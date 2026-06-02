@@ -1,0 +1,11 @@
+# À placer dans public_html/.htaccess (racine)
+
+Options -Indexes
+RewriteEngine On
+
+# Ne pas réécrire les fichiers/dossiers existants
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Tout rediriger vers index.php
+RewriteRule ^(.*)$ index.php [L,QSA]

@@ -94,7 +94,7 @@ $last_updated = "2 juin 2026";
 
   <h2>1. Présentation du service</h2>
   <p>
-    DAMBOU est une application mobile disponible sur iOS (App Store) et Android (Google Play), éditée par Jean-Olivier Salque, entrepreneur individuel.
+    DAMBOU est une application mobile disponible sur iOS (App Store) et Android (Google Play), éditée par Jean Orlandi.
   </p>
   <p>
     L'application permet aux professionnels indépendants (ci-après "Professionnels") de gérer leurs commandes, réservations, encaissements et fidélité clients, et aux clients finaux (ci-après "Clients") de commander et réserver auprès de ces Professionnels.
@@ -171,7 +171,7 @@ $last_updated = "2 juin 2026";
   </ul>
 
   <h2>9. Propriété intellectuelle</h2>
-  <p>L'application DAMBOU, son code source, son design, son logo, sa marque et l'ensemble de ses contenus sont la propriété exclusive de Jean-Olivier Salque. Toute reproduction, distribution ou exploitation sans autorisation écrite préalable est strictement interdite.</p>
+  <p>L'application DAMBOU, son code source, son design, son logo, sa marque et l'ensemble de ses contenus sont la propriété exclusive de Jean Orlandi. Toute reproduction, distribution ou exploitation sans autorisation écrite préalable est strictement interdite.</p>
   <p>Les contenus publiés par les Professionnels (photos, descriptions, noms de produits) restent leur propriété. En les publiant sur DAMBOU, ils accordent à DAMBOU une licence non exclusive d'affichage à des fins de fonctionnement du service.</p>
 
   <h2>10. Responsabilité</h2>
@@ -195,7 +195,6 @@ $last_updated = "2 juin 2026";
 
   <h2>12. Loi applicable et juridiction</h2>
   <p>Les présentes CGU sont soumises au droit français. En cas de litige, et à défaut de résolution amiable, les tribunaux compétents seront ceux du ressort du domicile de l'éditeur.</p>
-  <p>Pour tout litige de consommation, vous pouvez également recourir à une procédure de médiation. Plateforme européenne de règlement en ligne des litiges : <a href="https://ec.europa.eu/consumers/odr" target="_blank">https://ec.europa.eu/consumers/odr</a></p>
 
   <h2>13. Contact</h2>
   <p>Pour toute question relative aux présentes CGU :<br>

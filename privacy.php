@@ -86,7 +86,7 @@ $last_updated = "2 juin 2026";
 
   <h2>1. Qui sommes-nous ?</h2>
   <p>
-    DAMBOU est une application mobile éditée par Jean-Olivier Salque, entrepreneur individuel.<br>
+    DAMBOU est une application mobile éditée par Jean Orlandi.<br>
     Contact : <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br>
     Site web : <a href="https://dambou.fr">https://dambou.fr</a>
   </p>

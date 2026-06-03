@@ -7,6 +7,24 @@ if (count($parts) >= 1 && !empty($parts[0])) {
     $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower($parts[0]));
 }
 
+// Pages réservées (servies directement, pas traitées comme slug de business)
+$reservedPages = [
+    'privacy'    => 'privacy.php',
+    'cgu'        => 'cgu.php',
+    'abonnement' => 'abonnement.php',
+    'mentions'   => 'mentions.php',
+];
+$first = strtolower($parts[0] ?? '');
+// Retirer une éventuelle extension .php tapée par l'utilisateur
+$first = preg_replace('/\.php$/', '', $first);
+if (isset($reservedPages[$first])) {
+    $pageFile = __DIR__ . '/' . $reservedPages[$first];
+    if (file_exists($pageFile)) {
+        include $pageFile;
+        exit;
+    }
+}
+
 if (!empty($slug)) {
     $file = __DIR__ . '/pro/page.php';
     if (!file_exists($file)) {

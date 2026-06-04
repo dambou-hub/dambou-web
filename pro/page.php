@@ -116,13 +116,17 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
     .btn.disabled { opacity: 0.4; pointer-events: none; }
     .section { padding: 0 16px; margin-top: 20px; }
     .cat-title { font-size: 16px; font-weight: 800; color: var(--text); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--primary); display: inline-block; }
-    .product-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
-    .product-img { width: 100%; height: 200px; object-fit: cover; display: block; }
-    .product-img-placeholder { width: 100%; height: 160px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 40px; }
-    .product-info { padding: 10px 14px 14px; }
-    .product-name { font-size: 15px; font-weight: 700; color: var(--text); }
-    .product-desc { font-size: 13px; color: var(--text-med); margin-top: 4px; line-height: 1.4; }
-    .product-price { font-size: 16px; font-weight: 800; color: var(--primary); margin-top: 8px; }
+    .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+    @media (min-width: 480px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 720px) { .product-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); } }
+    .product-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+    .product-img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .product-img-placeholder { width: 100%; height: 140px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .product-info { padding: 8px 10px 12px; }
+    .product-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .product-desc { font-size: 11px; color: var(--text-med); margin-top: 3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .product-price { font-size: 14px; font-weight: 800; color: var(--primary); margin-top: 6px; }
     .sticky-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.12); z-index: 100; }
     .sticky-inner { display: flex; align-items: center; gap: 12px; max-width: 480px; margin: 0 auto; }
     .sticky-logo { width: 40px; height: 40px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: white; font-size: 20px; }
@@ -182,6 +186,7 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
       $catName = $catMap[$catId] ?? '';
     ?>
       <?php if ($catName): ?><div class="cat-title"><?= htmlspecialchars($catName) ?></div><?php endif; ?>
+      <div class="product-grid">
       <?php foreach ($prods as $p):
         $pname = htmlspecialchars($p['name'] ?? '');
         $pdesc = htmlspecialchars($p['description'] ?? '');
@@ -194,12 +199,14 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
           <?php else: ?>
             <div class="product-img-placeholder">🍽️</div>
           <?php endif; ?>
+          <div class="product-info">
             <div class="product-name"><?= $pname ?></div>
             <?php if ($pdesc): ?><div class="product-desc"><?= $pdesc ?></div><?php endif; ?>
             <div class="product-price"><?= $price ?> <?= $currencySymbol ?></div>
           </div>
         </div>
       <?php endforeach; ?>
+      </div>
     <?php endforeach; ?>
   <?php endif; ?>
 </div>

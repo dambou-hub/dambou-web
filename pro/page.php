@@ -116,13 +116,13 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
     .btn.disabled { opacity: 0.4; pointer-events: none; }
     .section { padding: 0 16px; margin-top: 20px; }
     .cat-title { font-size: 16px; font-weight: 800; color: var(--text); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--primary); display: inline-block; }
-    .product-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 12px; box-shadow: var(--shadow); }
-    .product-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
-    .product-img-placeholder { width: 60px; height: 60px; border-radius: 10px; background: var(--bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .product-info { flex: 1; min-width: 0; }
-    .product-name { font-size: 14px; font-weight: 700; color: var(--text); }
-    .product-desc { font-size: 12px; color: var(--text-med); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .product-price { font-size: 15px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+    .product-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
+    .product-img { width: 100%; height: 200px; object-fit: cover; display: block; }
+    .product-img-placeholder { width: 100%; height: 160px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .product-info { padding: 10px 14px 14px; }
+    .product-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .product-desc { font-size: 13px; color: var(--text-med); margin-top: 4px; line-height: 1.4; }
+    .product-price { font-size: 16px; font-weight: 800; color: var(--primary); margin-top: 8px; }
     .sticky-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.12); z-index: 100; }
     .sticky-inner { display: flex; align-items: center; gap: 12px; max-width: 480px; margin: 0 auto; }
     .sticky-logo { width: 40px; height: 40px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: white; font-size: 20px; }
@@ -194,11 +194,10 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
           <?php else: ?>
             <div class="product-img-placeholder">🍽️</div>
           <?php endif; ?>
-          <div class="product-info">
             <div class="product-name"><?= $pname ?></div>
             <?php if ($pdesc): ?><div class="product-desc"><?= $pdesc ?></div><?php endif; ?>
+            <div class="product-price"><?= $price ?> <?= $currencySymbol ?></div>
           </div>
-          <div class="product-price"><?= $price ?> <?= $currencySymbol ?></div>
         </div>
       <?php endforeach; ?>
     <?php endforeach; ?>

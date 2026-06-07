@@ -13,6 +13,7 @@ $reservedPages = [
     'cgu'        => 'cgu.php',
     'abonnement' => 'abonnement.php',
     'mentions'   => 'mentions.php',
+    'admin'      => 'admin.html',
 ];
 $first = strtolower($parts[0] ?? '');
 // Retirer une éventuelle extension .php tapée par l'utilisateur

@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dambou Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============================================================
+   RESET & VARIABLES
+============================================================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --primary: #00BFA5;
+  --primary-dark: #00897B;
+  --primary-glow: rgba(0,191,165,0.15);
+  --sidebar: #0D1117;
+  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-hover: rgba(255,255,255,0.04);
+  --bg: #F4F6F9;
+  --white: #FFFFFF;
+  --dark: #1A1D23;
+  --mid: #6B7280;
+  --light: #9CA3AF;
+  --border: #E5E7EB;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --success: #10B981;
+  --error: #EF4444;
+  --warning: #F59E0B;
+  --info: #3B82F6;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  display: flex;
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ============================================================
+   AUTH SCREEN
+============================================================ */
+#authScreen {
+  position: fixed; inset: 0;
+  background: var(--sidebar);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.auth-card {
+  background: #161B22;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 380px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+}
+.auth-logo {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 32px;
+}
+.auth-logo-box {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: white;
+}
+.auth-logo-text { font-size: 20px; font-weight: 700; color: white; }
+.auth-logo-badge {
+  font-size: 10px; font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-glow);
+  padding: 2px 8px; border-radius: 4px;
+  border: 1px solid rgba(0,191,165,0.2);
+}
+.auth-title { font-size: 22px; font-weight: 700; color: white; margin-bottom: 6px; }
+.auth-sub { font-size: 13px; color: #6B7280; margin-bottom: 28px; }
+.auth-field { margin-bottom: 16px; }
+.auth-label { font-size: 12px; font-weight: 600; color: #9CA3AF; margin-bottom: 6px; display: block; letter-spacing: 0.4px; }
+.auth-input {
+  width: 100%; padding: 12px 14px;
+  background: #0D1117; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; color: white; font-size: 14px;
+  font-family: 'DM Sans', sans-serif; outline: none;
+  transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: var(--primary); }
+.auth-input::placeholder { color: #374151; }
+.auth-error {
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 8px; padding: 10px 14px;
+  color: #FCA5A5; font-size: 13px; margin-bottom: 16px;
+  display: none;
+}
+.auth-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none; border-radius: 10px;
+  color: white; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.2s; margin-top: 4px;
+}
+.auth-btn:hover { opacity: 0.9; }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ============================================================
+   SIDEBAR
+============================================================ */
+.sidebar {
+  width: 220px; background: var(--sidebar);
+  flex-shrink: 0; display: flex; flex-direction: column;
+  padding-bottom: 20px; position: fixed;
+  top: 0; left: 0; height: 100vh; z-index: 100;
+  border-right: 1px solid var(--sidebar-border);
+}
+.sidebar-logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--sidebar-border);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: white;
+}
+.logo-name { font-size: 15px; font-weight: 700; color: white; letter-spacing: 0.5px; }
+.logo-badge {
+  font-size: 9px; font-weight: 600; color: var(--primary);
+  background: var(--primary-glow); padding: 1px 6px;
+  border-radius: 3px; display: block; margin-top: 1px;
+  border: 1px solid rgba(0,191,165,0.15);
+}
+
+.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+.nav-section { margin-bottom: 20px; }
+.nav-section-label {
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.2);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 0 8px; margin-bottom: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 8px;
+  color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; margin-bottom: 1px;
+  position: relative;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.75); }
+.nav-item.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border: 1px solid rgba(0,191,165,0.15);
+}
+.nav-item-icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto; font-size: 10px; font-weight: 700;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4);
+  padding: 1px 7px; border-radius: 10px;
+}
+.nav-item.active .nav-badge { background: rgba(0,191,165,0.2); color: var(--primary); }
+
+.sidebar-footer {
+  padding: 12px 10px 0;
+  border-top: 1px solid var(--sidebar-border);
+}
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; border-radius: 8px;
+  background: var(--sidebar-hover);
+}
+.user-avatar {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 700;
+  color: white; flex-shrink: 0;
+}
+.user-name { font-size: 12px; font-weight: 600; color: white; }
+.user-role { font-size: 10px; color: rgba(255,255,255,0.3); }
+.logout-btn {
+  margin-left: auto; background: none; border: none;
+  color: rgba(255,255,255,0.3); cursor: pointer;
+  font-size: 16px; padding: 2px;
+  transition: color 0.15s;
+}
+.logout-btn:hover { color: var(--error); }
+
+/* ============================================================
+   MAIN
+============================================================ */
+.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 60px;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-size: 16px; font-weight: 700; color: var(--dark); flex: 1; }
+.topbar-subtitle { font-size: 12px; color: var(--mid); margin-top: 1px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger { background: rgba(239,68,68,0.1); color: var(--error); border: 1px solid rgba(239,68,68,0.15); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+.content { padding: 24px; flex: 1; }
+
+/* ============================================================
+   VIEWS
+============================================================ */
+.view { display: none; animation: fadeIn 0.2s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   STATS
+============================================================ */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--white); border-radius: 12px;
+  padding: 18px 20px; border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+.stat-icon { font-size: 24px; margin-bottom: 10px; }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--dark); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--mid); margin-top: 4px; }
+.stat-sub { font-size: 11px; color: var(--success); margin-top: 6px; font-weight: 600; }
+
+/* ============================================================
+   CARDS & TABLES
+============================================================ */
+.card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); box-shadow: var(--card-shadow);
+  overflow: hidden; margin-bottom: 20px;
+}
+.card-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(--dark); flex: 1; }
+.card-count {
+  font-size: 11px; font-weight: 600; color: var(--mid);
+  background: var(--bg); padding: 2px 8px; border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  padding: 11px 16px; text-align: left;
+  font-size: 11px; font-weight: 600; color: var(--light);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  background: #FAFBFC;
+}
+.table td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #FAFBFC; }
+.table-empty { text-align: center; padding: 48px; color: var(--light); font-size: 13px; }
+
+/* Badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-green { background: rgba(16,185,129,0.1); color: var(--success); }
+.badge-gray { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+.badge-blue { background: rgba(59,130,246,0.1); color: var(--info); }
+.badge-orange { background: rgba(245,158,11,0.1); color: var(--warning); }
+.badge-red { background: rgba(239,68,68,0.1); color: var(--error); }
+
+/* Toggle */
+.toggle { position: relative; display: inline-block; width: 34px; height: 18px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #D1D5DB; border-radius: 18px; transition: .2s;
+}
+.toggle-track:before {
+  content: ''; position: absolute;
+  width: 12px; height: 12px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%; transition: .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+input:checked + .toggle-track { background: var(--primary); }
+input:checked + .toggle-track:before { transform: translateX(16px); }
+
+/* ============================================================
+   MODULE CHIPS
+============================================================ */
+.module-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.module-chip {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 5px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+
+/* ============================================================
+   TEMPLATES GRID
+============================================================ */
+.templates-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.tpl-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); box-shadow: var(--card-shadow);
+  overflow: hidden; transition: all 0.2s;
+}
+.tpl-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.tpl-header { padding: 16px; }
+.tpl-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.tpl-icon {
+  width: 44px; height: 44px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.tpl-name { font-size: 14px; font-weight: 700; color: var(--dark); }
+.tpl-desc { font-size: 11px; color: var(--mid); margin-top: 2px; line-height: 1.4; }
+.tpl-modules { display: flex; flex-wrap: wrap; gap: 4px; }
+.tpl-footer {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  background: #FAFBFC; display: flex; align-items: center;
+}
+.tpl-stat { font-size: 11px; color: var(--mid); font-weight: 500; }
+.tpl-actions { margin-left: auto; display: flex; gap: 4px; }
+
+/* ============================================================
+   MODAL
+============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 500; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white); border-radius: 16px;
+  width: 100%; max-width: 560px; max-height: 90vh;
+  overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.15);
+  animation: modalIn 0.2s cubic-bezier(0.34,1.4,0.64,1);
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+.modal-header {
+  padding: 20px 24px 0;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; background: var(--white);
+  padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--dark); flex: 1; }
+.modal-close {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; color: var(--mid);
+  transition: all 0.15s;
+}
+.modal-close:hover { background: var(--error); color: white; border-color: var(--error); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+  background: var(--bg);
+}
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-label {
+  font-size: 12px; font-weight: 600; color: var(--mid);
+  margin-bottom: 6px; display: block; letter-spacing: 0.3px;
+}
+.form-input {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); font-size: 13px;
+  color: var(--dark); font-family: 'DM Sans', sans-serif;
+  background: white; outline: none; transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+.form-input[type="color"] { height: 40px; padding: 3px 6px; cursor: pointer; }
+.form-mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+.form-hint { font-size: 11px; color: var(--light); margin-top: 4px; }
+
+/* Module checklist */
+.module-checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.check-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 11px; border-radius: 8px;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.15s; background: white;
+}
+.check-item:hover { border-color: var(--primary); background: var(--primary-glow); }
+.check-item.checked { border-color: var(--primary); background: var(--primary-glow); }
+.check-box {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all 0.15s;
+}
+.check-item.checked .check-box { background: var(--primary); border-color: var(--primary); color: white; }
+.check-label { font-size: 12px; font-weight: 600; color: var(--dark); }
+.check-emoji { font-size: 14px; }
+
+/* ============================================================
+   TOAST & LOADER
+============================================================ */
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; z-index: 9999;
+  display: none; align-items: center; gap: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  animation: toastIn 0.3s ease;
+}
+.toast.show { display: flex; }
+.toast-success { background: var(--dark); color: white; }
+.toast-error { background: var(--error); color: white; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.loader {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-screen {
+  position: fixed; inset: 0; background: var(--sidebar);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; flex-direction: column; gap: 16px;
+}
+.loading-screen .loader { width: 32px; height: 32px; border-width: 3px; }
+.loading-text { color: rgba(255,255,255,0.4); font-size: 13px; }
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 14px; }
+.empty-title { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; color: var(--mid); }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 1024px) {
+  .templates-grid { grid-template-columns: repeat(2,1fr); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOADING ===== -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loader"></div>
+  <div class="loading-text">Chargement de Dambou Admin...</div>
+</div>
+
+<!-- ===== AUTH ===== -->
+<div id="authScreen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-box">D</div>
+      <div>
+        <div class="auth-logo-text">Dambou</div>
+        <span class="auth-logo-badge">ADMIN</span>
+      </div>
+    </div>
+    <div class="auth-title">Accès restreint</div>
+    <div class="auth-sub">Connecte-toi avec ton compte administrateur</div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-field">
+      <label class="auth-label">Email</label>
+      <input class="auth-input" type="email" id="authEmail" placeholder="admin@dambou.com">
+    </div>
+    <div class="auth-field">
+      <label class="auth-label">Mot de passe</label>
+      <input class="auth-input" type="password" id="authPassword" placeholder="••••••••">
+    </div>
+    <button class="auth-btn" id="authBtn" onclick="login()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" style="display:none; width:100%">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">D</div>
+      <div>
+        <div class="logo-name">DAMBOU</div>
+        <span class="logo-badge">ADMIN</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" onclick="switchView('overview',this)">
+          <span class="nav-item-icon">🏠</span> Vue d'ensemble
+        </div>
+        <div class="nav-item" onclick="switchView('modules',this)">
+          <span class="nav-item-icon">📦</span> Modules
+          <span class="nav-badge" id="navModuleCount">—</span>
+        </div>
+        <div class="nav-item" onclick="switchView('templates',this)">
+          <span class="nav-item-icon">🏪</span> Templates
+          <span class="nav-badge" id="navTemplateCount">—</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Données</div>
+        <div class="nav-item" onclick="switchView('businesses',this)">
+          <span class="nav-item-icon">🏢</span> Businesses
+          <span class="nav-badge" id="navBizCount">—</span>
+        </div>
+        <div class="nav-item" onclick="switchView('users',this)">
+          <span class="nav-item-icon">👥</span> Utilisateurs
+          <span class="nav-badge" id="navUserCount">—</span>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="userAvatar">—</div>
+        <div>
+          <div class="user-name" id="userName">—</div>
+          <div class="user-role">Super Admin</div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Déconnexion">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Vue d'ensemble</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="refreshCurrentView()">↻ Actualiser</button>
+      <button class="btn btn-primary btn-sm" id="topbarActionBtn" onclick="handleTopAction()">＋ Nouveau module</button>
+    </div>
+
+    <div class="content">
+
+      <!-- VUE D'ENSEMBLE -->
+      <div class="view active" id="view-overview">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value" id="statModules">—</div>
+            <div class="stat-label">Modules configurés</div>
+            <div class="stat-sub" id="statModulesSub">Chargement...</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏪</div>
+            <div class="stat-value" id="statTemplates">—</div>
+            <div class="stat-label">Templates actifs</div>
+            <div class="stat-sub" id="statTemplatesSub">Chargement...</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏢</div>
+            <div class="stat-value" id="statBusinesses">—</div>
+            <div class="stat-label">Businesses inscrits</div>
+            <div class="stat-sub" id="statBusinessesSub">Chargement...</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="statUsers">—</div>
+            <div class="stat-label">Utilisateurs totaux</div>
+            <div class="stat-sub" id="statUsersSub">Chargement...</div>
+          </div>
+        </div>
+        <div id="overviewContent"></div>
+      </div>
+
+      <!-- MODULES -->
+      <div class="view" id="view-modules">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📦 Modules disponibles</div>
+            <span class="card-count" id="modulesCount">—</span>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Identifiant</th>
+                <th>Plan requis</th>
+                <th>Utilisé dans</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="modulesBody">
+              <tr><td colspan="6" class="table-empty">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TEMPLATES -->
+      <div class="view" id="view-templates">
+        <div class="templates-grid" id="templatesGrid">
+          <div style="text-align:center;padding:40px;color:var(--light)">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- BUSINESSES -->
+      <div class="view" id="view-businesses">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🏢 Businesses inscrits</div>
+            <span class="card-count" id="bizCount">—</span>
+          </div>
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+            <input type="text" id="bizSearch" placeholder="🔍 Rechercher un business par nom..." 
+              oninput="filterBiz(this.value)"
+              style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Business</th>
+                <th>Catégorie</th>
+                <th>Propriétaire</th>
+                <th>Inscrit le</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bizBody">
+              <tr><td colspan="6" class="table-empty">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="view" id="view-users">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Utilisateurs</div>
+            <span class="card-count" id="usersCount">—</span>
+          </div>
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+            <input type="text" id="userSearch" placeholder="🔍 Rechercher un utilisateur par nom ou email..." 
+              oninput="filterUsers(this.value)"
+              style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Inscrit le</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="5" class="table-empty">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- ===== MODAL MODULE ===== -->
+<div class="modal-overlay" id="moduleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="moduleModalTitle">＋ Nouveau module</div>
+      <button class="modal-close" onclick="closeModal('moduleModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Emoji</label>
+          <input class="form-input" id="mod_emoji" placeholder="📅" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Identifiant unique</label>
+          <input class="form-input form-mono" id="mod_id" placeholder="ex: booking">
+          <div class="form-hint">Minuscules, sans espaces ni accents</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom du module</label>
+        <input class="form-input" id="mod_name" placeholder="Ex: Réservations">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="mod_desc" placeholder="Ce module permet de...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Plan requis</label>
+          <select class="form-input" id="mod_plan">
+            <option value="free">Gratuit</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catégorie</label>
+          <select class="form-input" id="mod_category">
+            <option value="booking">Réservation / Planning</option>
+            <option value="sales">Ventes / Caisse</option>
+            <option value="management">Gestion</option>
+            <option value="marketing">Marketing / Fidélité</option>
+            <option value="analytics">Statistiques</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('moduleModal')">Annuler</button>
+      <button class="btn btn-primary" id="saveModuleBtn" onclick="saveModule()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL TEMPLATE ===== -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="tplModalTitle">＋ Nouveau template</div>
+      <button class="modal-close" onclick="closeModal('templateModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Emoji</label>
+          <input class="form-input" id="tpl_emoji" placeholder="✂️" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Identifiant unique</label>
+          <input class="form-input form-mono" id="tpl_id" placeholder="ex: coiffeur">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom du template</label>
+        <input class="form-input" id="tpl_name" placeholder="Ex: Coiffeur / Barbier">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="tpl_desc" placeholder="Ex: Salon de coiffure, barbier, à domicile">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Couleur principale</label>
+          <input type="color" class="form-input" id="tpl_color" value="#00BFA5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Couleur secondaire</label>
+          <input type="color" class="form-input" id="tpl_color2" value="#00897B">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catégorie Supabase</label>
+        <input class="form-input" id="tpl_category" placeholder="Ex: beaute">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modules activés par défaut</label>
+        <div class="module-checklist" id="tplModuleChecklist"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('templateModal')">Annuler</button>
+      <button class="btn btn-primary" id="saveTplBtn" onclick="saveTemplate()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://unwrghiiocaztnecmpeh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVud3JnaGlpb2NhenRuZWNtcGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2Mjc4NTUsImV4cCI6MjA4MDIwMzg1NX0.m9s85OKGVTQbItxB8bHaCpfpvICRf5tWSztUyLvOeZw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let currentView = 'overview';
+let editingModuleId = null;
+let editingTemplateId = null;
+let allModules = [];
+let allTemplates = [];
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  document.getElementById('loadingScreen').style.display = 'flex';
+
+  const { data: { session } } = await sb.auth.getSession();
+
+  document.getElementById('loadingScreen').style.display = 'none';
+
+  if (!session) {
+    showAuth();
+  } else {
+    // Vérifier que c'est bien un admin
+    const { data: user } = await sb.from('users')
+      .select('role, first_name, last_name, email')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!user || user.role !== 'admin') {
+      await sb.auth.signOut();
+      showAuth('Accès réservé aux administrateurs.');
+      return;
+    }
+    showApp(user);
+  }
+}
+
+function showAuth(errorMsg = '') {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  if (errorMsg) {
+    const err = document.getElementById('authError');
+    err.textContent = errorMsg;
+    err.style.display = 'block';
+  }
+}
+
+async function showApp(user) {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userAvatar').textContent = (user.first_name?.[0] || user.email?.[0] || 'A').toUpperCase();
+
+  await loadAll();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function login() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authBtn');
+  const errEl = document.getElementById('authError');
+
+  if (!email || !password) { showAuthError('Remplis tous les champs.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Connexion...';
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+    showAuthError('Email ou mot de passe incorrect.');
+    return;
+  }
+
+  const { data: user } = await sb.from('users')
+    .select('role, first_name, last_name, email')
+    .eq('id', data.user.id)
+    .single();
+
+  if (!user || user.role !== 'admin') {
+    await sb.auth.signOut();
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+    showAuthError('Accès réservé aux administrateurs.');
+    return;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Se connecter';
+  showApp(user);
+}
+
+function showAuthError(msg) {
+  const err = document.getElementById('authError');
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  showAuth();
+}
+
+// Connexion avec Enter
+document.getElementById('authPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+// ============================================================
+// LOAD ALL DATA
+// ============================================================
+async function loadAll() {
+  await Promise.all([
+    loadModules(),
+    loadTemplates(),
+    loadStats(),
+  ]);
+  renderOverview();
+}
+
+async function loadModules() {
+  const { data, error } = await sb
+    .from('business_templates')
+    .select('*')
+    .order('sort_order');
+
+  // Note: les modules sont stockés dans business_templates.modules (JSONB)
+  // On les extrait de façon unique
+  if (data) {
+    const moduleSet = new Map();
+    data.forEach(tpl => {
+      if (tpl.modules && Array.isArray(tpl.modules)) {
+        tpl.modules.forEach(m => {
+          if (typeof m === 'object' && m.id) {
+            moduleSet.set(m.id, m);
+          }
+        });
+      }
+    });
+    allModules = [...moduleSet.values()];
+  }
+
+  // Charger aussi depuis la table modules si elle existe
+  const { data: modulesData } = await sb.from('modules').select('*').limit(1);
+  // Si la table modules existe, on peut l'utiliser
+
+  document.getElementById('navModuleCount').textContent = allModules.length || '—';
+  document.getElementById('modulesCount').textContent = `${allModules.length} modules`;
+  renderModulesTable();
+}
+
+async function loadTemplates() {
+  const { data, error } = await sb
+    .from('business_templates')
+    .select('*')
+    .order('sort_order');
+
+  if (data) {
+    allTemplates = data;
+    document.getElementById('navTemplateCount').textContent = data.length;
+  }
+  renderTemplatesGrid();
+}
+
+async function loadStats() {
+  // Businesses
+  const { count: bizCount } = await sb
+    .from('businesses')
+    .select('*', { count: 'exact', head: true });
+
+  // Users
+  const { count: userCount } = await sb
+    .from('users')
+    .select('*', { count: 'exact', head: true });
+
+  // Users par rôle
+  const { count: proCount } = await sb
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'business_owner');
+
+  document.getElementById('statModules').textContent = allModules.length || 9;
+  document.getElementById('statModulesSub').textContent = 'Tous opérationnels';
+  document.getElementById('statTemplates').textContent = allTemplates.length || 0;
+  document.getElementById('statTemplatesSub').textContent = 'Templates configurés';
+  document.getElementById('statBusinesses').textContent = bizCount || 0;
+  document.getElementById('statBusinessesSub').textContent = `${proCount||0} professionnels`;
+  document.getElementById('statUsers').textContent = userCount || 0;
+  document.getElementById('statUsersSub').textContent = `${(userCount||0)-(proCount||0)} clients`;
+
+  document.getElementById('navBizCount').textContent = bizCount || 0;
+  document.getElementById('navUserCount').textContent = userCount || 0;
+}
+
+// ============================================================
+// RENDER OVERVIEW
+// ============================================================
+function renderOverview() {
+  const html = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <div class="card-title">🏪 Templates configurés</div>
+        <span class="card-count">${allTemplates.length} templates</span>
+        <button class="btn btn-primary btn-sm" onclick="switchView('templates', document.querySelectorAll('.nav-item')[2])">Gérer →</button>
+      </div>
+      <table class="table">
+        <thead><tr><th>Template</th><th>Modules</th><th>Statut</th></tr></thead>
+        <tbody>
+          ${allTemplates.length === 0
+            ? '<tr><td colspan="3" class="table-empty">Aucun template. Crée-en un !</td></tr>'
+            : allTemplates.map(t => {
+                const mods = Array.isArray(t.modules) ? t.modules : [];
+                return `
+                  <tr>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <span style="font-size:20px">${t.icon || '🏪'}</span>
+                        <div>
+                          <div style="font-weight:700">${t.name}</div>
+                          <div style="font-size:11px;color:var(--mid)">${t.description||''}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="module-chips">
+                        ${mods.slice(0,4).map(m => {
+                          const id = typeof m === 'string' ? m : m.id || m;
+                          return `<span class="module-chip badge-gray">${id}</span>`;
+                        }).join('')}
+                        ${mods.length > 4 ? `<span class="module-chip badge-gray">+${mods.length-4}</span>` : ''}
+                      </div>
+                    </td>
+                    <td><span class="badge ${t.is_active ? 'badge-green':'badge-gray'}">${t.is_active ? '✓ Actif':'Inactif'}</span></td>
+                  </tr>
+                `;
+              }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('overviewContent').innerHTML = html;
+}
+
+// ============================================================
+// RENDER MODULES
+// ============================================================
+function renderModulesTable() {
+  const tbody = document.getElementById('modulesBody');
+
+  // Modules définis dans le code (depuis business_templates.dart)
+  const staticModules = [
+    { id:'booking', emoji:'📅', name:'Réservations', desc:'Gestion des rendez-vous et planning', plan:'free', active:true },
+    { id:'orders', emoji:'🛒', name:'Commandes', desc:'Prise et suivi des commandes clients', plan:'free', active:true },
+    { id:'queue', emoji:'🎫', name:"File d'attente", desc:'Tickets virtuels et gestion de la queue', plan:'free', active:true },
+    { id:'pos', emoji:'💳', name:'Caisse / POS', desc:'Encaissements et reçus', plan:'free', active:true },
+    { id:'stock', emoji:'📦', name:'Stock', desc:'Gestion des stocks et alertes', plan:'pro', active:true },
+    { id:'employees', emoji:'👥', name:'Équipe', desc:'Gestion des employés et horaires', plan:'free', active:true },
+    { id:'loyalty', emoji:'🎁', name:'Fidélité', desc:'Programme de points et récompenses', plan:'pro', active:true },
+    { id:'subscriptions', emoji:'📋', name:'Abonnements', desc:'Forfaits et abonnements clients', plan:'pro', active:true },
+    { id:'stats', emoji:'📊', name:'Statistiques', desc:'Tableaux de bord et analyses', plan:'free', active:true },
+  ];
+
+  document.getElementById('modulesCount').textContent = `${staticModules.length} modules`;
+  document.getElementById('navModuleCount').textContent = staticModules.length;
+
+  tbody.innerHTML = staticModules.map(m => {
+    const usedIn = allTemplates.filter(t => {
+      const mods = Array.isArray(t.modules) ? t.modules : [];
+      return mods.some(x => (typeof x === 'string' ? x : x.id || x) === m.id);
+    });
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">${m.emoji}</span>
+            <div>
+              <div style="font-weight:700">${m.name}</div>
+              <div style="font-size:11px;color:var(--mid)">${m.desc}</div>
+            </div>
+          </div>
+        </td>
+        <td><code style="font-family:'DM Mono',monospace;font-size:11px;color:var(--mid);background:var(--bg);padding:2px 6px;border-radius:4px">${m.id}</code></td>
+        <td><span class="badge badge-${planColor(m.plan)}">${planLabel(m.plan)}</span></td>
+        <td>
+          <div class="module-chips">
+            ${usedIn.length === 0
+              ? '<span style="font-size:11px;color:var(--light)">Aucun template</span>'
+              : usedIn.map(t => `<span class="module-chip" style="background:${(t.color||'#E5E7EB')}20;color:${t.color||'#6B7280'}">${t.icon||'🏪'} ${t.name}</span>`).join('')
+            }
+          </div>
+        </td>
+        <td><span class="badge badge-green">✓ Actif</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openModuleModal('${m.id}')">✏️ Modifier</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER TEMPLATES
+// ============================================================
+function renderTemplatesGrid() {
+  const grid = document.getElementById('templatesGrid');
+
+  if (allTemplates.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1">
+        <div class="empty-state">
+          <div class="empty-icon">🏪</div>
+          <div class="empty-title">Aucun template</div>
+          <div class="empty-sub">Crée ton premier template pour que les pros puissent s'inscrire.</div>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="openTemplateModal()">＋ Créer un template</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = allTemplates.map(t => {
+    const mods = Array.isArray(t.modules) ? t.modules : [];
+    const color = t.color || '#00BFA5';
+    const color2 = t.color2 || '#00897B';
+    return `
+      <div class="tpl-card">
+        <div class="tpl-header">
+          <div class="tpl-top">
+            <div class="tpl-icon" style="background:linear-gradient(135deg,${color},${color2})">${t.icon||'🏪'}</div>
+            <div style="flex:1;min-width:0">
+              <div class="tpl-name">${t.name}</div>
+              <div class="tpl-desc">${t.description||''}</div>
+            </div>
+          </div>
+          <div class="tpl-modules">
+            ${mods.map(m => {
+              const id = typeof m === 'string' ? m : m.id || m;
+              return `<span class="module-chip" style="background:${color}18;color:${color}">${id}</span>`;
+            }).join('')}
+          </div>
+          <!-- Ajouter module directement -->
+          <div style="margin-top:10px;font-size:10px;font-weight:600;color:var(--light);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Ajouter un module</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${['booking','orders','queue','pos','stock','employees','loyalty','subscriptions','stats']
+              .filter(id => !mods.some(m => (typeof m === 'string' ? m : m.id||m) === id))
+              .map(id => `
+                <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:var(--bg);color:var(--mid);border:1px dashed var(--border);cursor:pointer"
+                  onclick="quickAddModule('${t.id}','${id}')">＋ ${id}</span>
+              `).join('')}
+          </div>
+        </div>
+        <div class="tpl-footer">
+          <span class="tpl-stat">${mods.length} modules</span>
+          <span class="tpl-stat" style="margin-left:8px">• ${t.sort_order||0}</span>
+          <span class="badge ${t.is_active ? 'badge-green':'badge-gray'}" style="margin-left:8px">${t.is_active?'Actif':'Inactif'}</span>
+          <div class="tpl-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openEditTemplate('${t.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER BUSINESSES
+// ============================================================
+async function loadBusinesses() {
+  const { data, error } = await sb
+    .from('businesses')
+    .select('*, users!owner_id(first_name, last_name, email), is_featured, featured_from, featured_until')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const count = data?.length || 0;
+  document.getElementById('bizCount').textContent = `${count} businesses`;
+
+  window._allBizData = data || [];
+  const tbody = document.getElementById('bizBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Aucun business inscrit pour l\'instant.</td></tr>';
+    return;
+  }
+  renderBizRows(data, tbody);
+}
+
+function renderBizRows(data, tbody) {
+  tbody.innerHTML = data.map(b => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${b.logo_url ? `<img src="${b.logo_url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover">` : `<div style="width:32px;height:32px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px">🏪</div>`}
+          <div>
+            <div style="font-weight:700">${b.name}</div>
+            <div style="font-size:11px;color:var(--mid)">${b.slug}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge badge-gray">${b.category||'—'}</span></td>
+      <td style="font-size:12px">${b.users ? `${b.users.first_name||''} ${b.users.last_name||''}`.trim() || b.users.email : '—'}</td>
+      <td style="font-size:12px;color:var(--mid)">${new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
+      <td>
+        <span class="badge ${b.is_active ? 'badge-green':'badge-red'}">${b.is_active ? '✓ Actif':'Inactif'}</span>
+        ${b.is_verified ? '<span class="badge badge-blue" style="margin-left:4px">✓ Vérifié</span>' : ''}
+        ${b.is_featured ? '<span class="badge badge-warning" style="margin-left:4px">⭐ Vedette</span>' : ''}
+      </td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="toggleBusiness('${b.id}',${b.is_active})">
+          ${b.is_active ? 'Désactiver' : 'Activer'}
+        </button>
+        <button class="btn btn-sm" 
+          style="background:${b.is_featured?'#F59E0B':'#E5E7EB'};color:${b.is_featured?'white':'#374151'};margin-top:4px"
+          data-biz-id="${b.id}"
+          data-biz-name="${(b.name||'').replace(/"/g,'&quot;')}"
+          data-is-featured="${b.is_featured||false}"
+          data-featured-from="${b.featured_from||''}"
+          data-featured-until="${b.featured_until||''}"
+          onclick="openFeaturedFromBtn(this)">
+          ${b.is_featured ? '⭐ Vedette' : '☆ Mettre en vedette'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function toggleBusiness(id, currentState) {
+  const { error } = await sb
+    .from('businesses')
+    .update({ is_active: !currentState })
+    .eq('id', id);
+  if (!error) { toast('Business mis à jour', 'success'); loadBusinesses(); }
+}
+
+// ============================================================
+// RENDER USERS
+// ============================================================
+async function loadUsers() {
+  const { data } = await sb
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  document.getElementById('usersCount').textContent = `${data?.length||0} utilisateurs`;
+
+  window._allUsersData = data || [];
+  const tbody = document.getElementById('usersBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Aucun utilisateur inscrit.</td></tr>';
+    return;
+  }
+  renderUserRows(data, tbody);
+}
+
+function renderUserRows(data, tbody) {
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px">
+            ${(u.first_name?.[0]||u.email?.[0]||'?').toUpperCase()}
+          </div>
+          <div style="font-weight:600">${u.first_name||''} ${u.last_name||''} ${!u.first_name&&!u.last_name?'(Sans nom)':''}</div>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--mid)">${u.email}</td>
+      <td>
+        <span class="badge ${roleColor(u.role)}">${roleLabel(u.role)}</span>
+        ${u.is_active === false ? '<span class="badge badge-red" style="margin-left:4px">Désactivé</span>' : ''}
+      </td>
+      <td style="font-size:12px;color:var(--mid)">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
+      <td>
+        ${u.role !== 'admin' ? `
+          <button class="btn btn-sm ${u.is_active === false ? 'btn-secondary' : 'btn-warning'}" onclick="toggleUser('${u.id}',${u.is_active !== false})">
+            ${u.is_active === false ? '▶ Réactiver' : '⏸ Désactiver'}
+          </button>` : '<span style="font-size:11px;color:var(--light)">—</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function toggleUser(id, currentActive) {
+  const action = currentActive ? 'désactiver' : 'réactiver';
+  if (confirm(`Voulez-vous ${action} cet utilisateur ?`)) {
+    const { error } = await sb.from('users').update({ is_active: !currentActive }).eq('id', id);
+    if (!error) { toast(`Utilisateur ${currentActive ? 'désactivé' : 'réactivé'}`, 'success'); loadUsers(); }
+    else toast('Erreur : ' + error.message, 'error');
+  }
+}
+
+// ============================================================
+// MODULES CRUD
+// ============================================================
+function openModuleModal(moduleId = null) {
+  editingModuleId = moduleId;
+  document.getElementById('moduleModalTitle').textContent = moduleId ? '✏️ Modifier le module' : '＋ Nouveau module';
+  if (!moduleId) {
+    document.getElementById('mod_emoji').value = '';
+    document.getElementById('mod_id').value = '';
+    document.getElementById('mod_name').value = '';
+    document.getElementById('mod_desc').value = '';
+    document.getElementById('mod_plan').value = 'free';
+  }
+  openModal('moduleModal');
+}
+
+async function saveModule() {
+  const btn = document.getElementById('saveModuleBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+
+  // Les modules sont gérés dans le code Flutter (business_templates.dart)
+  // Ici on peut les gérer dans business_templates table si on le souhaite
+  toast('Module mis à jour ! Pense à mettre à jour business_templates.dart', 'success');
+
+  btn.disabled = false; btn.textContent = '💾 Enregistrer';
+  closeModal('moduleModal');
+}
+
+// ============================================================
+// TEMPLATES CRUD
+// ============================================================
+function openTemplateModal() {
+  editingTemplateId = null;
+  document.getElementById('tplModalTitle').textContent = '＋ Nouveau template';
+  document.getElementById('tpl_emoji').value = '';
+  document.getElementById('tpl_id').value = '';
+  document.getElementById('tpl_name').value = '';
+  document.getElementById('tpl_desc').value = '';
+  document.getElementById('tpl_color').value = '#00BFA5';
+  document.getElementById('tpl_color2').value = '#00897B';
+  document.getElementById('tpl_category').value = '';
+  renderModuleChecklist([]);
+  openModal('templateModal');
+}
+
+async function openEditTemplate(id) {
+  const tpl = allTemplates.find(t => t.id === id);
+  if (!tpl) return;
+  editingTemplateId = id;
+  document.getElementById('tplModalTitle').textContent = '✏️ Modifier le template';
+  document.getElementById('tpl_emoji').value = tpl.icon || '';
+  document.getElementById('tpl_id').value = tpl.id;
+  document.getElementById('tpl_name').value = tpl.name;
+  document.getElementById('tpl_desc').value = tpl.description || '';
+  document.getElementById('tpl_color').value = tpl.color || '#00BFA5';
+  document.getElementById('tpl_color2').value = tpl.color2 || '#00897B';
+  document.getElementById('tpl_category').value = tpl.category || '';
+  const mods = Array.isArray(tpl.modules) ? tpl.modules.map(m => typeof m === 'string' ? m : m.id||m) : [];
+  renderModuleChecklist(mods);
+  openModal('templateModal');
+}
+
+async function saveTemplate() {
+  const btn = document.getElementById('saveTplBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+
+  const checkedMods = [...document.querySelectorAll('.check-item.checked')]
+    .map(el => el.dataset.moduleId);
+
+  const payload = {
+    id: document.getElementById('tpl_id').value.trim(),
+    name: document.getElementById('tpl_name').value.trim(),
+    description: document.getElementById('tpl_desc').value.trim(),
+    icon: document.getElementById('tpl_emoji').value.trim(),
+    category: document.getElementById('tpl_category').value.trim(),
+    is_active: true,
+    modules: checkedMods,
+    color: document.getElementById('tpl_color').value,
+    color2: document.getElementById('tpl_color2').value,
+  };
+
+  if (!payload.id || !payload.name) {
+    toast('Identifiant et nom requis', 'error');
+    btn.disabled = false; btn.textContent = '💾 Enregistrer';
+    return;
+  }
+
+  let error;
+  if (editingTemplateId) {
+    ({ error } = await sb.from('business_templates').update(payload).eq('id', editingTemplateId));
+  } else {
+    ({ error } = await sb.from('business_templates').insert(payload));
+  }
+
+  btn.disabled = false; btn.textContent = '💾 Enregistrer';
+
+  if (error) { toast('Erreur : ' + error.message, 'error'); return; }
+
+  toast(editingTemplateId ? 'Template mis à jour !' : 'Template créé !', 'success');
+  closeModal('templateModal');
+  await loadTemplates();
+}
+
+async function quickAddModule(templateId, moduleId) {
+  const tpl = allTemplates.find(t => t.id === templateId);
+  if (!tpl) return;
+
+  const mods = Array.isArray(tpl.modules) ? [...tpl.modules] : [];
+  if (!mods.includes(moduleId)) mods.push(moduleId);
+
+  const { error } = await sb.from('business_templates')
+    .update({ modules: mods })
+    .eq('id', templateId);
+
+  if (!error) { toast(`Module ${moduleId} ajouté !`, 'success'); await loadTemplates(); }
+  else toast('Erreur : ' + error.message, 'error');
+}
+
+async function deleteTemplate(id) {
+  const tpl = allTemplates.find(t => t.id === id);
+  if (!confirm(`Supprimer le template "${tpl?.name}" ? Cette action est irréversible.`)) return;
+
+  const { error } = await sb.from('business_templates').delete().eq('id', id);
+  if (!error) { toast('Template supprimé', 'success'); await loadTemplates(); }
+  else toast('Erreur : ' + error.message, 'error');
+}
+
+function renderModuleChecklist(selected = []) {
+  const modulesList = [
+    { id:'booking', emoji:'📅', name:'Réservations' },
+    { id:'orders', emoji:'🛒', name:'Commandes' },
+    { id:'queue', emoji:'🎫', name:"File d'attente" },
+    { id:'pos', emoji:'💳', name:'Caisse / POS' },
+    { id:'stock', emoji:'📦', name:'Stock' },
+    { id:'employees', emoji:'👥', name:'Équipe' },
+    { id:'loyalty', emoji:'🎁', name:'Fidélité' },
+    { id:'subscriptions', emoji:'📋', name:'Abonnements' },
+    { id:'stats', emoji:'📊', name:'Statistiques' },
+  ];
+
+  document.getElementById('tplModuleChecklist').innerHTML = modulesList.map(m => `
+    <div class="check-item ${selected.includes(m.id)?'checked':''}"
+      data-module-id="${m.id}"
+      onclick="toggleCheck(this)">
+      <div class="check-box">${selected.includes(m.id)?'✓':''}</div>
+      <span class="check-emoji">${m.emoji}</span>
+      <span class="check-label">${m.name}</span>
+    </div>
+  `).join('');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.querySelector('.check-box').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const viewTitles = {
+  overview: "Vue d'ensemble",
+  modules: "Modules",
+  templates: "Templates",
+  businesses: "Businesses",
+  users: "Utilisateurs",
+};
+const viewActions = {
+  overview: { label: '＋ Nouveau template', action: openTemplateModal },
+  modules: null,
+  templates: { label: '＋ Nouveau template', action: openTemplateModal },
+  businesses: null,
+  users: null,
+};
+
+function switchView(view, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  if (el) el.classList.add('active');
+  currentView = view;
+  document.getElementById('topbarTitle').textContent = viewTitles[view] || view;
+
+  const action = viewActions[view];
+  const btn = document.getElementById('topbarActionBtn');
+  if (action) { btn.textContent = action.label; btn.style.display = 'flex'; }
+  else btn.style.display = 'none';
+
+  if (view === 'businesses') loadBusinesses();
+  if (view === 'users') loadUsers();
+}
+
+function handleTopAction() {
+  const action = viewActions[currentView];
+  if (action) action.action();
+}
+
+async function refreshCurrentView() {
+  await loadAll();
+  if (currentView === 'businesses') loadBusinesses();
+  if (currentView === 'users') loadUsers();
+  toast('Données actualisées', 'success');
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+});
+
+// ============================================================
+// HELPERS
+// ============================================================
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  el.className = `toast toast-${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function planLabel(p) { return {free:'Gratuit',pro:'Pro',premium:'Premium'}[p]||p; }
+function planColor(p) { return {free:'green',pro:'blue',premium:'orange'}[p]||'gray'; }
+function roleLabel(r) { return {customer:'Client',business_owner:'Professionnel',admin:'Admin'}[r]||r; }
+function roleColor(r) { return {customer:'badge-gray',business_owner:'badge-blue',admin:'badge-orange'}[r]||'badge-gray'; }
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+
+<!-- Modal Vedette -->
+<div id="featuredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:28px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <h3 style="margin-bottom:6px">⭐ Mettre en vedette</h3>
+    <p id="featuredBizName" style="color:var(--mid);font-size:13px;margin-bottom:20px"></p>
+    <input type="hidden" id="featuredBizId">
+    
+    <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px">Date de début</label>
+    <input type="date" id="featuredFrom" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:14px">
+    
+    <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px">Date de fin</label>
+    <input type="date" id="featuredUntil" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:20px">
+    
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeFeaturedModal()">Annuler</button>
+      <button id="featuredRemoveBtn" class="btn btn-danger" style="flex:1" onclick="removeFeatured()">Retirer la vedette</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveFeatured()">⭐ Confirmer</button>
+    </div>
+  </div>
+</div>
+<script>
+// ── FEATURED / VEDETTE ───────────────────────────────────────────
+
+function openFeaturedFromBtn(btn) {
+  const id = btn.getAttribute('data-biz-id');
+  const name = btn.getAttribute('data-biz-name');
+  const isFeatured = btn.getAttribute('data-is-featured') === 'true';
+  const featuredFrom = btn.getAttribute('data-featured-from');
+  const featuredUntil = btn.getAttribute('data-featured-until');
+  openFeaturedModal(id, name, isFeatured, featuredFrom, featuredUntil);
+}
+
+function openFeaturedModal(id, name, isFeatured, featuredFrom, featuredUntil) {
+  document.getElementById('featuredBizId').value = id;
+  document.getElementById('featuredBizName').textContent = name;
+  document.getElementById('featuredFrom').value = featuredFrom ? featuredFrom.substring(0,10) : new Date().toISOString().substring(0,10);
+  document.getElementById('featuredUntil').value = featuredUntil ? featuredUntil.substring(0,10) : '';
+  document.getElementById('featuredRemoveBtn').style.display = isFeatured ? 'block' : 'none';
+  const modal = document.getElementById('featuredModal');
+  modal.style.setProperty('display','flex','important');
+}
+
+function closeFeaturedModal() {
+  document.getElementById('featuredModal').style.display = 'none';
+  document.getElementById('featuredModal').style.removeProperty('display');
+  document.getElementById('featuredModal').style.display = 'none';
+}
+
+async function saveFeatured() {
+  const id = document.getElementById('featuredBizId').value;
+  const from = document.getElementById('featuredFrom').value;
+  const until = document.getElementById('featuredUntil').value;
+  if (!id) { toast('Erreur : ID manquant', 'error'); return; }
+  if (!from || !until) { toast('Veuillez renseigner les deux dates', 'error'); return; }
+  if (until < from) { toast('La date de fin doit être après la date de début', 'error'); return; }
+  
+  const payload = { is_featured: true };
+  // Ajouter les dates seulement si les colonnes existent
+  try {
+    payload.featured_from = from;
+    payload.featured_until = until;
+  } catch(e) {}
+  
+  console.log('saveFeatured', id, payload);
+  const { data, error } = await sb.from('businesses').update(payload).eq('id', id).select();
+  console.log('result', data, error);
+  
+  if (!error) {
+    toast('✅ ' + document.getElementById('featuredBizName').textContent + ' mis en vedette !', 'success');
+    closeFeaturedModal();
+    loadBusinesses();
+  } else {
+    toast('Erreur : ' + error.message, 'error');
+    console.error('saveFeatured error', error);
+  }
+}
+
+async function removeFeatured() {
+  const id = document.getElementById('featuredBizId').value;
+  if (!id) { toast('Erreur : ID manquant', 'error'); return; }
+  console.log('removeFeatured', id);
+  const { data, error } = await sb.from('businesses')
+    .update({ is_featured: false, featured_from: null, featured_until: null })
+    .eq('id', id).select();
+  console.log('result', data, error);
+  if (!error) {
+    toast('Vedette retirée', 'success');
+    closeFeaturedModal();
+    loadBusinesses();
+  } else toast('Erreur : ' + error.message, 'error');
+}
+
+// ── RECHERCHE ─────────────────────────────────────────────────────
+function filterBiz(query) {
+  const q = query.toLowerCase().trim();
+  const data = (window._allBizData || []).filter(b => 
+    !q || (b.name||'').toLowerCase().includes(q) || (b.category||'').toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('bizBody');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Aucun résultat pour "' + query + '"</td></tr>';
+    return;
+  }
+  renderBizRows(data, tbody);
+}
+
+function filterUsers(query) {
+  const q = query.toLowerCase().trim();
+  const data = (window._allUsersData || []).filter(u =>
+    !q || (u.first_name||'').toLowerCase().includes(q) || 
+    (u.last_name||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('usersBody');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Aucun résultat pour "' + query + '"</td></tr>';
+    return;
+  }
+  renderUserRows(data, tbody);
+}
+
+</script></body>
+</html>

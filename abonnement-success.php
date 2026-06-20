@@ -1,5 +1,5 @@
 <?php
-// dambou.fr/abonnement/success — Page de confirmation après paiement Stripe
+// dambou.fr/abonnement/success  Page de confirmation après paiement Stripe
 $session_id  = $_GET['session_id'] ?? '';
 $business_id = $_GET['business_id'] ?? '';
 $options     = explode(',', $_GET['options'] ?? '');
@@ -41,14 +41,14 @@ $has_terminal = in_array('terminal', $options);
 <body>
 
 <div class="header">
-  <div class="logo">🥟 DAMBOU Pro</div>
+  <div class="logo"> DAMBOU Pro</div>
 </div>
 
 <div class="container">
 
   <!-- Confirmation -->
   <div class="card">
-    <div class="success-icon">🎉</div>
+    <div class="success-icon"></div>
     <div class="success-title">Bienvenue sur Dambou Pro !</div>
     <div class="success-sub">Votre abonnement est activé. Retournez sur l'application pour commencer.</div>
   </div>
@@ -60,7 +60,7 @@ $has_terminal = in_array('terminal', $options);
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-content">
-        <div class="step-title">📱 Ouvrez l'application Dambou</div>
+        <div class="step-title"> Ouvrez l'application Dambou</div>
         <div class="step-desc">Votre abonnement est automatiquement activé dans l'app.</div>
       </div>
     </div>
@@ -69,8 +69,8 @@ $has_terminal = in_array('terminal', $options);
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-content">
-        <div class="step-title">🔗 Configurez votre compte Stripe</div>
-        <div class="step-desc">Allez dans Modules → Paiement en ligne → "Connecter Stripe" pour recevoir vos paiements.</div>
+        <div class="step-title"> Configurez votre compte Stripe</div>
+        <div class="step-desc">Allez dans Modules  Paiement en ligne  "Connecter Stripe" pour recevoir vos paiements.</div>
       </div>
     </div>
     <?php endif; ?>
@@ -79,8 +79,8 @@ $has_terminal = in_array('terminal', $options);
     <div class="step">
       <div class="step-num"><?= ($has_stripe || $has_terminal) ? 3 : 2 ?></div>
       <div class="step-content">
-        <div class="step-title">🖨️ Activez votre terminal de paiement</div>
-        <div class="step-desc">Commandez votre lecteur WisePad 3 (59€) depuis Modules → Terminal de paiement.</div>
+        <div class="step-title"> Activez votre terminal de paiement</div>
+        <div class="step-desc">Commandez votre lecteur WisePad 3 (59) depuis Modules  Terminal de paiement.</div>
       </div>
     </div>
     <?php endif; ?>
@@ -90,39 +90,39 @@ $has_terminal = in_array('terminal', $options);
   <!-- Options activer -->
   <?php if ($has_stripe): ?>
   <div class="card">
-    <div class="steps-title">⚡ Activer le paiement en ligne</div>
+    <div class="steps-title"> Activer le paiement en ligne</div>
     <p style="font-size:13px;color:var(--text-med);margin-bottom:16px;line-height:1.5">
       Connectez votre compte Stripe pour accepter les paiements en ligne de vos clients.
       La procédure prend environ 5 minutes.
     </p>
     <a href="dambouapp://modules/stripe_payment" class="btn btn-primary">
-      Configurer Stripe dans l'app →
+      Configurer Stripe dans l'app 
     </a>
     <p style="font-size:11px;color:var(--text-med);text-align:center">
-      Ou allez dans Modules → Paiement en ligne dans l'application
+      Ou allez dans Modules  Paiement en ligne dans l'application
     </p>
   </div>
   <?php endif; ?>
 
   <?php if ($has_terminal): ?>
   <div class="card">
-    <div class="steps-title">🖨️ Commander votre lecteur</div>
+    <div class="steps-title"> Commander votre lecteur</div>
     <p style="font-size:13px;color:var(--text-med);margin-bottom:16px;line-height:1.5">
-      Le lecteur WisePad 3 est vendu 59€ directement par Stripe. Il accepte les cartes à puce,
+      Le lecteur WisePad 3 est vendu 59 directement par Stripe. Il accepte les cartes à puce,
       sans contact, Apple Pay et Google Pay via Bluetooth.
     </p>
     <a href="https://dashboard.stripe.com/terminal/shop" target="_blank" class="btn btn-primary">
-      Commander sur Stripe (59€) →
+      Commander sur Stripe (59) 
     </a>
     <a href="dambouapp://modules/terminal" class="btn btn-secondary" style="margin-top:8px">
-      Configurer dans l'app →
+      Configurer dans l'app 
     </a>
   </div>
   <?php endif; ?>
 
   <!-- Retour app -->
   <a href="dambouapp://home" class="btn btn-primary">
-    Retourner sur l'application →
+    Retourner sur l'application 
   </a>
 
   <div class="footer">

@@ -1,14 +1,14 @@
 <?php
 // ============================================================
-// dambou.fr/abonnement — Page de souscription Dambou Pro
+// dambou.fr/abonnement - Page de souscription Dambou Pro
 // ============================================================
 
-// ── Price IDs Stripe ────────────────────────────────────────
+// - Price IDs Stripe -
 $PRICES = [
   'eur' => [
-    'monthly' => 'price_1TkIC3Lh7m1wDGRjQ146c59B', // 29€/mois
-    'yearly'  => 'price_1TkIDkLh7m1wDGRjIETOsaAt', // 299€/an
-    'symbol'  => '€', 'monthly_amount' => 29, 'yearly_amount' => 299,
+    'monthly' => 'price_1TkIC3Lh7m1wDGRjQ146c59B', // 29&euro;/mois
+    'yearly'  => 'price_1TkIDkLh7m1wDGRjIETOsaAt', // 299&euro;/an
+    'symbol'  => '&euro;', 'monthly_amount' => 29, 'yearly_amount' => 299,
     'currency' => 'EUR',
   ],
   'mad' => [
@@ -25,7 +25,7 @@ $PRICES = [
   ],
 ];
 
-// Mapping pays → devise
+// Mapping pays -&gt; devise
 $COUNTRY_CURRENCY = [
   'fr' => 'eur', 'be' => 'eur', 'lu' => 'eur',
   'ma' => 'mad',
@@ -35,7 +35,7 @@ $COUNTRY_CURRENCY = [
 
 $STRIPE_SECRET_KEY = getenv('STRIPE_SECRET_KEY') ?: 'sk_test_XXXXXXXXXX';
 
-// ── Paramètres URL ───────────────────────────────────────────
+// - Paramètres URL -
 $business_id = $_GET['business_id'] ?? '';
 $country     = strtolower($_GET['country'] ?? 'fr');
 $email       = $_GET['email'] ?? '';
@@ -45,7 +45,7 @@ $options     = explode(',', $_GET['options'] ?? ''); // stripe_connect, terminal
 $currency_code = $COUNTRY_CURRENCY[$country] ?? 'eur';
 $price_data = $PRICES[$currency_code];
 
-// ── POST : Créer session Stripe Checkout ─────────────────────
+// - POST : Créer session Stripe Checkout -
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $selected_plan = $_POST['plan'] ?? 'monthly';
   $selected_options = $_POST['options'] ?? [];
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'mode' => 'subscription',
       'line_items[0][price]' => $price_id,
       'line_items[0][quantity]' => 1,
-      'success_url' => 'https://dambou.fr/abonnement/success?session_id={CHECKOUT_SESSION_ID}&business_id=' . urlencode($business_id) . '&options=' . urlencode(implode(',', $selected_options)),
+      'success_url' => 'https://dambou.fr/abonnement-success?session_id={CHECKOUT_SESSION_ID}&business_id=' . urlencode($business_id) . '&options=' . urlencode(implode(',', $selected_options)),
       'cancel_url' => 'https://dambou.fr/abonnement?business_id=' . urlencode($business_id) . '&country=' . urlencode($country),
       'customer_email' => $email ?: null,
       'metadata[business_id]' => $business_id,
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dambou Pro — Abonnement</title>
+<title>Dambou Pro - Abonnement</title>
 <style>
   :root {
     --primary: #00BFA5;
@@ -207,31 +207,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <div class="header">
-  <div class="logo">🥟 DAMBOU<span> Pro</span></div>
+  <div class="logo"> DAMBOU<span> Pro</span></div>
   <h1>Abonnement professionnel</h1>
 </div>
 
 <div class="container">
 
 <?php if (isset($error)): ?>
-<div class="error-msg">⚠️ <?= htmlspecialchars($error) ?></div>
+<div class="error-msg"> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
 <form method="POST" id="subscribeForm">
 
   <!-- Sélecteur pays -->
   <div class="card">
-    <div class="card-title">🌍 Votre pays</div>
+    <div class="card-title"> Votre pays</div>
     <div class="country-select">
-      <button type="button" class="country-btn <?= $currency_code === 'eur' ? 'active' : '' ?>" onclick="setCurrency('eur')">🇫🇷 France / Europe</button>
-      <button type="button" class="country-btn <?= $currency_code === 'mad' ? 'active' : '' ?>" onclick="setCurrency('mad')">🇲🇦 Maroc</button>
-      <button type="button" class="country-btn <?= $currency_code === 'chf' ? 'active' : '' ?>" onclick="setCurrency('chf')">🇨🇭 Suisse</button>
+      <button type="button" class="country-btn <?= $currency_code === 'eur' ? 'active' : '' ?>" onclick="setCurrency('eur')"> France / Europe</button>
+      <button type="button" class="country-btn <?= $currency_code === 'mad' ? 'active' : '' ?>" onclick="setCurrency('mad')"> Maroc</button>
+      <button type="button" class="country-btn <?= $currency_code === 'chf' ? 'active' : '' ?>" onclick="setCurrency('chf')"> Suisse</button>
     </div>
   </div>
 
   <!-- Choix du plan -->
   <div class="card">
-    <div class="card-title">📅 Votre plan</div>
+    <div class="card-title"> Votre plan</div>
 
     <div class="plan-toggle">
       <button type="button" class="plan-btn active" id="btn-monthly" onclick="setPlan('monthly')">
@@ -244,50 +244,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="price-display">
       <div class="price-amount" id="priceAmount">29</div>
-      <div class="price-period" id="pricePeriod">€ / mois</div>
+      <div class="price-period" id="pricePeriod">&euro; / mois</div>
       <div class="price-equiv" id="priceEquiv"></div>
     </div>
 
     <div class="features">
       <div class="feature">
-        <span class="feature-icon">🛒</span>
-        <div class="feature-text"><strong>Commandes en ligne</strong> — vos clients commandent depuis leur téléphone</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Commandes en ligne</strong> - vos clients commandent depuis leur téléphone</div>
       </div>
       <div class="feature">
-        <span class="feature-icon">📅</span>
-        <div class="feature-text"><strong>Réservations</strong> — agenda et gestion des rendez-vous</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Réservations</strong> - agenda et gestion des rendez-vous</div>
       </div>
       <div class="feature">
-        <span class="feature-icon">💳</span>
-        <div class="feature-text"><strong>Caisse (POS)</strong> — encaissement sur place avec reçu</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Caisse (POS)</strong> - encaissement sur place avec reçu</div>
       </div>
       <div class="feature">
-        <span class="feature-icon">⭐</span>
-        <div class="feature-text"><strong>Fidélité</strong> — programme de points automatique</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Fidélité</strong> - programme de points automatique</div>
       </div>
       <div class="feature">
-        <span class="feature-icon">📊</span>
-        <div class="feature-text"><strong>Statistiques</strong> — CA, clients, exports CSV</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Statistiques</strong> - CA, clients, exports CSV</div>
       </div>
       <div class="feature">
-        <span class="feature-icon">🌐</span>
-        <div class="feature-text"><strong>Page vitrine</strong> — dambou.fr/votre-nom</div>
+        <span class="feature-icon"></span>
+        <div class="feature-text"><strong>Page vitrine</strong> - dambou.fr/votre-nom</div>
       </div>
     </div>
   </div>
 
   <!-- Options -->
   <div class="card">
-    <div class="card-title">⚡ Options (facultatif)</div>
+    <div class="card-title"> Options (facultatif)</div>
     <div class="options-list">
 
       <!-- Option paiement en ligne -->
       <div class="option-item" id="opt-stripe" onclick="toggleOption('stripe_connect')">
         <div class="option-check" id="check-stripe_connect"></div>
         <div class="option-content">
-          <div class="option-title">💳 Paiement en ligne par carte</div>
-          <div class="option-desc">Vos clients paient à la commande — carte bancaire, Apple Pay, Google Pay</div>
-          <div class="option-price">Inclus dans l'abonnement · 1,4% + 0,10€ / transaction</div>
+          <div class="option-title"> Paiement en ligne par carte</div>
+          <div class="option-desc">Vos clients paient à la commande - carte bancaire, Apple Pay, Google Pay</div>
+          <div class="option-price">Inclus dans l'abonnement · 1,4% + 0,10&euro; / transaction</div>
         </div>
       </div>
 
@@ -295,9 +295,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="option-item" id="opt-terminal" onclick="toggleOption('terminal')">
         <div class="option-check" id="check-terminal"></div>
         <div class="option-content">
-          <div class="option-title">🖨️ Terminal de paiement (WisePad 3)</div>
-          <div class="option-desc">Encaissez en face à face par carte, sans contact, Apple Pay — lecteur Bluetooth</div>
-          <div class="option-price">Lecteur : 59€ · 1,4% + 0,10€ / transaction</div>
+          <div class="option-title"> Terminal de paiement (WisePad 3)</div>
+          <div class="option-desc">Encaissez en face à face par carte, sans contact, Apple Pay - lecteur Bluetooth</div>
+          <div class="option-price">Lecteur : 59&euro; · 1,4% + 0,10&euro; / transaction</div>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <input type="hidden" name="options[]" id="optionsInput" value="">
 
   <button type="submit" class="submit-btn" id="submitBtn">
-    Commencer l'essai gratuit — 2 mois offerts 🎉
+    Commencer l'essai gratuit - 2 mois offerts 
   </button>
 
   <p class="trial-note">
@@ -326,11 +326,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-// ── Données prix ─────────────────────────────────────────────
+// - Données prix -
 const PRICES = {
-  eur: { monthly: 29, yearly: 299, symbol: '€', label: 'France / Europe', period_m: '€ / mois', period_y: '€ / an', equiv_y: 'soit 24,90€ / mois — 2 mois offerts' },
-  mad: { monthly: 199, yearly: 1990, symbol: ' DH', label: 'Maroc', period_m: 'DH / mois', period_y: 'DH / an', equiv_y: 'soit 165,83 DH / mois — 2 mois offerts' },
-  chf: { monthly: 29, yearly: 290, symbol: ' CHF', label: 'Suisse', period_m: 'CHF / mois', period_y: 'CHF / an', equiv_y: 'soit 24,17 CHF / mois — 2 mois offerts' },
+  eur: { monthly: 29, yearly: 299, symbol: '&euro;', label: 'France / Europe', period_m: '&euro; / mois', period_y: '&euro; / an', equiv_y: 'soit 24,90&euro; / mois - 2 mois offerts' },
+  mad: { monthly: 199, yearly: 1990, symbol: ' DH', label: 'Maroc', period_m: 'DH / mois', period_y: 'DH / an', equiv_y: 'soit 165,83 DH / mois - 2 mois offerts' },
+  chf: { monthly: 29, yearly: 290, symbol: ' CHF', label: 'Suisse', period_m: 'CHF / mois', period_y: 'CHF / an', equiv_y: 'soit 24,17 CHF / mois - 2 mois offerts' },
 };
 
 let currentCurrency = '<?= $currency_code ?>';
@@ -374,7 +374,7 @@ function toggleOption(option) {
   const check = document.getElementById('check-' + option);
   if (selectedOptions.includes(option)) {
     item.classList.add('checked');
-    check.innerHTML = '✓';
+    check.innerHTML = '';
   } else {
     item.classList.remove('checked');
     check.innerHTML = '';
@@ -391,7 +391,7 @@ function updateSubmitBtn() {
   const amount = currentPlan === 'yearly' ? p.yearly : p.monthly;
   const sym = p.symbol;
   const period = currentPlan === 'yearly' ? '/an' : '/mois';
-  btn.textContent = `Commencer l'essai gratuit — 2 mois offerts 🎉`;
+  btn.textContent = `Commencer l'essai gratuit - 2 mois offerts `;
 }
 
 // Init

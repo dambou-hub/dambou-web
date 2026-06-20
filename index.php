@@ -9,11 +9,12 @@ if (count($parts) >= 1 && !empty($parts[0])) {
 
 // Pages réservées (servies directement, pas traitées comme slug de business)
 $reservedPages = [
-    'privacy'    => 'privacy.php',
-    'cgu'        => 'cgu.php',
-    'abonnement' => 'abonnement.php',
-    'mentions'   => 'mentions.php',
-    'admin'      => 'admin.html',
+    'privacy'         => 'privacy.php',
+    'cgu'             => 'cgu.php',
+    'abonnement'      => 'abonnement.php',
+    'abonnement/success' => 'abonnement/success.php',
+    'mentions'        => 'mentions.php',
+    'admin'           => 'admin.html',
 ];
 $first = strtolower($parts[0] ?? '');
 // Retirer une éventuelle extension .php tapée par l'utilisateur

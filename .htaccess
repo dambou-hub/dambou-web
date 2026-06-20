@@ -1,11 +1,16 @@
-# À placer dans public_html/.htaccess (racine)
-
 Options -Indexes
 RewriteEngine On
+
+# Redirection des pages reservees sans extension vers leur .php
+RewriteRule ^abonnement$ abonnement.php [L,QSA]
+RewriteRule ^abonnement-success$ abonnement-success.php [L,QSA]
+RewriteRule ^privacy$ privacy.php [L,QSA]
+RewriteRule ^cgu$ cgu.php [L,QSA]
+RewriteRule ^admin$ admin.html [L,QSA]
 
 # Ne pas réécrire les fichiers/dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Tout rediriger vers index.php
+# Tout le reste vers index.php (slugs business)
 RewriteRule ^(.*)$ index.php [L,QSA]

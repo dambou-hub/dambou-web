@@ -430,7 +430,7 @@ body {
   </div>
 </div>
 
-<button type="submit" class="submit-btn">Commencer - 2 mois gratuits</button>
+<button type="submit" class="submit-btn">Continuer vers le paiement</button>
 
 <p class="trial-note">
   2 mois gratuits, sans carte bancaire requise.<br>

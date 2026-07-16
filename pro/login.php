@@ -114,6 +114,7 @@ ini_set('log_errors', 1);
       <button type="submit" id="submit-btn">Se connecter</button>
     </form>
 
+    <a class="back-link" href="/pro/inscription">Pas encore de compte ? Creer un compte</a>
     <a class="back-link" href="/">&larr; Retour a l'accueil</a>
   </div>
 

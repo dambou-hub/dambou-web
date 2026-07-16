@@ -26,6 +26,7 @@ $reservedPages = [
     'admin'               => 'admin.html',
     'pro'                 => 'pro/dashboard.php',
     'pro/login'           => 'pro/login.php',
+    'pro/inscription'     => 'pro/inscription.php',
     'pro/planning'        => 'pro/planning.php',
     'pro/reservations'    => 'pro/reservations.php',
     'pro/catalogue'       => 'pro/catalogue.php',

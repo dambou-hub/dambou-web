@@ -76,7 +76,6 @@ ini_set('log_errors', 1);
   .appt .t { font-size: 10px; font-weight: 800; }
   .appt .c { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .appt .s { font-size: 10px; color: var(--text-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .appt .status-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; }
 
   .agenda.week-mode { overflow-x: visible; }
 
@@ -85,7 +84,6 @@ ini_set('log_errors', 1);
   .week-chip:hover { filter: brightness(0.97); }
   .wc-time { font-size: 10px; font-weight: 800; flex-shrink: 0; }
   .wc-name { font-size: 11px; font-weight: 600; color: var(--text-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-  .wc-emp { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .week-empty { font-size: 11px; color: var(--text-light); text-align: center; padding: 10px 0; }
 
   .legend { display: flex; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
@@ -302,7 +300,8 @@ ini_set('log_errors', 1);
       const end = timeToMinutes((booking.end_time || '').substring(0, 5)) || (start + 30);
       const top = (start - gridStartMin) * PX_PER_MIN;
       const height = Math.max((end - start) * PX_PER_MIN, 22);
-      const color = statusColor(booking) || employeeColor;
+      const accent = statusColor(booking); // null si rien de particulier a signaler
+      const mainColor = accent || employeeColor;
 
       const lay = layout || { col: 0, total: 1 };
       const widthPct = 100 / lay.total;
@@ -316,16 +315,16 @@ ini_set('log_errors', 1);
       el.style.left = 'calc(' + leftPct + '% + 3px)';
       el.style.width = 'calc(' + widthPct + '% - 6px)';
       el.style.right = 'auto';
-      el.style.background = color + '17';
-      el.style.borderLeftColor = color;
+      el.style.background = mainColor + '17';
+      el.style.borderLeftColor = employeeColor;
+      if (accent) el.style.borderTop = '3px solid ' + accent;
       el.draggable = true;
       el.dataset.bookingId = booking.id;
 
       el.innerHTML =
-        '<div class="t" style="color:' + color + '">' + (booking.start_time || '').substring(0, 5) + '</div>' +
+        '<div class="t" style="color:' + mainColor + '">' + (booking.start_time || '').substring(0, 5) + '</div>' +
         (height > 34 ? '<div class="c">' + escapeHtml(clientName(booking)) + '</div>' : '') +
-        (height > 48 && svc ? '<div class="s">' + escapeHtml(svc.name) + '</div>' : '') +
-        '<div class="status-dot" style="background:' + color + '"></div>';
+        (height > 48 && svc ? '<div class="s">' + escapeHtml(svc.name) + '</div>' : '');
 
       el.addEventListener('click', () => openPanel(booking, employeeColor));
       el.addEventListener('dragstart', (e) => {
@@ -432,12 +431,14 @@ ini_set('log_errors', 1);
         const rows = dayItems.map((b) => {
           const empIds = bookingEmployeeIds(b);
           const emp = empIds.length ? employeeById[empIds[0]] : null;
-          const color = statusColor(b) || (emp && emp.color) || '#00BFA5';
+          const employeeColor = (emp && emp.color) || '#00BFA5';
+          const accent = statusColor(b);
+          const mainColor = accent || employeeColor;
           const start = (b.start_time || '').substring(0, 5);
-          return '<div class="week-chip" data-booking-id="' + b.id + '" style="border-left-color:' + color + '; background:' + color + '10">' +
-            '<span class="wc-time" style="color:' + color + '">' + escapeHtml(start) + '</span>' +
+          const topBorder = accent ? ('border-top:3px solid ' + accent + ';') : '';
+          return '<div class="week-chip" data-booking-id="' + b.id + '" style="border-left-color:' + employeeColor + ';' + topBorder + ' background:' + mainColor + '10">' +
+            '<span class="wc-time" style="color:' + mainColor + '">' + escapeHtml(start) + '</span>' +
             '<span class="wc-name">' + escapeHtml(clientName(b)) + '</span>' +
-            (emp ? '<span class="wc-emp" style="background:' + (emp.color || '#00BFA5') + '"></span>' : '') +
             '</div>';
         }).join('');
 

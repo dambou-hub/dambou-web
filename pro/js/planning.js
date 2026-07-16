@@ -1,5 +1,5 @@
-// Planning pro (dambou.fr/pro/planning) - vue jour par jour.
-// Reproduit employee_planning_screen.dart (lecture seule pour ce premier passage).
+// Planning pro (dambou.fr/pro/planning).
+// Reproduit employee_planning_screen.dart + template_injection_service.dart pour la partie modules.
 // Fichier en ASCII uniquement (contrainte Hostinger).
 
 import { supabase } from '/pro/js/auth.js';
@@ -35,8 +35,6 @@ export async function loadEmployees(businessId) {
 }
 
 // Reservations d'un jour donne (hors annulees), avec employe(s)/service/client lies.
-// Reproduit la meme jointure que le mobile, filtree sur un seul jour au lieu
-// d'une plage de 30 jours (le mobile precharge pour le swipe, le web navigue page par page).
 export async function loadBookingsForDay(businessId, dateKey) {
     const { data, error } = await supabase
         .from('bookings')
@@ -50,33 +48,6 @@ export async function loadBookingsForDay(businessId, dateKey) {
         return [];
     }
     return data || [];
-}
-
-export function clientName(booking) {
-    const user = booking.users;
-    if (user) {
-        const name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
-        if (name) return name;
-    }
-    return booking.manual_customer_name || 'Client';
-}
-
-const FRENCH_DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-
-// Horaires d'ouverture du jour, depuis businesses.opening_hours (JSON par jour).
-// Reproduit la structure de my_business_screen.dart : { isOpen, start, end }.
-export function getDayHours(business, date) {
-    const dayName = FRENCH_DAYS[date.getDay()];
-    const fallback = { isOpen: true, start: '08:00', end: '20:00' };
-    const oh = business && business.opening_hours;
-    if (!oh || !oh[dayName]) return fallback;
-    return oh[dayName];
-}
-
-export function timeToMinutes(t) {
-    if (!t) return 0;
-    const parts = t.split(':');
-    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
 }
 
 // Reservations sur une plage de dates (pour la vue semaine).
@@ -97,9 +68,41 @@ export async function loadBookingsForRange(businessId, fromKey, toKeyExclusive) 
     return data || [];
 }
 
+export function clientName(booking) {
+    const user = booking.users;
+    if (user) {
+        const name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
+        if (name) return name;
+    }
+    return booking.manual_customer_name || 'Client';
+}
+
 export function bookingPhone(booking) {
     const user = booking.users;
     return (user && user.phone) || booking.manual_customer_phone || '';
+}
+
+export function bookingEmployeeIds(booking) {
+    const rel = booking.booking_employees || [];
+    return rel.map((r) => r.employee_id);
+}
+
+const FRENCH_DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+// Horaires d'ouverture du jour, depuis businesses.opening_hours (JSON par jour).
+// Reproduit la structure de my_business_screen.dart : { isOpen, start, end }.
+export function getDayHours(business, date) {
+    const dayName = FRENCH_DAYS[date.getDay()];
+    const fallback = { isOpen: true, start: '08:00', end: '20:00' };
+    const oh = business && business.opening_hours;
+    if (!oh || !oh[dayName]) return fallback;
+    return oh[dayName];
+}
+
+export function timeToMinutes(t) {
+    if (!t) return 0;
+    const parts = t.split(':');
+    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
 }
 
 // Verifie si deplacer une reservation vers un employe/creneau entre en conflit
@@ -194,184 +197,4 @@ export async function markNoShow(booking, businessId, businessName) {
     } catch (e) { /* ignore */ }
 
     return { count: count, blocked: count >= 3 };
-}
-
-// ------------------------------------------------------------
-// Horaires d'ouverture du business (businesses.opening_hours)
-// Reproduit la structure de my_business_screen.dart :
-// { 'Lundi': {isOpen, start, end}, ... }
-// ------------------------------------------------------------
-const FR_DAY_KEYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-const DEFAULT_START = '08:00';
-const DEFAULT_END = '20:00';
-
-export function parseTimeToMinutes(str) {
-    if (!str) return 0;
-    const parts = str.split(':');
-    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-}
-
-export function getDayRange(business, date) {
-    const dayKey = FR_DAY_KEYS[date.getDay()];
-    const oh = business && business.opening_hours;
-    const dayHours = oh && oh[dayKey];
-    const start = (dayHours && dayHours.start) || DEFAULT_START;
-    const end = (dayHours && dayHours.end) || DEFAULT_END;
-    const isOpen = !dayHours || dayHours.isOpen !== false;
-    return {
-        startMin: parseTimeToMinutes(start),
-        endMin: parseTimeToMinutes(end),
-        isOpen: isOpen,
-    };
-}
-
-// ------------------------------------------------------------
-// Actions sur un RDV (reproduit _showBookingActions)
-// ------------------------------------------------------------
-export async function confirmBooking(bookingId) {
-    const { error } = await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId);
-    if (error) throw error;
-}
-
-export async function cancelBooking(bookingId) {
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
-    if (error) throw error;
-}
-
-// Reproduit _handleNoShow -- marque le RDV, incremente client_no_shows,
-// bloque le client apres 3 absences, insere une notification.
-export async function markNoShow(businessId, booking) {
-    const bookingId = booking.id;
-    const customerId = booking.customer_id;
-
-    await supabase.from('bookings').update({
-        status: 'no_show',
-        no_show_reported_at: new Date().toISOString(),
-    }).eq('id', bookingId);
-
-    if (!customerId) return { count: 0, blocked: false };
-
-    try {
-        await supabase.from('client_no_shows').insert({
-            customer_id: customerId, business_id: businessId, booking_id: bookingId,
-        });
-    } catch (e) { /* ignore */ }
-
-    const { data: noShows } = await supabase.from('client_no_shows')
-        .select('id').eq('customer_id', customerId).eq('business_id', businessId);
-    const count = (noShows || []).length;
-
-    let bizName = 'le professionnel';
-    try {
-        const { data: biz } = await supabase.from('businesses').select('name').eq('id', businessId).single();
-        bizName = (biz && biz.name) || bizName;
-    } catch (e) { /* ignore */ }
-
-    let notifTitle, notifMessage;
-    if (count === 1) {
-        notifTitle = 'Rendez-vous manque';
-        notifMessage = "Vous ne vous etes pas presente(e) a votre rendez-vous chez " + bizName + ". Pensez a annuler au moins 2h a l'avance si vous ne pouvez pas venir.";
-    } else if (count === 2) {
-        notifTitle = '2eme absence non signalee';
-        notifMessage = "C'est votre 2eme absence non annulee chez " + bizName + ". Attention : apres une 3eme absence, vous ne pourrez plus reserver en ligne chez ce professionnel.";
-    } else {
-        notifTitle = 'Reservations en ligne desactivees';
-        notifMessage = "Suite a 3 absences non annulees chez " + bizName + ", les reservations en ligne ne sont plus disponibles. Contactez " + bizName + " directement pour prendre rendez-vous.";
-        try {
-            await supabase.from('client_blocks').upsert({
-                customer_id: customerId, business_id: businessId, reason: 'no_show',
-            });
-        } catch (e) { /* ignore */ }
-    }
-
-    try {
-        await supabase.from('notifications').insert({
-            user_id: customerId, title: notifTitle, message: notifMessage, type: 'no_show',
-            data: { business_id: businessId, no_show_count: count }, is_read: false,
-        });
-    } catch (e) { /* ignore */ }
-
-    return { count: count, blocked: count >= 3 };
-}
-
-// Annule un no-show deja signale (reproduit le dialogue special du mobile)
-export async function undoNoShow(businessId, booking) {
-    const bookingId = booking.id;
-    const customerId = booking.customer_id;
-
-    await supabase.from('bookings').update({
-        status: 'confirmed', no_show_reported_at: null,
-    }).eq('id', bookingId);
-
-    if (!customerId) return;
-
-    await supabase.from('client_no_shows').delete().eq('booking_id', bookingId);
-
-    const { data: remaining } = await supabase.from('client_no_shows')
-        .select('id').eq('customer_id', customerId).eq('business_id', businessId);
-    if ((remaining || []).length < 3) {
-        await supabase.from('client_blocks').delete()
-            .eq('customer_id', customerId).eq('business_id', businessId);
-    }
-}
-
-// ------------------------------------------------------------
-// Glisser-deposer : reassigner un RDV a un autre employe
-// ------------------------------------------------------------
-
-// Verifie si l'employe cible a deja un RDV qui chevauche ce creneau (hors ce RDV).
-export async function hasEmployeeConflict(businessId, employeeId, dateKey, startTime, endTime, excludeBookingId) {
-    const { data, error } = await supabase
-        .from('bookings')
-        .select('id, start_time, end_time, booking_employees(employee_id)')
-        .eq('business_id', businessId)
-        .eq('booking_date', dateKey)
-        .neq('status', 'cancelled');
-    if (error) {
-        console.error('Erreur verification conflit:', error);
-        return false;
-    }
-    const newStart = parseTimeToMinutes(startTime);
-    const newEnd = parseTimeToMinutes(endTime);
-    return (data || []).some((b) => {
-        if (b.id === excludeBookingId) return false;
-        const empIds = (b.booking_employees || []).map((r) => r.employee_id);
-        if (!empIds.includes(employeeId)) return false;
-        const s = parseTimeToMinutes(b.start_time);
-        const e = parseTimeToMinutes(b.end_time);
-        return newStart < e && s < newEnd;
-    });
-}
-
-export async function reassignBookingEmployee(bookingId, newEmployeeId) {
-    await supabase.from('booking_employees').delete().eq('booking_id', bookingId);
-    const { error } = await supabase.from('booking_employees').insert({
-        booking_id: bookingId, employee_id: newEmployeeId,
-    });
-    if (error) throw error;
-}
-
-// ------------------------------------------------------------
-// Vue semaine : reservations sur une plage de dates
-// ------------------------------------------------------------
-export async function loadBookingsForRange(businessId, fromDateKey, toDateKeyExclusive) {
-    const { data, error } = await supabase
-        .from('bookings')
-        .select('*, booking_employees(employee_id), services(name, duration, price), users!customer_id(id, first_name, last_name, phone)')
-        .eq('business_id', businessId)
-        .gte('booking_date', fromDateKey)
-        .lt('booking_date', toDateKeyExclusive)
-        .neq('status', 'cancelled')
-        .order('start_time');
-    if (error) {
-        console.error('Erreur chargement semaine:', error);
-        return [];
-    }
-    return data || [];
-}
-
-export function clientPhone(booking) {
-    const user = booking.users;
-    if (user && user.phone) return user.phone;
-    return booking.manual_customer_phone || '';
 }

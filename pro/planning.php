@@ -174,7 +174,7 @@ ini_set('log_errors', 1);
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
     import {
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
-      clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes,
+      clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
     } from '/pro/js/planning.js';
 
@@ -274,26 +274,37 @@ ini_set('log_errors', 1);
         attachDropZone(col, emp.id);
 
         const empBookings = dayBookings.filter((b) => bookingEmployeeIds(b).includes(emp.id));
-        empBookings.forEach((b) => {
-          const el = renderApptBlock(b, emp.color || '#00BFA5', startMin);
+        const layouts = layoutOverlaps(empBookings.map((b) => ({
+          start: timeToMinutes((b.start_time || '').substring(0, 5)),
+          end: timeToMinutes((b.end_time || '').substring(0, 5)) || 0,
+        })));
+        empBookings.forEach((b, i) => {
+          const el = renderApptBlock(b, emp.color || '#00BFA5', startMin, layouts[i]);
           col.appendChild(el);
         });
         bodyEl.appendChild(col);
       });
     }
 
-    function renderApptBlock(booking, employeeColor, gridStartMin) {
+    function renderApptBlock(booking, employeeColor, gridStartMin, layout) {
       const start = timeToMinutes((booking.start_time || '').substring(0, 5));
       const end = timeToMinutes((booking.end_time || '').substring(0, 5)) || (start + 30);
       const top = (start - gridStartMin) * PX_PER_MIN;
       const height = Math.max((end - start) * PX_PER_MIN, 22);
       const color = statusColor(booking) || employeeColor;
 
+      const lay = layout || { col: 0, total: 1 };
+      const widthPct = 100 / lay.total;
+      const leftPct = lay.col * widthPct;
+
       const svc = booking.services;
       const el = document.createElement('div');
       el.className = 'appt';
       el.style.top = top + 'px';
       el.style.height = height + 'px';
+      el.style.left = 'calc(' + leftPct + '% + 3px)';
+      el.style.width = 'calc(' + widthPct + '% - 6px)';
+      el.style.right = 'auto';
       el.style.background = color + '17';
       el.style.borderLeftColor = color;
       el.draggable = true;
@@ -423,11 +434,15 @@ ini_set('log_errors', 1);
         const col = document.createElement('div');
         col.className = 'day-col';
         const dayItems = weekBookings.filter((b) => b.booking_date === key);
-        dayItems.forEach((b) => {
+        const layouts = layoutOverlaps(dayItems.map((b) => ({
+          start: timeToMinutes((b.start_time || '').substring(0, 5)),
+          end: timeToMinutes((b.end_time || '').substring(0, 5)) || 0,
+        })));
+        dayItems.forEach((b, i) => {
           const empIds = bookingEmployeeIds(b);
           const emp = empIds.length ? employeeById[empIds[0]] : null;
           const color = (emp && emp.color) || '#00BFA5';
-          const el = renderApptBlock(b, color, startMin);
+          const el = renderApptBlock(b, color, startMin, layouts[i]);
           el.draggable = false; // reassignation inter-jours non geree dans cette vue
           col.appendChild(el);
         });

@@ -82,6 +82,55 @@ export function bookingPhone(booking) {
     return (user && user.phone) || booking.manual_customer_phone || '';
 }
 
+// Repartit des RDV qui se chevauchent en colonnes cote a cote (comme Google Calendar)
+// au lieu de les superposer. items doit avoir {start, end} en minutes.
+// Retourne un tableau parallele [{col, total}, ...] indexe comme items.
+export function layoutOverlaps(items) {
+    const withIdx = items.map((it, idx) => ({ start: it.start, end: it.end, idx: idx }));
+    withIdx.sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const result = new Array(items.length);
+    let cluster = [];
+    let clusterMaxEnd = -1;
+
+    function flush() {
+        if (!cluster.length) return;
+        const colEnds = [];
+        cluster.forEach((e) => {
+            let placed = false;
+            for (let c = 0; c < colEnds.length; c++) {
+                if (colEnds[c] <= e.start) {
+                    colEnds[c] = e.end;
+                    result[e.idx] = { col: c, total: 0 };
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                colEnds.push(e.end);
+                result[e.idx] = { col: colEnds.length - 1, total: 0 };
+            }
+        });
+        cluster.forEach((e) => { result[e.idx].total = colEnds.length; });
+        cluster = [];
+    }
+
+    withIdx.forEach((e) => {
+        if (cluster.length === 0) {
+            clusterMaxEnd = e.end;
+        } else if (e.start >= clusterMaxEnd) {
+            flush();
+            clusterMaxEnd = e.end;
+        } else {
+            clusterMaxEnd = Math.max(clusterMaxEnd, e.end);
+        }
+        cluster.push(e);
+    });
+    flush();
+
+    return result;
+}
+
 export function bookingEmployeeIds(booking) {
     const rel = booking.booking_employees || [];
     return rel.map((r) => r.employee_id);

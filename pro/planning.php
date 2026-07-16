@@ -78,6 +78,16 @@ ini_set('log_errors', 1);
   .appt .s { font-size: 10px; color: var(--text-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .appt .status-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; }
 
+  .agenda.week-mode { overflow-x: visible; }
+
+  .week-day-col { padding: 8px 6px; display: flex; flex-direction: column; gap: 6px; min-height: 80px; }
+  .week-chip { border-left: 3px solid; border-radius: 6px; padding: 5px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .week-chip:hover { filter: brightness(0.97); }
+  .wc-time { font-size: 10px; font-weight: 800; flex-shrink: 0; }
+  .wc-name { font-size: 11px; font-weight: 600; color: var(--text-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .wc-emp { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .week-empty { font-size: 11px; color: var(--text-light); text-align: center; padding: 10px 0; }
+
   .legend { display: flex; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-medium); font-weight: 600; }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -216,6 +226,7 @@ ini_set('log_errors', 1);
     // VUE JOUR
     // -----------------------------------------------------
     async function renderDayView() {
+      agendaEl.classList.remove('week-mode');
       const hours = getDayHours(business, selectedDate);
       const startMin = timeToMinutes(hours.start);
       const endMin = timeToMinutes(hours.end);
@@ -388,65 +399,59 @@ ini_set('log_errors', 1);
 
       loadingEl.style.display = 'none';
       agendaEl.style.display = 'block';
+      agendaEl.classList.add('week-mode');
 
-      // Amplitude horaire = la plus large parmi les 7 jours de la semaine
-      let startMin = 24 * 60, endMin = 0;
       const days = [];
       for (let i = 0; i < 7; i++) {
         const d = new Date(monday);
         d.setDate(d.getDate() + i);
-        const h = getDayHours(business, d);
-        startMin = Math.min(startMin, timeToMinutes(h.start));
-        endMin = Math.max(endMin, timeToMinutes(h.end));
         days.push(d);
       }
-      const totalMin = Math.max(endMin - startMin, 60);
-      const gridHeight = totalMin * PX_PER_MIN;
 
-      headEl.style.gridTemplateColumns = '56px repeat(7, 1fr)';
-      bodyEl.style.gridTemplateColumns = '56px repeat(7, 1fr)';
+      headEl.style.gridTemplateColumns = 'repeat(7, 1fr)';
+      bodyEl.style.gridTemplateColumns = 'repeat(7, 1fr)';
+      bodyEl.style.height = 'auto';
 
       const dayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-      headEl.innerHTML = '<div class="corner"></div>' + days.map((d, i) => {
+      const todayKey = toDateKey(new Date());
+
+      headEl.innerHTML = days.map((d, i) => {
         const key = toDateKey(d);
         const count = weekBookings.filter((b) => b.booking_date === key).length;
-        return '<div class="col-head"><div><div class="col-name">' + dayLabels[i] + ' ' + d.getDate() + '</div>' +
+        const isToday = key === todayKey;
+        return '<div class="col-head" style="justify-content:center' + (isToday ? ';background:rgba(0,191,165,0.06)' : '') + '">' +
+          '<div style="text-align:center"><div class="col-name">' + dayLabels[i] + ' ' + d.getDate() + '</div>' +
           '<div class="col-count">' + count + ' RDV</div></div></div>';
       }).join('');
 
-      bodyEl.innerHTML = '';
-      bodyEl.style.height = gridHeight + 'px';
-
-      const timeCol = document.createElement('div');
-      timeCol.className = 'time-col';
-      for (let m = Math.ceil(startMin / 60) * 60; m <= endMin; m += 60) {
-        const mark = document.createElement('div');
-        mark.className = 'time-mark';
-        mark.style.top = ((m - startMin) * PX_PER_MIN) + 'px';
-        const h = String(Math.floor(m / 60)).padStart(2, '0');
-        mark.innerHTML = '<span>' + h + ':00</span>';
-        timeCol.appendChild(mark);
-      }
-      bodyEl.appendChild(timeCol);
-
-      days.forEach((d) => {
+      bodyEl.innerHTML = days.map((d) => {
         const key = toDateKey(d);
-        const col = document.createElement('div');
-        col.className = 'day-col';
-        const dayItems = weekBookings.filter((b) => b.booking_date === key);
-        const layouts = layoutOverlaps(dayItems.map((b) => ({
-          start: timeToMinutes((b.start_time || '').substring(0, 5)),
-          end: timeToMinutes((b.end_time || '').substring(0, 5)) || 0,
-        })));
-        dayItems.forEach((b, i) => {
+        const dayItems = weekBookings.filter((b) => b.booking_date === key)
+          .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+        const rows = dayItems.map((b) => {
           const empIds = bookingEmployeeIds(b);
           const emp = empIds.length ? employeeById[empIds[0]] : null;
-          const color = (emp && emp.color) || '#00BFA5';
-          const el = renderApptBlock(b, color, startMin, layouts[i]);
-          el.draggable = false; // reassignation inter-jours non geree dans cette vue
-          col.appendChild(el);
+          const color = statusColor(b) || (emp && emp.color) || '#00BFA5';
+          const start = (b.start_time || '').substring(0, 5);
+          return '<div class="week-chip" data-booking-id="' + b.id + '" style="border-left-color:' + color + '; background:' + color + '10">' +
+            '<span class="wc-time" style="color:' + color + '">' + escapeHtml(start) + '</span>' +
+            '<span class="wc-name">' + escapeHtml(clientName(b)) + '</span>' +
+            (emp ? '<span class="wc-emp" style="background:' + (emp.color || '#00BFA5') + '"></span>' : '') +
+            '</div>';
+        }).join('');
+
+        return '<div class="week-day-col">' + (rows || '<div class="week-empty">-</div>') + '</div>';
+      }).join('');
+
+      bodyEl.querySelectorAll('.week-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const b = weekBookings.find((x) => x.id === chip.dataset.bookingId);
+          if (!b) return;
+          const empIds = bookingEmployeeIds(b);
+          const emp = empIds.length ? employeeById[empIds[0]] : null;
+          openPanel(b, (emp && emp.color) || '#00BFA5');
         });
-        bodyEl.appendChild(col);
       });
     }
 

@@ -34,6 +34,22 @@ export async function getBusinessForUser(userId) {
     return data;
 }
 
+// Recupere les modules actifs d'un business.
+// Reproduit exactement la requete de pro_home_screen.dart :
+// modules.select('*').eq('business_id', bizId).eq('is_enabled', true)
+export async function getActiveModules(businessId) {
+    const { data, error } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_enabled', true);
+    if (error) {
+        console.error('Erreur chargement modules:', error);
+        return [];
+    }
+    return data || [];
+}
+
 // Deconnexion + redirection vers login.
 export async function logout() {
     await supabase.auth.signOut();

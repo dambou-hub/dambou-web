@@ -111,13 +111,13 @@ ini_set('log_errors', 1);
         <p>Bienvenue dans votre espace de gestion Dambou.</p>
       </div>
 
-      <div class="nav-grid">
-        <a class="nav-card" href="/pro/planning">
+      <div class="nav-grid" id="nav-grid">
+        <a class="nav-card" href="/pro/planning" id="card-planning">
           <div class="icon" style="background:rgba(0,191,165,0.1)">&#128197;</div>
           <h3>Planning</h3>
           <p>Vue semaine et mois de vos rendez-vous</p>
         </a>
-        <a class="nav-card" href="/pro/reservations">
+        <a class="nav-card" href="/pro/reservations" id="card-reservations">
           <div class="icon" style="background:rgba(244,162,97,0.1)">&#128203;</div>
           <h3>Reservations</h3>
           <p>Liste et gestion de vos reservations</p>
@@ -137,7 +137,7 @@ ini_set('log_errors', 1);
   </div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser, logout } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, getActiveModules, logout } from '/pro/js/auth.js';
 
     const loadingEl = document.getElementById('loading');
     const contentEl = document.getElementById('content');
@@ -154,6 +154,16 @@ ini_set('log_errors', 1);
       }
 
       document.getElementById('business-name').textContent = business.name || 'Votre etablissement';
+
+      // Planning et Reservations ne s'affichent que si le module "booking" est actif
+      // (meme logique que _buildQuickActions() dans pro_home_screen.dart -- un food truck
+      // comme Freddy'Z Pizz n'a pas ce module et ne doit pas voir ces cards).
+      const activeModules = await getActiveModules(business.id);
+      const hasBooking = activeModules.some((m) => m.module_type === 'booking');
+      if (!hasBooking) {
+        document.getElementById('card-planning').remove();
+        document.getElementById('card-reservations').remove();
+      }
 
       loadingEl.style.display = 'none';
       contentEl.style.display = 'block';

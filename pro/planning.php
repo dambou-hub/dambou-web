@@ -70,6 +70,18 @@ ini_set('log_errors', 1);
   .day-col:last-child { border-right: none; }
   .day-col.drop-hover { background: rgba(0,191,165,0.06); }
 
+  .drop-indicator {
+    position: absolute; left: 2px; right: 2px; height: 2px; background: var(--primary); z-index: 5;
+    pointer-events: none; display: flex; align-items: center; justify-content: flex-end;
+  }
+  .drop-indicator::after {
+    content: ''; position: absolute; left: -3px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary);
+  }
+  .drop-indicator span {
+    background: var(--primary); color: white; font-size: 10px; font-weight: 800;
+    padding: 2px 6px; border-radius: 6px; transform: translateY(-50%); margin-right: 4px;
+  }
+
   .appt { position: absolute; left: 3px; right: 3px; border-radius: 8px; border-left: 3px solid; padding: 3px 7px; overflow: hidden; cursor: pointer; z-index: 2; }
   .appt:hover { z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
   .appt.dragging { opacity: 0.4; }
@@ -232,7 +244,7 @@ ini_set('log_errors', 1);
     import {
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
-      hasConflict, reassignEmployee, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
+      hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
       loadServices, searchManualClients, createBooking,
     } from '/pro/js/planning.js';
 
@@ -242,6 +254,7 @@ ini_set('log_errors', 1);
     let viewMode = 'day'; // 'day' | 'week'
     let dayBookings = []; // donnees du jour affiche (utilisees pour la verif de conflits)
     let currentBooking = null;
+    let currentGridStartMin = 0;
 
     const PX_PER_MIN = 1.2;
     const loadingEl = document.getElementById('loading');
@@ -280,6 +293,7 @@ ini_set('log_errors', 1);
       const endMin = timeToMinutes(hours.end);
       const totalMin = Math.max(endMin - startMin, 60);
       const gridHeight = totalMin * PX_PER_MIN;
+      currentGridStartMin = startMin;
 
       dateLabelEl.innerHTML = escapeHtml(formatDateLong(selectedDate)) +
         (hours.isOpen === false ? '<span class="closed-badge">Ferme</span>' : '');
@@ -387,35 +401,71 @@ ini_set('log_errors', 1);
     }
 
     function attachDropZone(col, employeeId) {
+      const indicator = document.createElement('div');
+      indicator.className = 'drop-indicator';
+      indicator.style.display = 'none';
+      col.appendChild(indicator);
+
+      function snappedMinutesFromEvent(e) {
+        const rect = col.getBoundingClientRect();
+        const offsetY = e.clientY - rect.top;
+        const rawMin = currentGridStartMin + (offsetY / PX_PER_MIN);
+        return Math.max(Math.round(rawMin / 5) * 5, currentGridStartMin);
+      }
+
       col.addEventListener('dragover', (e) => {
         e.preventDefault();
         col.classList.add('drop-hover');
+        const snapped = snappedMinutesFromEvent(e);
+        indicator.style.display = 'block';
+        indicator.style.top = ((snapped - currentGridStartMin) * PX_PER_MIN) + 'px';
+        const h = String(Math.floor(snapped / 60)).padStart(2, '0');
+        const m = String(snapped % 60).padStart(2, '0');
+        indicator.innerHTML = '<span>' + h + ':' + m + '</span>';
       });
-      col.addEventListener('dragleave', () => col.classList.remove('drop-hover'));
+      col.addEventListener('dragleave', (e) => {
+        if (e.target === col) {
+          col.classList.remove('drop-hover');
+          indicator.style.display = 'none';
+        }
+      });
       col.addEventListener('drop', async (e) => {
         e.preventDefault();
         col.classList.remove('drop-hover');
+        indicator.style.display = 'none';
+
         const bookingId = e.dataTransfer.getData('text/plain');
         const booking = dayBookings.find((b) => b.id === bookingId);
         if (!booking) return;
-        if (bookingEmployeeIds(booking).includes(employeeId)) return; // deja sur cette colonne
 
-        const start = timeToMinutes((booking.start_time || '').substring(0, 5));
-        const end = timeToMinutes((booking.end_time || '').substring(0, 5));
+        const oldStart = timeToMinutes((booking.start_time || '').substring(0, 5));
+        const oldEnd = timeToMinutes((booking.end_time || '').substring(0, 5)) || (oldStart + 30);
+        const duration = oldEnd - oldStart;
+
+        const newStart = snappedMinutesFromEvent(e);
+        const newEnd = newStart + duration;
+
+        const employeeChanged = !bookingEmployeeIds(booking).includes(employeeId);
+        const timeChanged = newStart !== oldStart;
+        if (!employeeChanged && !timeChanged) return; // depose au meme endroit, rien a faire
+
         const conflictCheckEnabled = business.check_employee_conflicts !== false;
-
-        if (conflictCheckEnabled && hasConflict(dayBookings, employeeId, start, end, bookingId)) {
+        if (conflictCheckEnabled && hasConflict(dayBookings, employeeId, newStart, newEnd, bookingId)) {
           showToast('Conflit : cet employe a deja un RDV sur ce creneau.');
           return;
         }
 
+        const startStr = String(Math.floor(newStart / 60)).padStart(2, '0') + ':' + String(newStart % 60).padStart(2, '0') + ':00';
+        const endStr = String(Math.floor(newEnd / 60)).padStart(2, '0') + ':' + String(newEnd % 60).padStart(2, '0') + ':00';
+
         try {
-          await reassignEmployee(bookingId, employeeId);
-          showToast('Rendez-vous reassigne.');
+          if (timeChanged) await updateBookingTime(bookingId, startStr, endStr);
+          if (employeeChanged) await reassignEmployee(bookingId, employeeId);
+          showToast('Rendez-vous deplace.');
           await renderDayView();
         } catch (err) {
           console.error(err);
-          showToast('Erreur lors de la reassignation.');
+          showToast('Erreur lors du deplacement.');
         }
       });
     }

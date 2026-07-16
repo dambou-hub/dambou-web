@@ -229,6 +229,11 @@ export function hasConflict(dayBookings, employeeId, newStart, newEnd, excludeBo
 }
 
 // Reassigne une reservation a un nouvel employe (glisser-deposer entre colonnes).
+export async function updateBookingTime(bookingId, startTime, endTime) {
+    const { error } = await supabase.from('bookings').update({ start_time: startTime, end_time: endTime }).eq('id', bookingId);
+    if (error) throw error;
+}
+
 export async function reassignEmployee(bookingId, newEmployeeId) {
     await supabase.from('booking_employees').delete().eq('booking_id', bookingId);
     const { error } = await supabase.from('booking_employees').insert({ booking_id: bookingId, employee_id: newEmployeeId });

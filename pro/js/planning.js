@@ -61,9 +61,139 @@ export function clientName(booking) {
     return booking.manual_customer_name || 'Client';
 }
 
-export function bookingEmployeeIds(booking) {
-    const rel = booking.booking_employees || [];
-    return rel.map((r) => r.employee_id);
+const FRENCH_DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+// Horaires d'ouverture du jour, depuis businesses.opening_hours (JSON par jour).
+// Reproduit la structure de my_business_screen.dart : { isOpen, start, end }.
+export function getDayHours(business, date) {
+    const dayName = FRENCH_DAYS[date.getDay()];
+    const fallback = { isOpen: true, start: '08:00', end: '20:00' };
+    const oh = business && business.opening_hours;
+    if (!oh || !oh[dayName]) return fallback;
+    return oh[dayName];
+}
+
+export function timeToMinutes(t) {
+    if (!t) return 0;
+    const parts = t.split(':');
+    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+}
+
+// Reservations sur une plage de dates (pour la vue semaine).
+export async function loadBookingsForRange(businessId, fromKey, toKeyExclusive) {
+    const { data, error } = await supabase
+        .from('bookings')
+        .select('*, booking_employees(employee_id), services(name, duration, price), users!customer_id(id, first_name, last_name, phone)')
+        .eq('business_id', businessId)
+        .gte('booking_date', fromKey)
+        .lt('booking_date', toKeyExclusive)
+        .neq('status', 'cancelled')
+        .order('booking_date')
+        .order('start_time');
+    if (error) {
+        console.error('Erreur chargement reservations (semaine):', error);
+        return [];
+    }
+    return data || [];
+}
+
+export function bookingPhone(booking) {
+    const user = booking.users;
+    return (user && user.phone) || booking.manual_customer_phone || '';
+}
+
+// Verifie si deplacer une reservation vers un employe/creneau entre en conflit
+// avec une autre reservation deja assignee a cet employe ce jour-la.
+export function hasConflict(dayBookings, employeeId, newStart, newEnd, excludeBookingId) {
+    return dayBookings.some((b) => {
+        if (b.id === excludeBookingId) return false;
+        if (b.status === 'cancelled') return false;
+        if (!bookingEmployeeIds(b).includes(employeeId)) return false;
+        const s = timeToMinutes((b.start_time || '').substring(0, 5));
+        const e = timeToMinutes((b.end_time || '').substring(0, 5));
+        return newStart < e && newEnd > s;
+    });
+}
+
+// Reassigne une reservation a un nouvel employe (glisser-deposer entre colonnes).
+export async function reassignEmployee(bookingId, newEmployeeId) {
+    await supabase.from('booking_employees').delete().eq('booking_id', bookingId);
+    const { error } = await supabase.from('booking_employees').insert({ booking_id: bookingId, employee_id: newEmployeeId });
+    if (error) throw error;
+}
+
+export async function confirmBooking(bookingId) {
+    const { error } = await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId);
+    if (error) throw error;
+}
+
+export async function cancelBooking(bookingId) {
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+    if (error) throw error;
+}
+
+// Restaure un RDV marque no-show par erreur (reproduit le dialogue "Annuler le no-show").
+export async function restoreNoShow(booking) {
+    const bookingId = booking.id;
+    const customerId = booking.customer_id;
+    await supabase.from('bookings').update({ status: 'confirmed', no_show_reported_at: null }).eq('id', bookingId);
+    if (!customerId) return;
+    await supabase.from('client_no_shows').delete().eq('booking_id', bookingId);
+    const { data: remaining } = await supabase
+        .from('client_no_shows').select('id')
+        .eq('customer_id', customerId).eq('business_id', booking.business_id);
+    if ((remaining || []).length < 3) {
+        await supabase.from('client_blocks').delete()
+            .eq('customer_id', customerId).eq('business_id', booking.business_id);
+    }
+}
+
+// Marque un client absent. Reproduit _handleNoShow() : incremente le compteur,
+// bloque le client apres 3 no-shows, insere une notification.
+export async function markNoShow(booking, businessId, businessName) {
+    const bookingId = booking.id;
+    const customerId = booking.customer_id;
+
+    await supabase.from('bookings')
+        .update({ status: 'no_show', no_show_reported_at: new Date().toISOString() })
+        .eq('id', bookingId);
+
+    if (!customerId) return { count: 0, blocked: false };
+
+    try {
+        await supabase.from('client_no_shows').insert({ customer_id: customerId, business_id: businessId, booking_id: bookingId });
+    } catch (e) { /* ignore */ }
+
+    const { data: noShows } = await supabase.from('client_no_shows')
+        .select('id').eq('customer_id', customerId).eq('business_id', businessId);
+    const count = (noShows || []).length;
+
+    let title, message;
+    if (count === 1) {
+        title = 'Rendez-vous manque';
+        message = 'Vous ne vous etes pas presente(e) a votre rendez-vous chez ' + businessName + '. ' +
+            "Pensez a annuler au moins 2h a l'avance si vous ne pouvez pas venir.";
+    } else if (count === 2) {
+        title = '2eme absence non signalee';
+        message = "C'est votre 2eme absence non annulee chez " + businessName + '. ' +
+            'Attention : apres une 3eme absence, vous ne pourrez plus reserver en ligne chez ce professionnel.';
+    } else {
+        title = 'Reservations en ligne desactivees';
+        message = 'Suite a 3 absences non annulees chez ' + businessName + ', ' +
+            'les reservations en ligne ne sont plus disponibles. Contactez ' + businessName + ' directement pour prendre rendez-vous.';
+        try {
+            await supabase.from('client_blocks').upsert({ customer_id: customerId, business_id: businessId, reason: 'no_show' });
+        } catch (e) { /* ignore */ }
+    }
+
+    try {
+        await supabase.from('notifications').insert({
+            user_id: customerId, title: title, message: message, type: 'no_show',
+            data: { business_id: businessId, no_show_count: count }, is_read: false,
+        });
+    } catch (e) { /* ignore */ }
+
+    return { count: count, blocked: count >= 3 };
 }
 
 // ------------------------------------------------------------

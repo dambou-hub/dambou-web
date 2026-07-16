@@ -135,6 +135,7 @@ ini_set('log_errors', 1);
           <button id="view-week">Semaine</button>
         </div>
         <button class="today-btn" id="today-btn">Aujourd'hui</button>
+        <button class="today-btn" id="new-booking-btn" style="background:var(--primary); color:white;">+ Nouvelle reservation</button>
       </div>
     </div>
 
@@ -178,12 +179,61 @@ ini_set('log_errors', 1);
 
   <div class="toast" id="toast"></div>
 
+  <!-- Nouvelle reservation -->
+  <div class="overlay" id="new-overlay">
+    <div class="panel" id="new-panel" style="max-width:420px">
+      <div class="panel-head" style="align-items:flex-start">
+        <div class="panel-info">
+          <div class="panel-client">Nouvelle reservation</div>
+          <div class="panel-service" id="new-date-label"></div>
+        </div>
+        <button class="nav-btn" id="new-close-btn" style="border:none">&times;</button>
+      </div>
+      <div class="panel-divider"></div>
+
+      <form id="new-booking-form">
+        <div style="margin-bottom:12px">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Heure</label>
+          <input type="time" id="new-time" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:15px; font-family:inherit; font-weight:700; color:var(--primary-dark)">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Service</label>
+          <select id="new-service" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
+            <option value="">Choisir un service</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:12px" id="new-employees-wrap">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Employe</label>
+          <div id="new-employees-chips" style="display:flex; flex-wrap:wrap; gap:8px"></div>
+        </div>
+
+        <div style="margin-bottom:12px; position:relative">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Nom du client</label>
+          <input type="text" id="new-client-name" placeholder="Nom du client" autocomplete="off" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
+          <div id="new-client-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--card-border); border-radius:12px; margin-top:4px; z-index:10; max-height:180px; overflow-y:auto"></div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Telephone (optionnel)</label>
+          <input type="tel" id="new-client-phone" placeholder="Telephone" style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
+        </div>
+
+        <div class="error-msg" id="new-error" style="display:none; background:rgba(229,62,62,0.08); color:var(--error); font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:12px"></div>
+
+        <button type="submit" id="new-submit-btn" style="width:100%; padding:13px; background:var(--primary); color:white; border:none; border-radius:14px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer">Creer la reservation</button>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
     import {
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
+      loadServices, searchManualClients, createBooking,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -592,13 +642,160 @@ ini_set('log_errors', 1);
       viewMode = 'day';
       document.getElementById('view-day').classList.add('active');
       document.getElementById('view-week').classList.remove('active');
+      document.getElementById('new-booking-btn').style.display = 'inline-block';
       reloadCurrentView();
     });
     document.getElementById('view-week').addEventListener('click', () => {
       viewMode = 'week';
       document.getElementById('view-week').classList.add('active');
       document.getElementById('view-day').classList.remove('active');
+      document.getElementById('new-booking-btn').style.display = 'none';
       reloadCurrentView();
+    });
+
+    // -----------------------------------------------------
+    // NOUVELLE RESERVATION
+    // -----------------------------------------------------
+    let services = [];
+    let selectedNewEmployeeId = null;
+    let selectedManualClientId = null;
+
+    function openNewBookingModal() {
+      if (viewMode !== 'day') return;
+      document.getElementById('new-date-label').textContent = formatDateLong(selectedDate);
+      document.getElementById('new-booking-form').reset();
+      document.getElementById('new-error').style.display = 'none';
+      selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
+      selectedManualClientId = null;
+      renderEmployeeChips();
+      document.getElementById('new-overlay').classList.add('visible');
+    }
+    function closeNewBookingModal() {
+      document.getElementById('new-overlay').classList.remove('visible');
+    }
+
+    function renderEmployeeChips() {
+      const wrap = document.getElementById('new-employees-chips');
+      const wrapContainer = document.getElementById('new-employees-wrap');
+      if (employees.length === 0) { wrapContainer.style.display = 'none'; return; }
+      wrapContainer.style.display = 'block';
+      wrap.innerHTML = '';
+      employees.forEach((emp) => {
+        const isSelected = selectedNewEmployeeId === emp.id;
+        const color = emp.color || '#00BFA5';
+        const chip = document.createElement('div');
+        chip.style.cssText = 'display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:700; border:1.5px solid ' +
+          (isSelected ? color : 'var(--card-border)') + '; background:' + (isSelected ? color + '26' : 'white') + '; color:' + (isSelected ? color : 'var(--text-dark)');
+        chip.innerHTML = '<span style="width:18px;height:18px;border-radius:50%;background:' + color + '33;border:1px solid ' + color + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:' + color + '">' +
+          escapeHtml((emp.first_name || '?').charAt(0).toUpperCase()) + '</span>' + escapeHtml(emp.first_name || '');
+        chip.addEventListener('click', () => {
+          selectedNewEmployeeId = isSelected ? null : emp.id;
+          renderEmployeeChips();
+        });
+        wrap.appendChild(chip);
+      });
+    }
+
+    document.getElementById('new-booking-btn').addEventListener('click', openNewBookingModal);
+    document.getElementById('new-close-btn').addEventListener('click', closeNewBookingModal);
+    document.getElementById('new-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'new-overlay') closeNewBookingModal();
+    });
+
+    // Autocompletion clients manuels
+    const newClientNameInput = document.getElementById('new-client-name');
+    const newSuggestionsBox = document.getElementById('new-client-suggestions');
+    let clientSearchDebounce = null;
+    newClientNameInput.addEventListener('input', () => {
+      selectedManualClientId = null;
+      clearTimeout(clientSearchDebounce);
+      const query = newClientNameInput.value;
+      clientSearchDebounce = setTimeout(async () => {
+        const results = await searchManualClients(business.id, query);
+        if (!results.length) { newSuggestionsBox.style.display = 'none'; return; }
+        newSuggestionsBox.innerHTML = '';
+        results.forEach((cl) => {
+          const name = ((cl.first_name || '') + ' ' + (cl.last_name || '')).trim();
+          const item = document.createElement('div');
+          item.style.cssText = 'padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--card-border)';
+          item.innerHTML = '<div style="font-weight:700">' + escapeHtml(name) + '</div>' +
+            (cl.phone ? '<div style="font-size:11px; color:var(--text-medium)">' + escapeHtml(cl.phone) + '</div>' : '');
+          item.addEventListener('click', () => {
+            newClientNameInput.value = name;
+            selectedManualClientId = cl.id;
+            if (cl.phone) document.getElementById('new-client-phone').value = cl.phone;
+            newSuggestionsBox.style.display = 'none';
+          });
+          newSuggestionsBox.appendChild(item);
+        });
+        newSuggestionsBox.style.display = 'block';
+      }, 350);
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#new-client-name') && !e.target.closest('#new-client-suggestions')) {
+        newSuggestionsBox.style.display = 'none';
+      }
+    });
+
+    document.getElementById('new-booking-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('new-error');
+      errorEl.style.display = 'none';
+
+      const time = document.getElementById('new-time').value; // 'HH:MM'
+      const serviceId = document.getElementById('new-service').value;
+      const service = services.find((s) => s.id === serviceId);
+      const clientNameVal = newClientNameInput.value.trim();
+      const phoneVal = document.getElementById('new-client-phone').value.trim();
+
+      if (!time || !service || !clientNameVal) {
+        errorEl.textContent = 'Merci de remplir au moins heure, service et nom du client.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const startMin = timeToMinutes(time);
+      const duration = service.duration || 30;
+      const endMin = startMin + duration;
+      const startTime = time + ':00';
+      const endTime = String(Math.floor(endMin / 60)).padStart(2, '0') + ':' + String(endMin % 60).padStart(2, '0') + ':00';
+
+      let employeeId = selectedNewEmployeeId;
+      if (!employeeId && employees.length === 1) employeeId = employees[0].id;
+
+      if (employeeId && hasConflict(dayBookings, employeeId, startMin, endMin, null)) {
+        const proceed = confirm('Cet employe a deja un rendez-vous sur ce creneau. Creer quand meme ?');
+        if (!proceed) return;
+      }
+
+      const submitBtn = document.getElementById('new-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creation...';
+
+      try {
+        await createBooking({
+          businessId: business.id,
+          serviceId: service.id,
+          dateKey: toDateKey(selectedDate),
+          startTime: startTime,
+          endTime: endTime,
+          customerName: clientNameVal,
+          customerPhone: phoneVal,
+          manualClientId: selectedManualClientId,
+          price: service.price,
+          employeeId: employeeId,
+        });
+        showToast('Reservation creee.');
+        closeNewBookingModal();
+        await renderDayView();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = 'Erreur lors de la creation de la reservation.';
+        errorEl.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Creer la reservation';
+      }
     });
 
     // -----------------------------------------------------
@@ -614,6 +811,15 @@ ini_set('log_errors', 1);
         return;
       }
       employees = await loadEmployees(business.id);
+      services = await loadServices(business.id);
+      const serviceSelect = document.getElementById('new-service');
+      services.forEach((s) => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.name + ' - ' + Math.round(s.price || 0) + ' ' +
+          ({ EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[business.currency_code] || '\u20ac');
+        serviceSelect.appendChild(opt);
+      });
       await renderDayView();
     })();
   </script>

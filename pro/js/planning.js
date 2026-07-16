@@ -131,6 +131,67 @@ export function layoutOverlaps(items) {
     return result;
 }
 
+// Services actifs du business, pour le formulaire de nouvelle reservation.
+export async function loadServices(businessId) {
+    const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .order('name');
+    if (error) {
+        console.error('Erreur chargement services:', error);
+        return [];
+    }
+    return data || [];
+}
+
+// Recherche dans les fiches clients manuelles du business (autocompletion nom/telephone).
+export async function searchManualClients(businessId, query) {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.trim();
+    const { data, error } = await supabase
+        .from('manual_clients')
+        .select('id, first_name, last_name, phone')
+        .eq('business_id', businessId)
+        .or('first_name.ilike.%' + q + '%,last_name.ilike.%' + q + '%,phone.ilike.%' + q + '%')
+        .limit(5);
+    if (error) {
+        console.error('Erreur recherche clients:', error);
+        return [];
+    }
+    return data || [];
+}
+
+// Cree une reservation manuelle (reproduit _NewBookingSheet._save()).
+// Le RDV est cree directement confirme (le pro le saisit lui-meme).
+export async function createBooking(params) {
+    const insertData = {
+        business_id: params.businessId,
+        service_id: params.serviceId,
+        booking_date: params.dateKey,
+        start_time: params.startTime,
+        end_time: params.endTime,
+        status: 'confirmed',
+        manual_customer_name: params.customerName,
+        price: params.price || 0,
+        preferred_employee_id: params.employeeId || null,
+    };
+    if (params.customerPhone) {
+        insertData.manual_customer_phone = params.customerPhone;
+        insertData.notes = 'Tel: ' + params.customerPhone;
+    }
+    if (params.manualClientId) insertData.manual_client_id = params.manualClientId;
+
+    const { data, error } = await supabase.from('bookings').insert(insertData).select('id').single();
+    if (error) throw error;
+
+    if (params.employeeId) {
+        await supabase.from('booking_employees').insert({ booking_id: data.id, employee_id: params.employeeId });
+    }
+    return data.id;
+}
+
 export function bookingEmployeeIds(booking) {
     const rel = booking.booking_employees || [];
     return rel.map((r) => r.employee_id);

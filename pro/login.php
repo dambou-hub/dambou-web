@@ -11,12 +11,24 @@ ini_set('log_errors', 1);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Connexion Pro - Dambou</title>
 <meta name="theme-color" content="#00BFA5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --primary: #00BFA5;
+    --primary-dark: #00897B;
+    --text-dark: #2D3748;
+    --text-medium: #718096;
+    --text-light: #A0AEC0;
+    --background: #F7F8FA;
+    --card-border: #E2E8F0;
+    --error: #E53E3E;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f7fa;
-    color: #1a1a2e;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--background);
+    color: var(--text-dark);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -29,47 +41,47 @@ ini_set('log_errors', 1);
     padding: 40px 32px;
     width: 100%;
     max-width: 380px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-    border: 1px solid #e8ecf0;
+    border: 1px solid var(--card-border);
   }
-  .logo { text-align: center; margin-bottom: 8px; font-size: 40px; }
-  h1 { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 4px; color: #1a1a2e; }
-  .subtitle { text-align: center; font-size: 14px; color: #666666; margin-bottom: 28px; }
-  label { display: block; font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; margin-top: 16px; }
+  .logo { text-align: center; margin-bottom: 12px; }
+  .logo img { height: 40px; width: auto; }
+  h1 { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 4px; color: var(--text-dark); }
+  .subtitle { text-align: center; font-size: 14px; color: var(--text-medium); margin-bottom: 28px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; margin-top: 16px; }
   input {
     width: 100%;
     padding: 13px 14px;
-    border: 1px solid #e8ecf0;
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     font-size: 15px;
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
   }
-  input:focus { border-color: #00BFA5; }
+  input:focus { border-color: var(--primary); border-width: 2px; padding: 12px 13px; }
   button {
     width: 100%;
     margin-top: 24px;
     padding: 14px;
-    background: #00BFA5;
+    background: var(--primary);
     color: #ffffff;
     border: none;
-    border-radius: 10px;
+    border-radius: 14px;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     transition: background 0.15s;
   }
-  button:hover { background: #008f7a; }
-  button:disabled { background: #a0d9cf; cursor: not-allowed; }
+  button:hover { background: var(--primary-dark); }
+  button:disabled { background: var(--text-light); cursor: not-allowed; }
   .error-msg {
     display: none;
-    background: #fdecea;
-    color: #dc2626;
+    background: rgba(229,62,62,0.08);
+    color: var(--error);
     font-size: 13px;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-top: 16px;
   }
   .error-msg.visible { display: block; }
@@ -78,15 +90,15 @@ ini_set('log_errors', 1);
     text-align: center;
     margin-top: 20px;
     font-size: 13px;
-    color: #666666;
+    color: var(--text-medium);
     text-decoration: none;
   }
-  .back-link:hover { color: #00BFA5; }
+  .back-link:hover { color: var(--primary); }
 </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">&#127855;</div>
+    <div class="logo"><img src="/assets/icon.png" alt="Dambou"></div>
     <h1>Espace Pro</h1>
     <p class="subtitle">Connectez-vous pour gerer votre activite</p>
 

@@ -11,44 +11,61 @@ ini_set('log_errors', 1);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Pro - Dambou</title>
 <meta name="theme-color" content="#00BFA5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --primary: #00BFA5;
+    --primary-dark: #00897B;
+    --text-dark: #2D3748;
+    --text-medium: #718096;
+    --text-light: #A0AEC0;
+    --background: #F7F8FA;
+    --card-border: #E2E8F0;
+    --error: #E53E3E;
+
+    --c-planning: #00BFA5;
+    --c-reservations: #F4A261;
+    --c-catalogue: #6C63FF;
+    --c-clients: #3182CE;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f7fa;
-    color: #1a1a2e;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--background);
+    color: var(--text-dark);
     min-height: 100vh;
   }
   .topbar {
     background: #ffffff;
-    border-bottom: 1px solid #e8ecf0;
-    padding: 16px 24px;
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; }
-  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: #00BFA5; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+  .brand img { height: 26px; width: auto; }
   .logout-btn {
     background: none;
-    border: 1px solid #e8ecf0;
-    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
-    color: #666666;
+    color: var(--text-medium);
     cursor: pointer;
     font-family: inherit;
   }
-  .logout-btn:hover { border-color: #dc2626; color: #dc2626; }
+  .logout-btn:hover { border-color: var(--error); color: var(--error); }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-  #loading { text-align: center; padding: 80px 20px; color: #666666; }
+  #loading { text-align: center; padding: 80px 20px; color: var(--text-medium); }
 
   #content { display: none; }
   .welcome { margin-bottom: 28px; }
-  .welcome h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
-  .welcome p { font-size: 14px; color: #666666; }
+  .welcome h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .welcome p { font-size: 14px; color: var(--text-medium); }
 
   .nav-grid {
     display: grid;
@@ -57,22 +74,22 @@ ini_set('log_errors', 1);
   }
   .nav-card {
     background: #ffffff;
-    border: 1px solid #e8ecf0;
+    border: 1px solid var(--card-border);
     border-radius: 16px;
-    padding: 24px;
+    padding: 22px;
     text-decoration: none;
-    color: #1a1a2e;
+    color: var(--text-dark);
     display: block;
-    transition: box-shadow 0.15s, border-color 0.15s;
+    transition: border-color 0.15s;
   }
-  .nav-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); border-color: #00BFA5; }
-  .nav-card .icon { font-size: 28px; margin-bottom: 12px; }
-  .nav-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .nav-card p { font-size: 13px; color: #666666; }
+  .nav-card:hover { border-color: var(--primary); }
+  .nav-card .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; margin-bottom: 14px; }
+  .nav-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .nav-card p { font-size: 13px; color: var(--text-medium); }
 
   .error-box {
-    background: #fdecea;
-    color: #dc2626;
+    background: rgba(229,62,62,0.08);
+    color: var(--error);
     padding: 16px;
     border-radius: 12px;
     font-size: 14px;
@@ -82,7 +99,7 @@ ini_set('log_errors', 1);
 </head>
 <body>
   <div class="topbar">
-    <div class="brand"><span class="dot"></span> Dambou Pro</div>
+    <div class="brand"><img src="/assets/icon.png" alt=""> Dambou Pro</div>
     <button class="logout-btn" id="logout-btn">Deconnexion</button>
   </div>
 
@@ -96,22 +113,22 @@ ini_set('log_errors', 1);
 
       <div class="nav-grid">
         <a class="nav-card" href="/pro/planning">
-          <div class="icon">&#128197;</div>
+          <div class="icon" style="background:rgba(0,191,165,0.1)">&#128197;</div>
           <h3>Planning</h3>
           <p>Vue semaine et mois de vos rendez-vous</p>
         </a>
         <a class="nav-card" href="/pro/reservations">
-          <div class="icon">&#128203;</div>
+          <div class="icon" style="background:rgba(244,162,97,0.1)">&#128203;</div>
           <h3>Reservations</h3>
           <p>Liste et gestion de vos reservations</p>
         </a>
         <a class="nav-card" href="/pro/catalogue">
-          <div class="icon">&#128717;</div>
+          <div class="icon" style="background:rgba(108,99,255,0.1)">&#129534;</div>
           <h3>Catalogue</h3>
           <p>Produits et services proposes</p>
         </a>
         <a class="nav-card" href="/pro/clients">
-          <div class="icon">&#128101;</div>
+          <div class="icon" style="background:rgba(49,130,206,0.1)">&#128101;</div>
           <h3>Clients</h3>
           <p>Fiches et historique de vos clients</p>
         </a>

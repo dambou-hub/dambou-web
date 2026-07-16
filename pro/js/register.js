@@ -5,6 +5,18 @@
 import { supabase } from '/pro/js/auth.js';
 
 // ------------------------------------------------------------
+// Emoji drapeau a partir d'un code pays ISO (ex: 'FR' -> drapeau francais)
+// Calcul par codepoint pour rester en ASCII dans le fichier source.
+// ------------------------------------------------------------
+export function flagEmoji(isoCode) {
+    return isoCode
+        .toUpperCase()
+        .split('')
+        .map((c) => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
+        .join('');
+}
+
+// ------------------------------------------------------------
 // Pays / devises / indicatifs (miroir de country_config.dart)
 // ------------------------------------------------------------
 export const COUNTRIES = [

@@ -137,7 +137,7 @@ ini_set('log_errors', 1);
           <span>J'accepte les <a href="/cgu">Conditions d'utilisation</a> et la <a href="/privacy">Politique de confidentialite</a></span>
         </label>
         <div class="error-msg" id="account-error"></div>
-        <button type="submit" class="primary" id="account-submit">Creer mon compte et continuer</button>
+        <button type="submit" class="primary" id="account-submit" disabled>Chargement...</button>
       </form>
       <a class="login-link" href="/pro/login">Deja un compte ? Se connecter</a>
     </div>
@@ -174,7 +174,7 @@ ini_set('log_errors', 1);
 </div>
 
 <script type="module">
-  import { createAccount, loadTemplates, searchAddress, reverseGeocode, createBusinessWithTemplate, COUNTRIES } from '/pro/js/register.js';
+  import { createAccount, loadTemplates, searchAddress, reverseGeocode, createBusinessWithTemplate, COUNTRIES, flagEmoji } from '/pro/js/register.js';
   import { supabase } from '/pro/js/auth.js';
 
   // -----------------------------
@@ -192,12 +192,18 @@ ini_set('log_errors', 1);
   COUNTRIES.forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c.code;
-    opt.textContent = c.flag + ' ' + c.phonePrefix;
+    opt.textContent = flagEmoji(c.flag) + ' ' + c.phonePrefix;
     countrySelect.appendChild(opt);
   });
   countrySelect.addEventListener('change', () => {
     selectedCountry = COUNTRIES.find((c) => c.code === countrySelect.value) || COUNTRIES[0];
   });
+
+  // Le JS est pret : select rempli et handlers attaches, on peut activer la soumission.
+  // Empeche toute soumission native prematuree du formulaire pendant le chargement du module.
+  const accountSubmitBtn = document.getElementById('account-submit');
+  accountSubmitBtn.disabled = false;
+  accountSubmitBtn.textContent = 'Creer mon compte et continuer';
 
   // -----------------------------
   // Navigation entre etapes

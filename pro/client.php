@@ -68,10 +68,11 @@ ini_set('log_errors', 1);
     <div id="content" style="display:none">
       <div class="client-head">
         <div class="client-avatar" id="c-avatar"></div>
-        <div>
+        <div style="flex:1">
           <div class="client-name" id="c-name"></div>
           <div class="client-contact" id="c-contact"></div>
         </div>
+        <button id="notes-btn" style="display:none; align-items:center; gap:6px; background:rgba(0,191,165,0.1); color:var(--primary-dark); border:none; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer">&#128221; Notes</button>
       </div>
 
       <div class="tabs">
@@ -86,14 +87,44 @@ ini_set('log_errors', 1);
     </div>
   </div>
 
+  <!-- Notes de seance -->
+  <div class="overlay" id="notes-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.35); display:none; align-items:center; justify-content:center; z-index:50; padding:20px">
+    <div style="background:white; border-radius:18px; width:100%; max-width:440px; padding:20px; max-height:85vh; overflow-y:auto">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+        <h2 style="font-size:16px; font-weight:800">Notes de seance</h2>
+        <button id="notes-close" style="border:none; background:none; font-size:20px; color:var(--text-light); cursor:pointer">&times;</button>
+      </div>
+      <div id="notes-list"></div>
+      <div id="note-form" style="display:none; margin-top:14px; border-top:1px solid var(--card-border); padding-top:14px">
+        <input type="text" id="note-title" placeholder="Titre" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <textarea id="note-content" placeholder="Contenu" rows="4" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px; resize:vertical"></textarea>
+        <div style="display:flex; gap:8px">
+          <button id="note-cancel-btn" style="flex:1; padding:10px; border:1px solid var(--card-border); background:white; border-radius:10px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Annuler</button>
+          <button id="note-save-btn" style="flex:1; padding:10px; border:none; background:var(--primary); color:white; border-radius:10px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Enregistrer</button>
+        </div>
+      </div>
+      <button id="note-add-btn" style="width:100%; margin-top:12px; padding:11px; border:1.5px dashed var(--card-border); background:none; border-radius:12px; font-size:13px; font-weight:700; color:var(--text-medium); font-family:inherit; cursor:pointer">+ Nouvelle note</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--text-dark); color:white; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; z-index:60; display:none"></div>
+
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
-    import { loadDambouClientDetail } from '/pro/js/clients.js';
+    import {
+      loadDambouClientDetail, isModuleEnabled, loadSessionNotes, saveSessionNote, deleteSessionNote, useSubscriptionSession,
+    } from '/pro/js/clients.js';
 
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str || '';
       return div.innerHTML;
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
     function currencySymbol(business) {
       return { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[(business && business.currency_code) || 'EUR'] || '\u20ac';
@@ -157,6 +188,42 @@ ini_set('log_errors', 1);
       });
       document.getElementById('tab-active').innerHTML = activeItems.length ? activeItems.join('') : '<div id="empty-active">Rien en cours actuellement.</div>';
 
+      // ----- Forfaits actifs (au-dessus de la liste "en cours") -----
+      if (detail.activeForfaits.length) {
+        const forfaitsHtml = detail.activeForfaits.map((sub) => {
+          const plan = sub.subscription_plans;
+          const remaining = sub.sessions_remaining || 0;
+          const total = sub.sessions_total || 0;
+          const progress = total > 0 ? (remaining / total) * 100 : 0;
+          const color = remaining <= 1 ? 'var(--warning)' : 'var(--success)';
+          return '<div class="item-card">' +
+            '<div class="item-row"><div style="display:flex; align-items:center; gap:8px; flex:1"><span>&#127905;</span>' +
+            '<span class="item-title">' + escapeHtml((plan && plan.name) || 'Forfait') + '</span></div>' +
+            '<span style="font-size:18px; font-weight:900; color:' + color + '">' + remaining + ' / ' + total + '</span></div>' +
+            '<div style="height:6px; background:var(--background); border-radius:4px; margin:8px 0; overflow:hidden">' +
+            '<div style="height:100%; width:' + progress + '%; background:' + color + '"></div></div>' +
+            '<button class="use-session-btn" data-id="' + sub.id + '" ' + (remaining <= 0 ? 'disabled' : '') +
+            ' style="width:100%; padding:9px; border:none; border-radius:10px; background:' + (remaining > 0 ? 'var(--primary)' : 'var(--card-border)') + '; color:white; font-size:12px; font-weight:700; font-family:inherit; cursor:' + (remaining > 0 ? 'pointer' : 'not-allowed') + '">' +
+            (remaining > 0 ? 'Utiliser une seance' : 'Forfait epuise') + '</button></div>';
+        }).join('');
+        document.getElementById('tab-active').innerHTML = forfaitsHtml + document.getElementById('tab-active').innerHTML;
+
+        document.querySelectorAll('.use-session-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const sub = detail.activeForfaits.find((s) => s.id === btn.dataset.id);
+            if (!sub || !confirm('Confirmer l\'utilisation d\'une seance pour ce forfait ?')) return;
+            try {
+              const remaining = await useSubscriptionSession(sub);
+              showToast(remaining <= 0 ? 'Derniere seance utilisee, forfait epuise.' : 'Seance utilisee, reste ' + remaining + '.');
+              window.location.reload();
+            } catch (err) {
+              console.error(err);
+              showToast('Erreur lors de la mise a jour du forfait.');
+            }
+          });
+        });
+      }
+
       // ----- Onglet Historique -----
       const historyItems = detail.history.map((h) => {
         if (h._type === 'booking') {
@@ -207,7 +274,89 @@ ini_set('log_errors', 1);
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
+
+      // ----- Notes de seance (module optionnel) -----
+      const hasSessionNotes = await isModuleEnabled(business.id, 'session_notes');
+      if (hasSessionNotes) {
+        document.getElementById('notes-btn').style.display = 'flex';
+        setupNotesModal(business.id, { customerId: customerId, manualClientId: null });
+      }
     })();
+
+    function setupNotesModal(businessId, ids) {
+      let editingNoteId = null;
+
+      async function refreshNotes() {
+        const notes = await loadSessionNotes(businessId, ids);
+        const list = document.getElementById('notes-list');
+        if (notes.length === 0) {
+          list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:13px">Aucune note pour ce client.</div>';
+        } else {
+          list.innerHTML = notes.map((n) => {
+            const booking = n.bookings;
+            const bookingInfo = booking ? escapeHtml(booking.booking_date) + (booking.services ? ' - ' + escapeHtml(booking.services.name) : '') : '';
+            return '<div class="item-card">' +
+              '<div class="item-row"><span class="item-title">' + escapeHtml(n.title) + '</span>' +
+              '<div><button class="note-edit-btn" data-id="' + n.id + '" style="border:none; background:none; cursor:pointer; font-size:13px">&#9998;</button>' +
+              '<button class="note-delete-btn" data-id="' + n.id + '" style="border:none; background:none; cursor:pointer; font-size:13px; color:var(--error)">&#128465;</button></div></div>' +
+              (n.content ? '<div class="item-sub" style="margin-top:6px; white-space:pre-wrap">' + escapeHtml(n.content) + '</div>' : '') +
+              (bookingInfo ? '<div class="item-sub" style="margin-top:6px; color:var(--text-light)">' + bookingInfo + '</div>' : '') +
+              '</div>';
+          }).join('');
+
+          list.querySelectorAll('.note-edit-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const note = notes.find((n) => n.id === btn.dataset.id);
+              editingNoteId = note.id;
+              document.getElementById('note-title').value = note.title || '';
+              document.getElementById('note-content').value = note.content || '';
+              document.getElementById('note-form').style.display = 'block';
+            });
+          });
+          list.querySelectorAll('.note-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Supprimer cette note ?')) return;
+              await deleteSessionNote(btn.dataset.id);
+              await refreshNotes();
+            });
+          });
+        }
+      }
+
+      document.getElementById('notes-btn').addEventListener('click', async () => {
+        document.getElementById('note-form').style.display = 'none';
+        document.getElementById('notes-overlay').style.display = 'flex';
+        await refreshNotes();
+      });
+      document.getElementById('notes-close').addEventListener('click', () => {
+        document.getElementById('notes-overlay').style.display = 'none';
+      });
+      document.getElementById('note-add-btn').addEventListener('click', () => {
+        editingNoteId = null;
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-content').value = '';
+        document.getElementById('note-form').style.display = 'block';
+      });
+      document.getElementById('note-cancel-btn').addEventListener('click', () => {
+        document.getElementById('note-form').style.display = 'none';
+      });
+      document.getElementById('note-save-btn').addEventListener('click', async () => {
+        const title = document.getElementById('note-title').value.trim();
+        if (!title) return;
+        try {
+          await saveSessionNote({
+            businessId: businessId, customerId: ids.customerId, manualClientId: ids.manualClientId,
+            noteId: editingNoteId, title: title, content: document.getElementById('note-content').value.trim(),
+          });
+          document.getElementById('note-form').style.display = 'none';
+          showToast('Note enregistree.');
+          await refreshNotes();
+        } catch (err) {
+          console.error(err);
+          showToast('Erreur lors de l\'enregistrement.');
+        }
+      });
+    }
   </script>
 </body>
 </html>

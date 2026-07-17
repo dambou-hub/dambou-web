@@ -61,7 +61,10 @@ ini_set('log_errors', 1);
     <div id="loading">Chargement de la fiche client...</div>
     <div id="content" style="display:none">
       <div class="card">
-        <h2>Informations</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <h2 style="margin-bottom:0">Informations</h2>
+          <button id="notes-btn" style="display:none; align-items:center; gap:6px; background:rgba(0,191,165,0.1); color:var(--primary-dark); border:none; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer">&#128221; Notes</button>
+        </div>
         <div class="row2">
           <div class="field"><label>Prenom</label><input type="text" id="f-first-name"></div>
           <div class="field"><label>Nom</label><input type="text" id="f-last-name"></div>
@@ -79,11 +82,31 @@ ini_set('log_errors', 1);
     </div>
   </div>
 
+  <!-- Notes de seance -->
+  <div class="overlay" id="notes-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.35); display:none; align-items:center; justify-content:center; z-index:50; padding:20px">
+    <div style="background:white; border-radius:18px; width:100%; max-width:440px; padding:20px; max-height:85vh; overflow-y:auto">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+        <h2 style="font-size:16px; font-weight:800">Notes de seance</h2>
+        <button id="notes-close" style="border:none; background:none; font-size:20px; color:var(--text-light); cursor:pointer">&times;</button>
+      </div>
+      <div id="notes-list"></div>
+      <div id="note-form" style="display:none; margin-top:14px; border-top:1px solid var(--card-border); padding-top:14px">
+        <input type="text" id="note-title" placeholder="Titre" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <textarea id="note-content" placeholder="Contenu" rows="4" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px; resize:vertical"></textarea>
+        <div style="display:flex; gap:8px">
+          <button id="note-cancel-btn" style="flex:1; padding:10px; border:1px solid var(--card-border); background:white; border-radius:10px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Annuler</button>
+          <button id="note-save-btn" style="flex:1; padding:10px; border:none; background:var(--primary); color:white; border-radius:10px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Enregistrer</button>
+        </div>
+      </div>
+      <button id="note-add-btn" style="width:100%; margin-top:12px; padding:11px; border:1.5px dashed var(--card-border); background:none; border-radius:12px; font-size:13px; font-weight:700; color:var(--text-medium); font-family:inherit; cursor:pointer">+ Nouvelle note</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
-    import { loadManualClientDetail, updateManualClient, deleteManualClient } from '/pro/js/clients.js';
+    import { loadManualClientDetail, updateManualClient, deleteManualClient, isModuleEnabled, loadSessionNotes, saveSessionNote, deleteSessionNote } from '/pro/js/clients.js';
 
     function escapeHtml(str) {
       const div = document.createElement('div');
@@ -146,7 +169,88 @@ ini_set('log_errors', 1);
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
+
+      const hasSessionNotes = await isModuleEnabled(business.id, 'session_notes');
+      if (hasSessionNotes) {
+        document.getElementById('notes-btn').style.display = 'flex';
+        setupNotesModal(business.id, { customerId: null, manualClientId: clientId });
+      }
     })();
+
+    function setupNotesModal(businessId, ids) {
+      let editingNoteId = null;
+
+      async function refreshNotes() {
+        const notes = await loadSessionNotes(businessId, ids);
+        const list = document.getElementById('notes-list');
+        if (notes.length === 0) {
+          list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:13px">Aucune note pour ce client.</div>';
+        } else {
+          list.innerHTML = notes.map((n) => {
+            const booking = n.bookings;
+            const bookingInfo = booking ? escapeHtml(booking.booking_date) + (booking.services ? ' - ' + escapeHtml(booking.services.name) : '') : '';
+            return '<div class="item-card">' +
+              '<div class="item-row"><span class="item-title">' + escapeHtml(n.title) + '</span>' +
+              '<div><button class="note-edit-btn" data-id="' + n.id + '" style="border:none; background:none; cursor:pointer; font-size:13px">&#9998;</button>' +
+              '<button class="note-delete-btn" data-id="' + n.id + '" style="border:none; background:none; cursor:pointer; font-size:13px; color:var(--error)">&#128465;</button></div></div>' +
+              (n.content ? '<div class="item-sub" style="margin-top:6px; white-space:pre-wrap">' + escapeHtml(n.content) + '</div>' : '') +
+              (bookingInfo ? '<div class="item-sub" style="margin-top:6px; color:var(--text-light)">' + bookingInfo + '</div>' : '') +
+              '</div>';
+          }).join('');
+
+          list.querySelectorAll('.note-edit-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const note = notes.find((n) => n.id === btn.dataset.id);
+              editingNoteId = note.id;
+              document.getElementById('note-title').value = note.title || '';
+              document.getElementById('note-content').value = note.content || '';
+              document.getElementById('note-form').style.display = 'block';
+            });
+          });
+          list.querySelectorAll('.note-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Supprimer cette note ?')) return;
+              await deleteSessionNote(btn.dataset.id);
+              await refreshNotes();
+            });
+          });
+        }
+      }
+
+      document.getElementById('notes-btn').addEventListener('click', async () => {
+        document.getElementById('note-form').style.display = 'none';
+        document.getElementById('notes-overlay').style.display = 'flex';
+        await refreshNotes();
+      });
+      document.getElementById('notes-close').addEventListener('click', () => {
+        document.getElementById('notes-overlay').style.display = 'none';
+      });
+      document.getElementById('note-add-btn').addEventListener('click', () => {
+        editingNoteId = null;
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-content').value = '';
+        document.getElementById('note-form').style.display = 'block';
+      });
+      document.getElementById('note-cancel-btn').addEventListener('click', () => {
+        document.getElementById('note-form').style.display = 'none';
+      });
+      document.getElementById('note-save-btn').addEventListener('click', async () => {
+        const title = document.getElementById('note-title').value.trim();
+        if (!title) return;
+        try {
+          await saveSessionNote({
+            businessId: businessId, customerId: ids.customerId, manualClientId: ids.manualClientId,
+            noteId: editingNoteId, title: title, content: document.getElementById('note-content').value.trim(),
+          });
+          document.getElementById('note-form').style.display = 'none';
+          showToast('Note enregistree.');
+          await refreshNotes();
+        } catch (err) {
+          console.error(err);
+          showToast('Erreur lors de l\'enregistrement.');
+        }
+      });
+    }
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const firstName = document.getElementById('f-first-name').value.trim();

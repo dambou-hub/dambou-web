@@ -124,6 +124,9 @@ ini_set('log_errors', 1);
   .confirm-actions button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
   .confirm-actions button.danger { background: var(--error); color: white; border-color: var(--error); }
 
+  .pm-btn { padding: 12px; border-radius: 10px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-dark); }
+  .pm-btn:hover { border-color: var(--primary); color: var(--primary-dark); background: rgba(0,191,165,0.06); }
+
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 60; display: none; }
   .toast.visible { display: block; }
   input:disabled { background: var(--background); color: var(--text-medium); cursor: not-allowed; }
@@ -187,6 +190,18 @@ ini_set('log_errors', 1);
           <button class="danger" id="confirm-cancel-yes">Oui, annuler</button>
         </div>
       </div>
+
+      <div class="confirm-box" id="payment-choice-box">
+        <div style="font-size:13px; color:var(--text-medium); margin-bottom:10px">Mode de paiement</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+          <button type="button" class="pm-btn" data-method="cash">Especes</button>
+          <button type="button" class="pm-btn" data-method="card">Carte</button>
+          <button type="button" class="pm-btn" data-method="check">Cheque</button>
+          <button type="button" class="pm-btn" data-method="ticket_restaurant">Ticket resto</button>
+          <button type="button" class="pm-btn" data-method="free" style="grid-column:1 / -1">Offert</button>
+        </div>
+        <button type="button" id="payment-cancel-btn" style="width:100%; margin-top:10px; padding:9px; border:1px solid var(--card-border); background:white; border-radius:10px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer">Annuler</button>
+      </div>
     </div>
   </div>
 
@@ -213,6 +228,7 @@ ini_set('log_errors', 1);
         <div style="margin-bottom:12px">
           <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Heure</label>
           <input type="time" id="new-time" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:15px; font-family:inherit; font-weight:700; color:var(--primary-dark)">
+          <div id="new-end-hint" style="font-size:11px; color:var(--text-medium); margin-top:4px"></div>
         </div>
 
         <div style="margin-bottom:12px">
@@ -288,6 +304,7 @@ ini_set('log_errors', 1);
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
       loadServices, searchClients, createManualClient, createBooking, updateBooking,
+      checkoutBooking, PAYMENT_METHOD_LABELS,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -628,6 +645,7 @@ ini_set('log_errors', 1);
       }
 
       document.getElementById('confirm-cancel-box').classList.remove('visible');
+      document.getElementById('payment-choice-box').classList.remove('visible');
       renderPanelActions(booking);
       document.getElementById('panel-overlay').classList.add('visible');
     }
@@ -660,6 +678,20 @@ ini_set('log_errors', 1);
         }));
         container.appendChild(divider());
       }
+
+      if (booking.is_paid) {
+        const paidTile = document.createElement('div');
+        paidTile.style.cssText = 'display:flex; align-items:center; gap:12px; padding:13px 4px; font-size:14px; font-weight:700; color:var(--success)';
+        paidTile.innerHTML = '<span class="a-icon">\u2705</span><span>Paye</span>';
+        container.appendChild(paidTile);
+      } else {
+        const svc = booking.services;
+        const priceLabel = svc ? (Math.round(svc.price || 0) + '') : '0';
+        container.appendChild(makeAction('\u{1F4B3}', 'Encaisser (' + priceLabel + ')', () => {
+          document.getElementById('payment-choice-box').classList.add('visible');
+        }));
+      }
+      container.appendChild(divider());
 
       container.appendChild(makeAction('\u{1F4DD}', 'Modifier le rendez-vous', () => {
         closePanel();
@@ -709,6 +741,28 @@ ini_set('log_errors', 1);
       showToast('Rendez-vous annule.');
       closePanel();
       await reloadCurrentView();
+    });
+
+    document.getElementById('payment-cancel-btn').addEventListener('click', () => {
+      document.getElementById('payment-choice-box').classList.remove('visible');
+    });
+    document.querySelectorAll('.pm-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!currentBooking) return;
+        const method = btn.dataset.method;
+        btn.disabled = true;
+        try {
+          await checkoutBooking(currentBooking, business, method);
+          showToast('Rendez-vous encaisse (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
+          closePanel();
+          await reloadCurrentView();
+        } catch (err) {
+          console.error(err);
+          showToast("Erreur lors de l'encaissement.");
+        } finally {
+          btn.disabled = false;
+        }
+      });
     });
 
     // -----------------------------------------------------
@@ -806,6 +860,7 @@ ini_set('log_errors', 1);
 
       updateClientBoxDisplay();
       renderEmployeeChips();
+      updateEndHint();
       document.getElementById('new-overlay').classList.add('visible');
     }
     function closeNewBookingModal() {
@@ -833,6 +888,20 @@ ini_set('log_errors', 1);
         wrap.appendChild(chip);
       });
     }
+
+    function updateEndHint() {
+      const time = document.getElementById('new-time').value;
+      const serviceId = document.getElementById('new-service').value;
+      const service = services.find((s) => s.id === serviceId);
+      const hint = document.getElementById('new-end-hint');
+      if (!time || !service || !service.duration) { hint.textContent = ''; return; }
+      const endMin = timeToMinutes(time) + service.duration;
+      const h = String(Math.floor(endMin / 60)).padStart(2, '0');
+      const m = String(endMin % 60).padStart(2, '0');
+      hint.textContent = 'Se termine a ' + h + ':' + m + ' (' + service.duration + ' min)';
+    }
+    document.getElementById('new-time').addEventListener('input', updateEndHint);
+    document.getElementById('new-service').addEventListener('change', updateEndHint);
 
     document.getElementById('new-booking-btn').addEventListener('click', () => openNewBookingModal());
     document.getElementById('new-close-btn').addEventListener('click', closeNewBookingModal);
@@ -1049,7 +1118,8 @@ ini_set('log_errors', 1);
       services.forEach((s) => {
         const opt = document.createElement('option');
         opt.value = s.id;
-        opt.textContent = s.name + ' - ' + Math.round(s.price || 0) + ' ' +
+        const durationLabel = s.duration ? (s.duration + 'min - ') : '';
+        opt.textContent = s.name + ' - ' + durationLabel + Math.round(s.price || 0) + ' ' +
           ({ EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[business.currency_code] || '\u20ac');
         serviceSelect.appendChild(opt);
       });

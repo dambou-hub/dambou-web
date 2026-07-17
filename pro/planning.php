@@ -206,6 +206,11 @@ ini_set('log_errors', 1);
 
       <form id="new-booking-form">
         <div style="margin-bottom:12px">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Date</label>
+          <input type="date" id="new-date" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
+        </div>
+
+        <div style="margin-bottom:12px">
           <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Heure</label>
           <input type="time" id="new-time" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:15px; font-family:inherit; font-weight:700; color:var(--primary-dark)">
         </div>
@@ -222,15 +227,22 @@ ini_set('log_errors', 1);
           <div id="new-employees-chips" style="display:flex; flex-wrap:wrap; gap:8px"></div>
         </div>
 
-        <div style="margin-bottom:12px; position:relative">
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Nom du client</label>
-          <input type="text" id="new-client-name" placeholder="Nom du client" autocomplete="off" required style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
-          <div id="new-client-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--card-border); border-radius:12px; margin-top:4px; z-index:10; max-height:180px; overflow-y:auto"></div>
-        </div>
-
         <div style="margin-bottom:16px">
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Telephone (optionnel)</label>
-          <input type="tel" id="new-client-phone" placeholder="Telephone" style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Client</label>
+          <div id="client-selector-box" style="display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid var(--card-border); border-radius:12px; cursor:pointer;">
+            <span id="client-box-placeholder" style="color:var(--text-light); font-size:14px; flex:1">Rechercher ou creer un client...</span>
+            <div id="client-box-selected" style="display:none; align-items:center; gap:10px; flex:1; min-width:0">
+              <div id="csb-avatar" style="width:30px; height:30px; border-radius:50%; background:rgba(0,191,165,0.15); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0"></div>
+              <div style="flex:1; min-width:0">
+                <div style="display:flex; align-items:center; gap:6px">
+                  <span id="csb-name" style="font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"></span>
+                  <span id="csb-badge" style="display:none; font-size:9px; font-weight:800; color:var(--primary-dark); background:rgba(0,191,165,0.1); padding:2px 5px; border-radius:4px">Dambou</span>
+                </div>
+                <div id="csb-phone" style="font-size:11px; color:var(--text-medium)"></div>
+              </div>
+              <button type="button" id="csb-clear" style="border:none; background:none; font-size:18px; color:var(--text-light); cursor:pointer; padding:0 4px">&times;</button>
+            </div>
+          </div>
         </div>
 
         <div class="error-msg" id="new-error" style="display:none; background:rgba(229,62,62,0.08); color:var(--error); font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:12px"></div>
@@ -240,13 +252,42 @@ ini_set('log_errors', 1);
     </div>
   </div>
 
+  <!-- Recherche / creation client (au dessus du modal reservation) -->
+  <div class="overlay" id="client-search-overlay" style="z-index:70">
+    <div class="panel" id="client-search-panel" style="max-width:400px; display:flex; flex-direction:column; max-height:80vh">
+      <div class="panel-head" style="align-items:flex-start; margin-bottom:12px">
+        <div class="panel-info">
+          <div class="panel-client">Choisir un client</div>
+        </div>
+        <button class="nav-btn" id="client-search-close" style="border:none">&times;</button>
+      </div>
+
+      <input type="text" id="client-search-input" placeholder="Nom ou telephone..." autocomplete="off"
+        style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit; margin-bottom:10px">
+
+      <div id="client-results" style="overflow-y:auto; flex:1; min-height:60px"></div>
+
+      <button type="button" id="client-create-toggle" class="action-tile" style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:14px; color:var(--primary-dark)">
+        <span class="a-icon">+</span><span>Creer une fiche client</span>
+      </button>
+
+      <div id="client-create-form" style="display:none">
+        <input type="text" id="cc-first-name" placeholder="Prenom" required style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="text" id="cc-last-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="tel" id="cc-phone" placeholder="Telephone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="email" id="cc-email" placeholder="Email (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
+        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Creer et selectionner</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
     import {
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
-      loadServices, searchManualClients, createBooking, updateBooking,
+      loadServices, searchClients, createManualClient, createBooking, updateBooking,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -710,47 +751,60 @@ ini_set('log_errors', 1);
     // -----------------------------------------------------
     let services = [];
     let selectedNewEmployeeId = null;
-    let selectedManualClientId = null;
+    let selectedClient = null; // {id, type:'dambou'|'manual', name, phone} ou null
     let editingBookingId = null;
-    let editingIsManual = true;
+
+    function updateClientBoxDisplay() {
+      const placeholder = document.getElementById('client-box-placeholder');
+      const selectedBox = document.getElementById('client-box-selected');
+      if (!selectedClient) {
+        placeholder.style.display = 'block';
+        selectedBox.style.display = 'none';
+        return;
+      }
+      placeholder.style.display = 'none';
+      selectedBox.style.display = 'flex';
+      document.getElementById('csb-avatar').textContent = (selectedClient.name || '?').charAt(0).toUpperCase();
+      document.getElementById('csb-name').textContent = selectedClient.name || 'Client';
+      document.getElementById('csb-phone').textContent = selectedClient.phone || '';
+      document.getElementById('csb-badge').style.display = selectedClient.type === 'dambou' ? 'inline-block' : 'none';
+    }
 
     function openNewBookingModal(existingBooking) {
       if (viewMode !== 'day') return;
       document.getElementById('new-date-label').textContent = formatDateLong(selectedDate);
       document.getElementById('new-booking-form').reset();
       document.getElementById('new-error').style.display = 'none';
-      selectedManualClientId = null;
-
-      const nameInput = document.getElementById('new-client-name');
-      const phoneInput = document.getElementById('new-client-phone');
 
       if (existingBooking) {
         editingBookingId = existingBooking.id;
-        editingIsManual = !existingBooking.customer_id;
         document.getElementById('new-modal-title').textContent = 'Modifier le rendez-vous';
         document.getElementById('new-submit-btn').textContent = 'Enregistrer les modifications';
 
+        document.getElementById('new-date').value = existingBooking.booking_date;
         document.getElementById('new-time').value = (existingBooking.start_time || '').substring(0, 5);
         document.getElementById('new-service').value = (existingBooking.services && existingBooking.services.id) || (existingBooking.service_id || '');
-        nameInput.value = clientName(existingBooking);
-        phoneInput.value = bookingPhone(existingBooking);
+
+        if (existingBooking.customer_id) {
+          selectedClient = { id: existingBooking.customer_id, type: 'dambou', name: clientName(existingBooking), phone: bookingPhone(existingBooking) };
+        } else if (existingBooking.manual_client_id || existingBooking.manual_customer_name) {
+          selectedClient = { id: existingBooking.manual_client_id || null, type: 'manual', name: clientName(existingBooking), phone: bookingPhone(existingBooking) };
+        } else {
+          selectedClient = null;
+        }
 
         const empIds = bookingEmployeeIds(existingBooking);
         selectedNewEmployeeId = empIds.length ? empIds[0] : null;
-
-        // Un vrai client de l'app : nom/telephone non modifiables ici (ce sont les infos de son compte).
-        nameInput.disabled = !editingIsManual;
-        phoneInput.disabled = !editingIsManual;
       } else {
         editingBookingId = null;
-        editingIsManual = true;
         document.getElementById('new-modal-title').textContent = 'Nouvelle reservation';
         document.getElementById('new-submit-btn').textContent = 'Creer la reservation';
+        document.getElementById('new-date').value = toDateKey(selectedDate);
         selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
-        nameInput.disabled = false;
-        phoneInput.disabled = false;
+        selectedClient = null;
       }
 
+      updateClientBoxDisplay();
       renderEmployeeChips();
       document.getElementById('new-overlay').classList.add('visible');
     }
@@ -780,60 +834,135 @@ ini_set('log_errors', 1);
       });
     }
 
-    document.getElementById('new-booking-btn').addEventListener('click', openNewBookingModal);
+    document.getElementById('new-booking-btn').addEventListener('click', () => openNewBookingModal());
     document.getElementById('new-close-btn').addEventListener('click', closeNewBookingModal);
     document.getElementById('new-overlay').addEventListener('click', (e) => {
       if (e.target.id === 'new-overlay') closeNewBookingModal();
     });
 
-    // Autocompletion clients manuels
-    const newClientNameInput = document.getElementById('new-client-name');
-    const newSuggestionsBox = document.getElementById('new-client-suggestions');
+    // -----------------------------------------------------
+    // SELECTEUR CLIENT (recherche Dambou + manuels, ou creation)
+    // -----------------------------------------------------
+    document.getElementById('client-selector-box').addEventListener('click', openClientSearch);
+    document.getElementById('csb-clear').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedClient = null;
+      updateClientBoxDisplay();
+    });
+    document.getElementById('client-search-close').addEventListener('click', closeClientSearch);
+    document.getElementById('client-search-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'client-search-overlay') closeClientSearch();
+    });
+
+    function openClientSearch() {
+      document.getElementById('client-search-input').value = '';
+      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un telephone</div>';
+      document.getElementById('client-create-form').style.display = 'none';
+      document.getElementById('client-search-overlay').classList.add('visible');
+      document.getElementById('client-search-input').focus();
+    }
+    function closeClientSearch() {
+      document.getElementById('client-search-overlay').classList.remove('visible');
+    }
+
+    function clientTile(name, phone, badge, onClick) {
+      const tile = document.createElement('div');
+      tile.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 6px; cursor:pointer; border-bottom:1px solid var(--card-border)';
+      tile.innerHTML =
+        '<div style="width:30px;height:30px;border-radius:50%;background:rgba(0,191,165,0.12);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">' +
+        escapeHtml((name || '?').charAt(0).toUpperCase()) + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:700">' + escapeHtml(name) + '</span>' +
+        (badge ? '<span style="font-size:9px;font-weight:800;color:var(--primary-dark);background:rgba(0,191,165,0.1);padding:2px 5px;border-radius:4px">Dambou</span>' : '') + '</div>' +
+        (phone ? '<div style="font-size:11px;color:var(--text-medium)">' + escapeHtml(phone) + '</div>' : '') + '</div>';
+      tile.addEventListener('click', onClick);
+      return tile;
+    }
+
+    const clientSearchInput = document.getElementById('client-search-input');
     let clientSearchDebounce = null;
-    newClientNameInput.addEventListener('input', () => {
-      selectedManualClientId = null;
+    clientSearchInput.addEventListener('input', () => {
       clearTimeout(clientSearchDebounce);
-      const query = newClientNameInput.value;
+      const query = clientSearchInput.value;
       clientSearchDebounce = setTimeout(async () => {
-        const results = await searchManualClients(business.id, query);
-        if (!results.length) { newSuggestionsBox.style.display = 'none'; return; }
-        newSuggestionsBox.innerHTML = '';
-        results.forEach((cl) => {
-          const name = ((cl.first_name || '') + ' ' + (cl.last_name || '')).trim();
-          const item = document.createElement('div');
-          item.style.cssText = 'padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--card-border)';
-          item.innerHTML = '<div style="font-weight:700">' + escapeHtml(name) + '</div>' +
-            (cl.phone ? '<div style="font-size:11px; color:var(--text-medium)">' + escapeHtml(cl.phone) + '</div>' : '');
-          item.addEventListener('click', () => {
-            newClientNameInput.value = name;
-            selectedManualClientId = cl.id;
-            if (cl.phone) document.getElementById('new-client-phone').value = cl.phone;
-            newSuggestionsBox.style.display = 'none';
-          });
-          newSuggestionsBox.appendChild(item);
+        const resultsBox = document.getElementById('client-results');
+        if (query.trim().length < 2) {
+          resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un telephone</div>';
+          return;
+        }
+        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Recherche...</div>';
+        const results = await searchClients(business.id, query);
+        resultsBox.innerHTML = '';
+
+        if (!results.dambou.length && !results.manual.length) {
+          resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Aucun resultat</div>';
+          return;
+        }
+        results.dambou.forEach((u) => {
+          const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || 'Client Dambou';
+          resultsBox.appendChild(clientTile(name, u.phone || '', true, () => {
+            selectedClient = { id: u.id, type: 'dambou', name: name, phone: u.phone || '' };
+            updateClientBoxDisplay();
+            closeClientSearch();
+          }));
         });
-        newSuggestionsBox.style.display = 'block';
+        results.manual.forEach((cl) => {
+          const name = ((cl.first_name || '') + ' ' + (cl.last_name || '')).trim() || 'Client';
+          resultsBox.appendChild(clientTile(name, cl.phone || '', false, () => {
+            selectedClient = { id: cl.id, type: 'manual', name: name, phone: cl.phone || '' };
+            updateClientBoxDisplay();
+            closeClientSearch();
+          }));
+        });
       }, 350);
     });
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#new-client-name') && !e.target.closest('#new-client-suggestions')) {
-        newSuggestionsBox.style.display = 'none';
+
+    document.getElementById('client-create-toggle').addEventListener('click', () => {
+      const form = document.getElementById('client-create-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      if (form.style.display === 'block') document.getElementById('cc-first-name').focus();
+    });
+
+    document.getElementById('cc-save-btn').addEventListener('click', async () => {
+      const firstName = document.getElementById('cc-first-name').value.trim();
+      if (!firstName) { document.getElementById('cc-first-name').focus(); return; }
+      const lastName = document.getElementById('cc-last-name').value.trim();
+      const phone = document.getElementById('cc-phone').value.trim();
+      const email = document.getElementById('cc-email').value.trim();
+
+      const btn = document.getElementById('cc-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creation...';
+      try {
+        const created = await createManualClient(business.id, { firstName, lastName, phone, email });
+        const name = ((created.first_name || '') + ' ' + (created.last_name || '')).trim();
+        selectedClient = { id: created.id, type: 'manual', name: name, phone: created.phone || '' };
+        updateClientBoxDisplay();
+        closeClientSearch();
+        showToast('Fiche client creee.');
+      } catch (err) {
+        console.error(err);
+        showToast('Erreur lors de la creation du client.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Creer et selectionner';
       }
     });
 
+    // -----------------------------------------------------
+    // SOUMISSION (creation ou mise a jour)
+    // -----------------------------------------------------
     document.getElementById('new-booking-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById('new-error');
       errorEl.style.display = 'none';
 
+      const dateKey = document.getElementById('new-date').value;
       const time = document.getElementById('new-time').value; // 'HH:MM'
       const serviceId = document.getElementById('new-service').value;
       const service = services.find((s) => s.id === serviceId);
-      const clientNameVal = newClientNameInput.value.trim();
-      const phoneVal = document.getElementById('new-client-phone').value.trim();
 
-      if (!time || !service || !clientNameVal) {
-        errorEl.textContent = 'Merci de remplir au moins heure, service et nom du client.';
+      if (!dateKey || !time || !service || !selectedClient) {
+        errorEl.textContent = 'Merci de remplir la date, l\'heure, le service et le client.';
         errorEl.style.display = 'block';
         return;
       }
@@ -847,7 +976,13 @@ ini_set('log_errors', 1);
       let employeeId = selectedNewEmployeeId;
       if (!employeeId && employees.length === 1) employeeId = employees[0].id;
 
-      if (employeeId && hasConflict(dayBookings, employeeId, startMin, endMin, editingBookingId)) {
+      // Conflit : si la date choisie est celle deja affichee, on reutilise dayBookings (deja charge).
+      // Sinon on va chercher les reservations de la date cible avant de verifier.
+      const conflictSource = (dateKey === toDateKey(selectedDate))
+        ? dayBookings
+        : await loadBookingsForDay(business.id, dateKey);
+
+      if (employeeId && hasConflict(conflictSource, employeeId, startMin, endMin, editingBookingId)) {
         const proceed = confirm('Cet employe a deja un rendez-vous sur ce creneau. Continuer quand meme ?');
         if (!proceed) return;
       }
@@ -856,35 +991,35 @@ ini_set('log_errors', 1);
       submitBtn.disabled = true;
       submitBtn.textContent = editingBookingId ? 'Enregistrement...' : 'Creation...';
 
+      const clientParams = selectedClient.type === 'dambou'
+        ? { customerId: selectedClient.id }
+        : { customerName: selectedClient.name, customerPhone: selectedClient.phone, manualClientId: selectedClient.id };
+
       try {
         if (editingBookingId) {
-          await updateBooking(editingBookingId, {
+          await updateBooking(editingBookingId, Object.assign({
             serviceId: service.id,
+            dateKey: dateKey,
             startTime: startTime,
             endTime: endTime,
             price: service.price,
             employeeId: employeeId,
-            isManual: editingIsManual,
-            customerName: clientNameVal,
-            customerPhone: phoneVal,
-          });
+          }, clientParams));
           showToast('Rendez-vous modifie.');
         } else {
-          await createBooking({
+          await createBooking(Object.assign({
             businessId: business.id,
             serviceId: service.id,
-            dateKey: toDateKey(selectedDate),
+            dateKey: dateKey,
             startTime: startTime,
             endTime: endTime,
-            customerName: clientNameVal,
-            customerPhone: phoneVal,
-            manualClientId: selectedManualClientId,
             price: service.price,
             employeeId: employeeId,
-          });
+          }, clientParams));
           showToast('Reservation creee.');
         }
         closeNewBookingModal();
+        selectedDate = new Date(dateKey + 'T00:00:00');
         await renderDayView();
       } catch (err) {
         console.error(err);

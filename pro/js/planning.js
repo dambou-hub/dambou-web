@@ -146,23 +146,6 @@ export async function loadServices(businessId) {
     return data || [];
 }
 
-// Recherche dans les fiches clients manuelles du business (autocompletion nom/telephone).
-export async function searchManualClients(businessId, query) {
-    if (!query || query.trim().length < 2) return [];
-    const q = query.trim();
-    const { data, error } = await supabase
-        .from('manual_clients')
-        .select('id, first_name, last_name, phone')
-        .eq('business_id', businessId)
-        .or('first_name.ilike.%' + q + '%,last_name.ilike.%' + q + '%,phone.ilike.%' + q + '%')
-        .limit(5);
-    if (error) {
-        console.error('Erreur recherche clients:', error);
-        return [];
-    }
-    return data || [];
-}
-
 // Cree une reservation manuelle (reproduit _NewBookingSheet._save()).
 // Le RDV est cree directement confirme (le pro le saisit lui-meme).
 export async function createBooking(params) {
@@ -173,15 +156,19 @@ export async function createBooking(params) {
         start_time: params.startTime,
         end_time: params.endTime,
         status: 'confirmed',
-        manual_customer_name: params.customerName,
         price: params.price || 0,
         preferred_employee_id: params.employeeId || null,
     };
-    if (params.customerPhone) {
-        insertData.manual_customer_phone = params.customerPhone;
-        insertData.notes = 'Tel: ' + params.customerPhone;
+    if (params.customerId) {
+        insertData.customer_id = params.customerId;
+    } else {
+        insertData.manual_customer_name = params.customerName;
+        if (params.customerPhone) {
+            insertData.manual_customer_phone = params.customerPhone;
+            insertData.notes = 'Tel: ' + params.customerPhone;
+        }
+        if (params.manualClientId) insertData.manual_client_id = params.manualClientId;
     }
-    if (params.manualClientId) insertData.manual_client_id = params.manualClientId;
 
     const { data, error } = await supabase.from('bookings').insert(insertData).select('id').single();
     if (error) throw error;
@@ -197,16 +184,22 @@ export async function createBooking(params) {
 export async function updateBooking(bookingId, params) {
     const updateData = {
         service_id: params.serviceId,
+        booking_date: params.dateKey,
         start_time: params.startTime,
         end_time: params.endTime,
         price: params.price || 0,
     };
-    if (params.isManual) {
+    if (params.customerId) {
+        updateData.customer_id = params.customerId;
+        updateData.manual_customer_name = null;
+        updateData.manual_customer_phone = null;
+        updateData.manual_client_id = null;
+    } else {
+        updateData.customer_id = null;
         updateData.manual_customer_name = params.customerName;
-        if (params.customerPhone) {
-            updateData.manual_customer_phone = params.customerPhone;
-            updateData.notes = 'Tel: ' + params.customerPhone;
-        }
+        updateData.manual_customer_phone = params.customerPhone || null;
+        updateData.manual_client_id = params.manualClientId || null;
+        if (params.customerPhone) updateData.notes = 'Tel: ' + params.customerPhone;
     }
     const { error } = await supabase.from('bookings').update(updateData).eq('id', bookingId);
     if (error) throw error;
@@ -215,6 +208,76 @@ export async function updateBooking(bookingId, params) {
     if (params.employeeId) {
         await supabase.from('booking_employees').insert({ booking_id: bookingId, employee_id: params.employeeId });
     }
+}
+
+// Recherche unifiee client (comptes Dambou lies a ce business + fiches manuelles).
+// Reproduit client_search_screen.dart, sans la partie scan (pas pertinente sur web).
+export async function searchClients(businessId, query) {
+    const q = (query || '').trim();
+    if (q.length < 2) return { dambou: [], manual: [] };
+
+    let dambou = [];
+    try {
+        const [bookingIds, orderIds, txIds, subIds] = await Promise.all([
+            supabase.from('bookings').select('customer_id').eq('business_id', businessId),
+            supabase.from('orders').select('customer_id').eq('business_id', businessId),
+            supabase.from('transactions').select('customer_id').eq('business_id', businessId),
+            supabase.from('customer_subscriptions').select('customer_id').eq('business_id', businessId),
+        ]);
+        const ids = new Set();
+        [bookingIds.data, orderIds.data, txIds.data, subIds.data].forEach((list) => {
+            (list || []).forEach((r) => { if (r.customer_id) ids.add(r.customer_id); });
+        });
+        if (ids.size) {
+            const { data } = await supabase
+                .from('users')
+                .select('id, first_name, last_name, phone, email')
+                .in('id', Array.from(ids))
+                .or('first_name.ilike.%' + q + '%,last_name.ilike.%' + q + '%,phone.ilike.%' + q + '%')
+                .limit(10);
+            dambou = data || [];
+        }
+    } catch (e) {
+        console.error('Erreur recherche clients Dambou:', e);
+    }
+
+    let manual = [];
+    try {
+        const { data } = await supabase
+            .from('manual_clients')
+            .select('*')
+            .eq('business_id', businessId)
+            .or('first_name.ilike.%' + q + '%,last_name.ilike.%' + q + '%,phone.ilike.%' + q + '%,email.ilike.%' + q + '%')
+            .order('first_name')
+            .limit(10);
+        manual = data || [];
+    } catch (e) {
+        console.error('Erreur recherche clients manuels:', e);
+    }
+
+    return { dambou: dambou, manual: manual };
+}
+
+// Cree une fiche client manuelle. Si l'email correspond a un compte Dambou existant,
+// la fiche est liee automatiquement (reproduit _ManualClientSheet._save()).
+export async function createManualClient(businessId, { firstName, lastName, phone, email }) {
+    let userId = null;
+    if (email) {
+        try {
+            const { data } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
+            userId = (data && data.id) || null;
+        } catch (e) { /* ignore */ }
+    }
+    const { data, error } = await supabase.from('manual_clients').insert({
+        business_id: businessId,
+        first_name: firstName,
+        last_name: lastName || '',
+        phone: phone || '',
+        email: email || '',
+        user_id: userId,
+    }).select().single();
+    if (error) throw error;
+    return data;
 }
 
 export function bookingEmployeeIds(booking) {

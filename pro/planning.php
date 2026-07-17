@@ -126,6 +126,7 @@ ini_set('log_errors', 1);
 
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 60; display: none; }
   .toast.visible { display: block; }
+  input:disabled { background: var(--background); color: var(--text-medium); cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -196,7 +197,7 @@ ini_set('log_errors', 1);
     <div class="panel" id="new-panel" style="max-width:420px">
       <div class="panel-head" style="align-items:flex-start">
         <div class="panel-info">
-          <div class="panel-client">Nouvelle reservation</div>
+          <div class="panel-client" id="new-modal-title">Nouvelle reservation</div>
           <div class="panel-service" id="new-date-label"></div>
         </div>
         <button class="nav-btn" id="new-close-btn" style="border:none">&times;</button>
@@ -245,7 +246,7 @@ ini_set('log_errors', 1);
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
-      loadServices, searchManualClients, createBooking,
+      loadServices, searchManualClients, createBooking, updateBooking,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -619,8 +620,9 @@ ini_set('log_errors', 1);
         container.appendChild(divider());
       }
 
-      container.appendChild(makeAction('\u{1F4DD}', 'Gerer dans les reservations', () => {
-        window.location.href = '/pro/reservations';
+      container.appendChild(makeAction('\u{1F4DD}', 'Modifier le rendez-vous', () => {
+        closePanel();
+        openNewBookingModal(booking);
       }));
       container.appendChild(divider());
 
@@ -709,14 +711,46 @@ ini_set('log_errors', 1);
     let services = [];
     let selectedNewEmployeeId = null;
     let selectedManualClientId = null;
+    let editingBookingId = null;
+    let editingIsManual = true;
 
-    function openNewBookingModal() {
+    function openNewBookingModal(existingBooking) {
       if (viewMode !== 'day') return;
       document.getElementById('new-date-label').textContent = formatDateLong(selectedDate);
       document.getElementById('new-booking-form').reset();
       document.getElementById('new-error').style.display = 'none';
-      selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
       selectedManualClientId = null;
+
+      const nameInput = document.getElementById('new-client-name');
+      const phoneInput = document.getElementById('new-client-phone');
+
+      if (existingBooking) {
+        editingBookingId = existingBooking.id;
+        editingIsManual = !existingBooking.customer_id;
+        document.getElementById('new-modal-title').textContent = 'Modifier le rendez-vous';
+        document.getElementById('new-submit-btn').textContent = 'Enregistrer les modifications';
+
+        document.getElementById('new-time').value = (existingBooking.start_time || '').substring(0, 5);
+        document.getElementById('new-service').value = (existingBooking.services && existingBooking.services.id) || (existingBooking.service_id || '');
+        nameInput.value = clientName(existingBooking);
+        phoneInput.value = bookingPhone(existingBooking);
+
+        const empIds = bookingEmployeeIds(existingBooking);
+        selectedNewEmployeeId = empIds.length ? empIds[0] : null;
+
+        // Un vrai client de l'app : nom/telephone non modifiables ici (ce sont les infos de son compte).
+        nameInput.disabled = !editingIsManual;
+        phoneInput.disabled = !editingIsManual;
+      } else {
+        editingBookingId = null;
+        editingIsManual = true;
+        document.getElementById('new-modal-title').textContent = 'Nouvelle reservation';
+        document.getElementById('new-submit-btn').textContent = 'Creer la reservation';
+        selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
+        nameInput.disabled = false;
+        phoneInput.disabled = false;
+      }
+
       renderEmployeeChips();
       document.getElementById('new-overlay').classList.add('visible');
     }
@@ -813,38 +847,52 @@ ini_set('log_errors', 1);
       let employeeId = selectedNewEmployeeId;
       if (!employeeId && employees.length === 1) employeeId = employees[0].id;
 
-      if (employeeId && hasConflict(dayBookings, employeeId, startMin, endMin, null)) {
-        const proceed = confirm('Cet employe a deja un rendez-vous sur ce creneau. Creer quand meme ?');
+      if (employeeId && hasConflict(dayBookings, employeeId, startMin, endMin, editingBookingId)) {
+        const proceed = confirm('Cet employe a deja un rendez-vous sur ce creneau. Continuer quand meme ?');
         if (!proceed) return;
       }
 
       const submitBtn = document.getElementById('new-submit-btn');
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Creation...';
+      submitBtn.textContent = editingBookingId ? 'Enregistrement...' : 'Creation...';
 
       try {
-        await createBooking({
-          businessId: business.id,
-          serviceId: service.id,
-          dateKey: toDateKey(selectedDate),
-          startTime: startTime,
-          endTime: endTime,
-          customerName: clientNameVal,
-          customerPhone: phoneVal,
-          manualClientId: selectedManualClientId,
-          price: service.price,
-          employeeId: employeeId,
-        });
-        showToast('Reservation creee.');
+        if (editingBookingId) {
+          await updateBooking(editingBookingId, {
+            serviceId: service.id,
+            startTime: startTime,
+            endTime: endTime,
+            price: service.price,
+            employeeId: employeeId,
+            isManual: editingIsManual,
+            customerName: clientNameVal,
+            customerPhone: phoneVal,
+          });
+          showToast('Rendez-vous modifie.');
+        } else {
+          await createBooking({
+            businessId: business.id,
+            serviceId: service.id,
+            dateKey: toDateKey(selectedDate),
+            startTime: startTime,
+            endTime: endTime,
+            customerName: clientNameVal,
+            customerPhone: phoneVal,
+            manualClientId: selectedManualClientId,
+            price: service.price,
+            employeeId: employeeId,
+          });
+          showToast('Reservation creee.');
+        }
         closeNewBookingModal();
         await renderDayView();
       } catch (err) {
         console.error(err);
-        errorEl.textContent = 'Erreur lors de la creation de la reservation.';
+        errorEl.textContent = 'Erreur lors de l\'enregistrement de la reservation.';
         errorEl.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Creer la reservation';
+        submitBtn.textContent = editingBookingId ? 'Enregistrer les modifications' : 'Creer la reservation';
       }
     });
 

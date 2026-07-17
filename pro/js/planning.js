@@ -192,6 +192,31 @@ export async function createBooking(params) {
     return data.id;
 }
 
+// Met a jour une reservation existante (utilise par le modal en mode edition).
+// Ne touche au nom/telephone que si c'est une reservation manuelle (pas un vrai compte client app).
+export async function updateBooking(bookingId, params) {
+    const updateData = {
+        service_id: params.serviceId,
+        start_time: params.startTime,
+        end_time: params.endTime,
+        price: params.price || 0,
+    };
+    if (params.isManual) {
+        updateData.manual_customer_name = params.customerName;
+        if (params.customerPhone) {
+            updateData.manual_customer_phone = params.customerPhone;
+            updateData.notes = 'Tel: ' + params.customerPhone;
+        }
+    }
+    const { error } = await supabase.from('bookings').update(updateData).eq('id', bookingId);
+    if (error) throw error;
+
+    await supabase.from('booking_employees').delete().eq('booking_id', bookingId);
+    if (params.employeeId) {
+        await supabase.from('booking_employees').insert({ booking_id: bookingId, employee_id: params.employeeId });
+    }
+}
+
 export function bookingEmployeeIds(booking) {
     const rel = booking.booking_employees || [];
     return rel.map((r) => r.employee_id);

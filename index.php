@@ -33,6 +33,8 @@ $reservedPages = [
     'pro/catalogue'       => 'pro/catalogue.php',
     'pro/stock'           => 'pro/stock.php',
     'pro/clients'         => 'pro/clients.php',
+    'pro/client'          => 'pro/client.php',
+    'pro/manual-client'   => 'pro/manual-client.php',
 ];
 if (isset($reservedPages[$fullPath])) {
     $pageFile = __DIR__ . '/' . $reservedPages[$fullPath];

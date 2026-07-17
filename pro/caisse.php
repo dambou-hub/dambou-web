@@ -41,6 +41,10 @@ ini_set('log_errors', 1);
   .search-bar { margin-bottom: 14px; }
   .search-bar input { width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 14px; font-family: inherit; }
 
+  .category-chips { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .cat-chip { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text-medium); cursor: pointer; white-space: nowrap; }
+  .cat-chip.active { background: var(--primary); border-color: var(--primary); color: white; }
+
   #loading { text-align: center; padding: 60px 20px; color: var(--text-medium); }
   .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .catalogue-item { background: white; border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; cursor: pointer; text-align: left; font-family: inherit; }
@@ -112,6 +116,7 @@ ini_set('log_errors', 1);
   <div class="layout">
     <div>
       <div class="search-bar"><input type="text" id="item-search" placeholder="Rechercher un produit ou un service..."></div>
+      <div class="category-chips" id="category-chips"></div>
       <div id="loading">Chargement du catalogue...</div>
       <div class="item-grid" id="item-grid" style="display:none"></div>
     </div>
@@ -206,9 +211,12 @@ ini_set('log_errors', 1);
     import { requireAuth, getBusinessForUser, supabase } from '/pro/js/auth.js';
     import { searchClients, createManualClient } from '/pro/js/planning.js';
     import { loadCatalogueItems, loadLoyaltyCard, payCart, PAYMENT_METHOD_LABELS } from '/pro/js/caisse.js';
+    import { loadCategories } from '/pro/js/catalogue.js';
 
     let business = null;
+    let categories = [];
     let allItems = [];
+    let selectedCategoryId = null;
     let cart = []; // {id, name, unitPrice, qty, isProduct}
     let selectedClient = null; // {type:'dambou'|'guest', id, name, phone}
     let loyaltyCard = null;
@@ -233,10 +241,29 @@ ini_set('log_errors', 1);
     // -----------------------------------------------------
     // CATALOGUE (grille de vente)
     // -----------------------------------------------------
+    function renderCategoryChips() {
+      const wrap = document.getElementById('category-chips');
+      if (categories.length === 0) { wrap.style.display = 'none'; return; }
+      wrap.innerHTML = '';
+      const allChip = document.createElement('button');
+      allChip.className = 'cat-chip' + (selectedCategoryId === null ? ' active' : '');
+      allChip.textContent = 'Tout';
+      allChip.addEventListener('click', () => { selectedCategoryId = null; renderCategoryChips(); renderGrid(document.getElementById('item-search').value); });
+      wrap.appendChild(allChip);
+      categories.forEach((cat) => {
+        const chip = document.createElement('button');
+        chip.className = 'cat-chip' + (selectedCategoryId === cat.id ? ' active' : '');
+        chip.textContent = cat.name;
+        chip.addEventListener('click', () => { selectedCategoryId = cat.id; renderCategoryChips(); renderGrid(document.getElementById('item-search').value); });
+        wrap.appendChild(chip);
+      });
+    }
+
     function renderGrid(filter) {
       const grid = document.getElementById('item-grid');
       const q = (filter || '').toLowerCase().trim();
-      const list = q ? allItems.filter((i) => i.name.toLowerCase().includes(q)) : allItems;
+      let list = selectedCategoryId ? allItems.filter((i) => i.category_id === selectedCategoryId) : allItems;
+      if (q) list = list.filter((i) => i.name.toLowerCase().includes(q));
       grid.innerHTML = '';
       list.forEach((item) => {
         const btn = document.createElement('button');
@@ -582,8 +609,10 @@ ini_set('log_errors', 1);
         return;
       }
       allItems = await loadCatalogueItems(business.id);
+      categories = await loadCategories(business.id);
       document.getElementById('loading').style.display = 'none';
       document.getElementById('item-grid').style.display = 'grid';
+      renderCategoryChips();
       renderGrid('');
       renderCart();
     })();

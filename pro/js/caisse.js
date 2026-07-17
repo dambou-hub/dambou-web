@@ -34,7 +34,7 @@ export async function loadLoyaltyCard(businessId, customerId) {
 // cart: array de {id, name, unitPrice, qty, isProduct}
 // client: null | {type:'dambou', id, name, phone} | {type:'guest', name, phone}
 export async function payCart(params) {
-    const { cart, business, client, discountAmount, discountType, loyaltyDiscount, useLoyalty, loyaltyCard, method } = params;
+    const { cart, business, client, discountAmount, discountType, loyaltyDiscount, useLoyalty, loyaltyCard, method, bookingId } = params;
 
     const subtotal = cart.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
     const total = Math.max(subtotal - (discountAmount || 0) - (loyaltyDiscount || 0), 0);
@@ -60,6 +60,12 @@ export async function payCart(params) {
 
     const { data: txn, error: txnError } = await supabase.from('transactions').insert(insertData).select('id').single();
     if (txnError) throw txnError;
+
+    if (bookingId) {
+        try {
+            await supabase.from('bookings').update({ is_paid: true, payment_method: method, status: 'confirmed' }).eq('id', bookingId);
+        } catch (e) { /* ignore */ }
+    }
 
     // Decompte du stock pour les produits suivis
     for (const item of cart) {

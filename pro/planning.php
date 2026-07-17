@@ -124,9 +124,6 @@ ini_set('log_errors', 1);
   .confirm-actions button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
   .confirm-actions button.danger { background: var(--error); color: white; border-color: var(--error); }
 
-  .pm-btn { padding: 12px; border-radius: 10px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-dark); }
-  .pm-btn:hover { border-color: var(--primary); color: var(--primary-dark); background: rgba(0,191,165,0.06); }
-
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 60; display: none; }
   .toast.visible { display: block; }
   input:disabled { background: var(--background); color: var(--text-medium); cursor: not-allowed; }
@@ -188,32 +185,6 @@ ini_set('log_errors', 1);
         <div class="confirm-actions">
           <button id="confirm-cancel-no">Non</button>
           <button class="danger" id="confirm-cancel-yes">Oui, annuler</button>
-        </div>
-      </div>
-
-      <div class="confirm-box" id="payment-choice-box">
-        <div style="font-size:13px; color:var(--text-medium); margin-bottom:10px">Mode de paiement</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
-          <button type="button" class="pm-btn" data-method="cash">Especes</button>
-          <button type="button" class="pm-btn" data-method="card">Carte</button>
-          <button type="button" class="pm-btn" data-method="check">Cheque</button>
-          <button type="button" class="pm-btn" data-method="ticket_restaurant">Ticket resto</button>
-          <button type="button" class="pm-btn" data-method="free" style="grid-column:1 / -1">Offert</button>
-        </div>
-        <button type="button" id="payment-cancel-btn" style="width:100%; margin-top:10px; padding:9px; border:1px solid var(--card-border); background:white; border-radius:10px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer">Annuler</button>
-      </div>
-
-      <div class="confirm-box" id="cash-amount-box">
-        <div style="font-size:13px; color:var(--text-medium); margin-bottom:4px" id="cash-total-label">A encaisser</div>
-        <input type="number" id="cash-received" step="0.01" placeholder="Montant recu" autofocus
-          style="width:100%; padding:12px; border:1.5px solid var(--card-border); border-radius:12px; font-size:16px; font-weight:700; font-family:inherit; margin-bottom:10px">
-        <div id="cash-change-box" style="display:none; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-          <span id="cash-change-label" style="font-weight:700; font-size:13px"></span>
-          <span id="cash-change-value" style="font-weight:900; font-size:18px"></span>
-        </div>
-        <div class="confirm-actions">
-          <button id="cash-cancel-btn">Annuler</button>
-          <button class="danger" id="cash-confirm-btn" style="background:var(--primary); border-color:var(--primary)">Valider</button>
         </div>
       </div>
     </div>
@@ -318,7 +289,6 @@ ini_set('log_errors', 1);
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
       loadServices, searchClients, createManualClient, createBooking, updateBooking,
-      checkoutBooking, PAYMENT_METHOD_LABELS,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -701,7 +671,16 @@ ini_set('log_errors', 1);
         const svc = booking.services;
         const priceLabel = svc ? (Math.round(svc.price || 0) + '') : '0';
         container.appendChild(makeAction('\u{1F4B3}', 'Encaisser (' + priceLabel + ')', () => {
-          showSubPanel('payment-choice-box');
+          const params = new URLSearchParams();
+          if (booking.service_id) params.set('service_id', booking.service_id);
+          params.set('booking_id', booking.id);
+          if (booking.customer_id) {
+            params.set('customer_id', booking.customer_id);
+          }
+          params.set('customer_name', clientName(booking));
+          const phone = bookingPhone(booking);
+          if (phone) params.set('customer_phone', phone);
+          window.location.href = '/pro/caisse?' + params.toString();
         }));
       }
       container.appendChild(divider());
@@ -733,15 +712,11 @@ ini_set('log_errors', 1);
     function showSubPanel(id) {
       document.getElementById('panel-actions').style.display = 'none';
       document.getElementById('confirm-cancel-box').classList.remove('visible');
-      document.getElementById('payment-choice-box').classList.remove('visible');
-      document.getElementById('cash-amount-box').classList.remove('visible');
       document.getElementById(id).classList.add('visible');
     }
     function hideSubPanels() {
       document.getElementById('panel-actions').style.display = 'block';
       document.getElementById('confirm-cancel-box').classList.remove('visible');
-      document.getElementById('payment-choice-box').classList.remove('visible');
-      document.getElementById('cash-amount-box').classList.remove('visible');
     }
 
     function makeAction(icon, label, onClick, color) {
@@ -768,81 +743,6 @@ ini_set('log_errors', 1);
       showToast('Rendez-vous annule.');
       closePanel();
       await reloadCurrentView();
-    });
-
-    document.getElementById('payment-cancel-btn').addEventListener('click', hideSubPanels);
-    document.querySelectorAll('.pm-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!currentBooking) return;
-        const method = btn.dataset.method;
-
-        if (method === 'cash') {
-          const svc = currentBooking.services;
-          const price = svc ? (svc.price || 0) : (currentBooking.price || 0);
-          const currencySymbols = { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' };
-          const symbol = currencySymbols[(business && business.currency_code) || 'EUR'] || '\u20ac';
-          document.getElementById('cash-total-label').textContent = 'A encaisser : ' + Math.round(price) + ' ' + symbol;
-          document.getElementById('cash-received').value = '';
-          document.getElementById('cash-change-box').style.display = 'none';
-          document.getElementById('cash-confirm-btn').disabled = true;
-          showSubPanel('cash-amount-box');
-          document.getElementById('cash-received').focus();
-          return;
-        }
-
-        btn.disabled = true;
-        try {
-          await checkoutBooking(currentBooking, business, method);
-          showToast('Rendez-vous encaisse (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
-          closePanel();
-          await reloadCurrentView();
-        } catch (err) {
-          console.error(err);
-          showToast("Erreur lors de l'encaissement.");
-        } finally {
-          btn.disabled = false;
-        }
-      });
-    });
-
-    document.getElementById('cash-received').addEventListener('input', () => {
-      if (!currentBooking) return;
-      const svc = currentBooking.services;
-      const price = svc ? (svc.price || 0) : (currentBooking.price || 0);
-      const received = parseFloat(document.getElementById('cash-received').value) || 0;
-      const box = document.getElementById('cash-change-box');
-      const confirmBtn = document.getElementById('cash-confirm-btn');
-
-      if (!document.getElementById('cash-received').value) {
-        box.style.display = 'none';
-        confirmBtn.disabled = true;
-        return;
-      }
-      const change = received - price;
-      box.style.display = 'flex';
-      box.style.background = change >= 0 ? 'rgba(56,161,105,0.1)' : 'rgba(229,62,62,0.1)';
-      document.getElementById('cash-change-label').textContent = change >= 0 ? 'Monnaie' : 'Insuffisant';
-      document.getElementById('cash-change-label').style.color = change >= 0 ? 'var(--success)' : 'var(--error)';
-      document.getElementById('cash-change-value').textContent = Math.abs(change).toFixed(2);
-      document.getElementById('cash-change-value').style.color = change >= 0 ? 'var(--success)' : 'var(--error)';
-      confirmBtn.disabled = change < 0;
-    });
-
-    document.getElementById('cash-cancel-btn').addEventListener('click', hideSubPanels);
-    document.getElementById('cash-confirm-btn').addEventListener('click', async () => {
-      if (!currentBooking) return;
-      const btn = document.getElementById('cash-confirm-btn');
-      btn.disabled = true;
-      try {
-        await checkoutBooking(currentBooking, business, 'cash');
-        showToast('Rendez-vous encaisse (Especes).');
-        closePanel();
-        await reloadCurrentView();
-      } catch (err) {
-        console.error(err);
-        showToast("Erreur lors de l'encaissement.");
-        btn.disabled = false;
-      }
     });
 
     // -----------------------------------------------------

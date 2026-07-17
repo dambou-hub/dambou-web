@@ -123,6 +123,9 @@ ini_set('log_errors', 1);
 
     <div class="cart-panel">
       <h2>Vente en cours</h2>
+      <div id="booking-banner" style="display:none; background:rgba(0,191,165,0.08); border:1px solid rgba(0,191,165,0.25); border-radius:10px; padding:8px 12px; font-size:12px; color:var(--primary-dark); margin-bottom:12px">
+        &#128197; Encaissement d'un rendez-vous -- vous pouvez ajouter d'autres articles avant de valider.
+      </div>
 
       <div class="client-box" id="client-box">
         <span class="placeholder" id="client-placeholder">Client de passage (optionnel)</span>
@@ -221,6 +224,7 @@ ini_set('log_errors', 1);
     let selectedClient = null; // {type:'dambou'|'guest', id, name, phone}
     let loyaltyCard = null;
     let useLoyalty = false;
+    let sourceBookingId = null; // si on arrive depuis "Encaisser" sur un RDV du planning
 
     function escapeHtml(str) {
       const div = document.createElement('div');
@@ -584,11 +588,12 @@ ini_set('log_errors', 1);
           cart: cart, business: business, client: selectedClient,
           discountAmount: t.discountAmount, discountType: t.discountType,
           loyaltyDiscount: t.loyaltyDiscount, useLoyalty: useLoyalty, loyaltyCard: loyaltyCard,
-          method: method,
+          method: method, bookingId: sourceBookingId,
         });
         showToast('Vente encaissee (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
-        cart = []; selectedClient = null; loyaltyCard = null; useLoyalty = false;
+        cart = []; selectedClient = null; loyaltyCard = null; useLoyalty = false; sourceBookingId = null;
         document.getElementById('discount-value').value = '';
+        document.getElementById('booking-banner').style.display = 'none';
         renderCart();
         updateClientBox();
       } catch (err) {
@@ -615,6 +620,29 @@ ini_set('log_errors', 1);
       renderCategoryChips();
       renderGrid('');
       renderCart();
+
+      // Arrivee depuis "Encaisser" sur un RDV du planning : precharge service + client.
+      const urlParams = new URLSearchParams(window.location.search);
+      const preselectServiceId = urlParams.get('service_id');
+      const preselectBookingId = urlParams.get('booking_id');
+      const preselectCustomerId = urlParams.get('customer_id');
+      const preselectCustomerName = urlParams.get('customer_name');
+      const preselectCustomerPhone = urlParams.get('customer_phone');
+
+      if (preselectServiceId) {
+        const item = allItems.find((i) => i.id === preselectServiceId);
+        if (item) addToCart(item);
+      }
+      if (preselectBookingId) {
+        sourceBookingId = preselectBookingId;
+        document.getElementById('booking-banner').style.display = 'block';
+      }
+      if (preselectCustomerId) {
+        await selectDambouClient(preselectCustomerId, preselectCustomerName || 'Client', preselectCustomerPhone || '');
+      } else if (preselectCustomerName) {
+        selectedClient = { type: 'guest', name: preselectCustomerName, phone: preselectCustomerPhone || '' };
+        updateClientBox();
+      }
     })();
   </script>
 </body>

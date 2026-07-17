@@ -162,7 +162,7 @@ ini_set('log_errors', 1);
           <div class="field"><label>Stock actuel</label><input type="number" id="item-stock-qty" min="0"></div>
           <div class="field"><label>Seuil d'alerte</label><input type="number" id="item-stock-alert" min="0" value="5"></div>
         </div>
-        <div class="field" style="margin-top:8px"><label>TVA</label>
+        <div class="field" id="tva-field" style="margin-top:8px"><label>TVA</label>
           <select id="item-tva"></select>
         </div>
       </div>
@@ -374,6 +374,11 @@ ini_set('log_errors', 1);
 
       document.getElementById('duration-field').style.display = isProduct ? 'none' : 'block';
       document.getElementById('product-fields').style.display = isProduct ? 'block' : 'none';
+      // TVA : uniquement sur les produits (colonne absente sur services en base,
+      // meme dans l'app mobile ou le champ est affiche mais jamais sauvegarde pour les services)
+      // et uniquement si le pro est assujetti a la TVA (businesses.is_tva_assujetti).
+      const tvaAssujetti = !!(business && business.is_tva_assujetti);
+      document.getElementById('tva-field').style.display = (isProduct && tvaAssujetti) ? 'block' : 'none';
 
       const imgPreview = document.getElementById('image-preview');
       const imgPlaceholder = document.getElementById('image-upload-placeholder');

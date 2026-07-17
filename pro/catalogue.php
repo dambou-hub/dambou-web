@@ -162,9 +162,10 @@ ini_set('log_errors', 1);
           <div class="field"><label>Stock actuel</label><input type="number" id="item-stock-qty" min="0"></div>
           <div class="field"><label>Seuil d'alerte</label><input type="number" id="item-stock-alert" min="0" value="5"></div>
         </div>
-        <div class="field" id="tva-field" style="margin-top:8px"><label>TVA</label>
-          <select id="item-tva"></select>
-        </div>
+      </div>
+
+      <div class="field" id="tva-field" style="margin-top:8px"><label>TVA</label>
+        <select id="item-tva"></select>
       </div>
 
       <div class="toggle-row"><label>Actif (visible pour les clients)</label><input type="checkbox" id="item-active" checked></div>
@@ -374,11 +375,10 @@ ini_set('log_errors', 1);
 
       document.getElementById('duration-field').style.display = isProduct ? 'none' : 'block';
       document.getElementById('product-fields').style.display = isProduct ? 'block' : 'none';
-      // TVA : uniquement sur les produits (colonne absente sur services en base,
-      // meme dans l'app mobile ou le champ est affiche mais jamais sauvegarde pour les services)
-      // et uniquement si le pro est assujetti a la TVA (businesses.is_tva_assujetti).
+      // TVA : produits ET services desormais (colonne ajoutee sur services), uniquement
+      // si le pro est assujetti a la TVA (businesses.is_tva_assujetti).
       const tvaAssujetti = !!(business && business.is_tva_assujetti);
-      document.getElementById('tva-field').style.display = (isProduct && tvaAssujetti) ? 'block' : 'none';
+      document.getElementById('tva-field').style.display = tvaAssujetti ? 'block' : 'none';
 
       const imgPreview = document.getElementById('image-preview');
       const imgPlaceholder = document.getElementById('image-upload-placeholder');
@@ -396,9 +396,9 @@ ini_set('log_errors', 1);
           document.getElementById('item-track-stock').checked = !!item.track_stock;
           document.getElementById('item-stock-qty').value = item.stock_qty || 0;
           document.getElementById('item-stock-alert').value = item.stock_alert != null ? item.stock_alert : 5;
-          document.getElementById('item-tva').value = item.tva_rate != null ? item.tva_rate : 20;
           document.getElementById('stock-fields').style.display = item.track_stock ? 'grid' : 'none';
         }
+        document.getElementById('item-tva').value = item.tva_rate != null ? item.tva_rate : 20;
         if (item.image_url) {
           imgPreview.src = item.image_url; imgPreview.style.display = 'block'; imgPlaceholder.style.display = 'none';
         } else {

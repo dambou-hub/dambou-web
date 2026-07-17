@@ -129,7 +129,9 @@ export async function saveItem(isProduct, itemId, params) {
         data.stock_qty = params.stockQty || 0;
         data.stock_alert = params.stockAlert != null ? params.stockAlert : 5;
         data.track_stock = !!params.trackStock;
-        data.tva_rate = params.tvaRate != null ? params.tvaRate : 20.0;
+    }
+    if (params.tvaRate != null) {
+        data.tva_rate = params.tvaRate;
     }
 
     if (itemId) {

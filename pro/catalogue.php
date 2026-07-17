@@ -87,6 +87,13 @@ ini_set('log_errors', 1);
   .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
   .modal-actions .btn { flex: 1; }
   .btn-danger { background: rgba(229,62,62,0.1); color: var(--error); }
+
+  .type-choice-btn {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px;
+    border: 1.5px solid var(--card-border); border-radius: 14px; background: white;
+    font-family: inherit; font-size: 14px; text-align: left; cursor: pointer; margin-bottom: 10px;
+  }
+  .type-choice-btn:hover { border-color: var(--primary); background: rgba(0,191,165,0.04); }
   .error-msg { display: none; background: rgba(229,62,62,0.08); color: var(--error); font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
   .error-msg.visible { display: block; }
 
@@ -111,6 +118,22 @@ ini_set('log_errors', 1);
 
     <div id="loading">Chargement du catalogue...</div>
     <div id="catalogue-content" style="display:none"></div>
+  </div>
+
+  <!-- Choix service ou produit -->
+  <div class="overlay" id="type-choice-overlay">
+    <div class="panel" style="max-width:340px">
+      <h3>Type d'element</h3>
+      <button type="button" class="type-choice-btn" id="choice-service">
+        <span style="font-size:22px">&#128467;</span>
+        <span><strong>Prestation / Service</strong><br><span style="font-weight:400; color:var(--text-medium)">Massage, coaching, cours...</span></span>
+      </button>
+      <button type="button" class="type-choice-btn" id="choice-product">
+        <span style="font-size:22px">&#128230;</span>
+        <span><strong>Produit a vendre</strong><br><span style="font-weight:400; color:var(--text-medium)">Whey, huile, creme...</span></span>
+      </button>
+      <button class="btn btn-outline" id="type-choice-cancel" style="width:100%; margin-top:8px">Annuler</button>
+    </div>
   </div>
 
   <!-- Modal edition produit/service -->
@@ -247,7 +270,7 @@ ini_set('log_errors', 1);
       const addTile = document.createElement('button');
       addTile.className = 'add-tile';
       addTile.innerHTML = '<span style="font-size:20px">+</span><span>Ajouter</span>';
-      addTile.addEventListener('click', () => openItemModal(null, category ? category.id : null, true));
+      addTile.addEventListener('click', () => openTypeChoice(category ? category.id : null));
       grid.appendChild(addTile);
 
       section.appendChild(grid);
@@ -272,6 +295,27 @@ ini_set('log_errors', 1);
       card.addEventListener('click', () => openItemModal(item, item.category_id, item._type === 'product'));
       return card;
     }
+
+    let pendingAddCategoryId = null;
+
+    function openTypeChoice(categoryId) {
+      pendingAddCategoryId = categoryId;
+      document.getElementById('type-choice-overlay').classList.add('visible');
+    }
+    document.getElementById('type-choice-cancel').addEventListener('click', () => {
+      document.getElementById('type-choice-overlay').classList.remove('visible');
+    });
+    document.getElementById('type-choice-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'type-choice-overlay') document.getElementById('type-choice-overlay').classList.remove('visible');
+    });
+    document.getElementById('choice-service').addEventListener('click', () => {
+      document.getElementById('type-choice-overlay').classList.remove('visible');
+      openItemModal(null, pendingAddCategoryId, false);
+    });
+    document.getElementById('choice-product').addEventListener('click', () => {
+      document.getElementById('type-choice-overlay').classList.remove('visible');
+      openItemModal(null, pendingAddCategoryId, true);
+    });
 
     async function onDeleteCategory(category) {
       if (!confirm('La categorie "' + category.name + '" et tous ses elements seront supprimes. Continuer ?')) return;

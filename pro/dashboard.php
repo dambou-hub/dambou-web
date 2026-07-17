@@ -127,6 +127,11 @@ ini_set('log_errors', 1);
           <h3>Catalogue</h3>
           <p>Produits et services proposes</p>
         </a>
+        <a class="nav-card" href="/pro/caisse" id="card-caisse">
+          <div class="icon" style="background:rgba(82,183,136,0.1)">&#128179;</div>
+          <h3>Caisse</h3>
+          <p>Vente sur place et encaissement</p>
+        </a>
         <a class="nav-card" href="/pro/clients">
           <div class="icon" style="background:rgba(49,130,206,0.1)">&#128101;</div>
           <h3>Clients</h3>
@@ -163,6 +168,10 @@ ini_set('log_errors', 1);
       if (!hasBooking) {
         document.getElementById('card-planning').remove();
         document.getElementById('card-reservations').remove();
+      }
+      const hasPos = activeModules.some((m) => m.module_type === 'pos');
+      if (!hasPos) {
+        document.getElementById('card-caisse').remove();
       }
 
       loadingEl.style.display = 'none';

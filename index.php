@@ -30,6 +30,7 @@ $reservedPages = [
     'pro/planning'        => 'pro/planning.php',
     'pro/reservations'    => 'pro/reservations.php',
     'pro/catalogue'       => 'pro/catalogue.php',
+    'pro/stock'           => 'pro/stock.php',
     'pro/clients'         => 'pro/clients.php',
 ];
 if (isset($reservedPages[$fullPath])) {

@@ -202,6 +202,20 @@ ini_set('log_errors', 1);
         </div>
         <button type="button" id="payment-cancel-btn" style="width:100%; margin-top:10px; padding:9px; border:1px solid var(--card-border); background:white; border-radius:10px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer">Annuler</button>
       </div>
+
+      <div class="confirm-box" id="cash-amount-box">
+        <div style="font-size:13px; color:var(--text-medium); margin-bottom:4px" id="cash-total-label">A encaisser</div>
+        <input type="number" id="cash-received" step="0.01" placeholder="Montant recu" autofocus
+          style="width:100%; padding:12px; border:1.5px solid var(--card-border); border-radius:12px; font-size:16px; font-weight:700; font-family:inherit; margin-bottom:10px">
+        <div id="cash-change-box" style="display:none; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+          <span id="cash-change-label" style="font-weight:700; font-size:13px"></span>
+          <span id="cash-change-value" style="font-weight:900; font-size:18px"></span>
+        </div>
+        <div class="confirm-actions">
+          <button id="cash-cancel-btn">Annuler</button>
+          <button class="danger" id="cash-confirm-btn" style="background:var(--primary); border-color:var(--primary)">Valider</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -644,8 +658,7 @@ ini_set('log_errors', 1);
         phoneEl.style.display = 'none';
       }
 
-      document.getElementById('confirm-cancel-box').classList.remove('visible');
-      document.getElementById('payment-choice-box').classList.remove('visible');
+      hideSubPanels();
       renderPanelActions(booking);
       document.getElementById('panel-overlay').classList.add('visible');
     }
@@ -688,7 +701,7 @@ ini_set('log_errors', 1);
         const svc = booking.services;
         const priceLabel = svc ? (Math.round(svc.price || 0) + '') : '0';
         container.appendChild(makeAction('\u{1F4B3}', 'Encaisser (' + priceLabel + ')', () => {
-          document.getElementById('payment-choice-box').classList.add('visible');
+          showSubPanel('payment-choice-box');
         }));
       }
       container.appendChild(divider());
@@ -711,8 +724,24 @@ ini_set('log_errors', 1);
       }
 
       container.appendChild(makeAction('\u2716', 'Annuler le rendez-vous', () => {
-        document.getElementById('confirm-cancel-box').classList.add('visible');
+        showSubPanel('confirm-cancel-box');
       }, 'var(--error)'));
+    }
+
+    // Affiche un sous-panneau (paiement / confirmation) et masque la liste d'actions
+    // pour eviter de pouvoir cliquer une autre action pendant qu'un sous-panneau est ouvert.
+    function showSubPanel(id) {
+      document.getElementById('panel-actions').style.display = 'none';
+      document.getElementById('confirm-cancel-box').classList.remove('visible');
+      document.getElementById('payment-choice-box').classList.remove('visible');
+      document.getElementById('cash-amount-box').classList.remove('visible');
+      document.getElementById(id).classList.add('visible');
+    }
+    function hideSubPanels() {
+      document.getElementById('panel-actions').style.display = 'block';
+      document.getElementById('confirm-cancel-box').classList.remove('visible');
+      document.getElementById('payment-choice-box').classList.remove('visible');
+      document.getElementById('cash-amount-box').classList.remove('visible');
     }
 
     function makeAction(icon, label, onClick, color) {
@@ -732,9 +761,7 @@ ini_set('log_errors', 1);
     document.getElementById('panel-overlay').addEventListener('click', (e) => {
       if (e.target.id === 'panel-overlay') closePanel();
     });
-    document.getElementById('confirm-cancel-no').addEventListener('click', () => {
-      document.getElementById('confirm-cancel-box').classList.remove('visible');
-    });
+    document.getElementById('confirm-cancel-no').addEventListener('click', hideSubPanels);
     document.getElementById('confirm-cancel-yes').addEventListener('click', async () => {
       if (!currentBooking) return;
       await cancelBooking(currentBooking.id);
@@ -743,13 +770,26 @@ ini_set('log_errors', 1);
       await reloadCurrentView();
     });
 
-    document.getElementById('payment-cancel-btn').addEventListener('click', () => {
-      document.getElementById('payment-choice-box').classList.remove('visible');
-    });
+    document.getElementById('payment-cancel-btn').addEventListener('click', hideSubPanels);
     document.querySelectorAll('.pm-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         if (!currentBooking) return;
         const method = btn.dataset.method;
+
+        if (method === 'cash') {
+          const svc = currentBooking.services;
+          const price = svc ? (svc.price || 0) : (currentBooking.price || 0);
+          const currencySymbols = { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' };
+          const symbol = currencySymbols[(business && business.currency_code) || 'EUR'] || '\u20ac';
+          document.getElementById('cash-total-label').textContent = 'A encaisser : ' + Math.round(price) + ' ' + symbol;
+          document.getElementById('cash-received').value = '';
+          document.getElementById('cash-change-box').style.display = 'none';
+          document.getElementById('cash-confirm-btn').disabled = true;
+          showSubPanel('cash-amount-box');
+          document.getElementById('cash-received').focus();
+          return;
+        }
+
         btn.disabled = true;
         try {
           await checkoutBooking(currentBooking, business, method);
@@ -763,6 +803,46 @@ ini_set('log_errors', 1);
           btn.disabled = false;
         }
       });
+    });
+
+    document.getElementById('cash-received').addEventListener('input', () => {
+      if (!currentBooking) return;
+      const svc = currentBooking.services;
+      const price = svc ? (svc.price || 0) : (currentBooking.price || 0);
+      const received = parseFloat(document.getElementById('cash-received').value) || 0;
+      const box = document.getElementById('cash-change-box');
+      const confirmBtn = document.getElementById('cash-confirm-btn');
+
+      if (!document.getElementById('cash-received').value) {
+        box.style.display = 'none';
+        confirmBtn.disabled = true;
+        return;
+      }
+      const change = received - price;
+      box.style.display = 'flex';
+      box.style.background = change >= 0 ? 'rgba(56,161,105,0.1)' : 'rgba(229,62,62,0.1)';
+      document.getElementById('cash-change-label').textContent = change >= 0 ? 'Monnaie' : 'Insuffisant';
+      document.getElementById('cash-change-label').style.color = change >= 0 ? 'var(--success)' : 'var(--error)';
+      document.getElementById('cash-change-value').textContent = Math.abs(change).toFixed(2);
+      document.getElementById('cash-change-value').style.color = change >= 0 ? 'var(--success)' : 'var(--error)';
+      confirmBtn.disabled = change < 0;
+    });
+
+    document.getElementById('cash-cancel-btn').addEventListener('click', hideSubPanels);
+    document.getElementById('cash-confirm-btn').addEventListener('click', async () => {
+      if (!currentBooking) return;
+      const btn = document.getElementById('cash-confirm-btn');
+      btn.disabled = true;
+      try {
+        await checkoutBooking(currentBooking, business, 'cash');
+        showToast('Rendez-vous encaisse (Especes).');
+        closePanel();
+        await reloadCurrentView();
+      } catch (err) {
+        console.error(err);
+        showToast("Erreur lors de l'encaissement.");
+        btn.disabled = false;
+      }
     });
 
     // -----------------------------------------------------

@@ -125,6 +125,9 @@ export async function saveItem(isProduct, itemId, params) {
     if (!isProduct && params.duration) {
         data.duration = params.duration;
     }
+    if (!isProduct) {
+        data.max_participants = params.maxParticipants && params.maxParticipants > 1 ? params.maxParticipants : 1;
+    }
     if (isProduct) {
         data.stock_qty = params.stockQty || 0;
         data.stock_alert = params.stockAlert != null ? params.stockAlert : 5;

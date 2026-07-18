@@ -154,6 +154,11 @@ ini_set('log_errors', 1);
         <div class="field"><label>Prix</label><input type="number" id="item-price" step="0.01" min="0"></div>
         <div class="field" id="duration-field"><label>Dur&eacute;e (min)</label><input type="number" id="item-duration" min="0"></div>
       </div>
+      <div class="field" id="participants-field" style="display:none">
+        <label>Places (laisser 1 pour un rendez-vous individuel classique)</label>
+        <input type="number" id="item-max-participants" min="1" value="1">
+        <div style="font-size:11px; color:var(--text-light); margin-top:4px">Au-dessus de 1, ce service devient un atelier : plusieurs clients peuvent s'inscrire sur le meme creneau.</div>
+      </div>
       <div class="field"><label>Cat&eacute;gorie</label><select id="item-category"></select></div>
 
       <div id="product-fields">
@@ -374,6 +379,7 @@ ini_set('log_errors', 1);
       populateTvaSelect();
 
       document.getElementById('duration-field').style.display = isProduct ? 'none' : 'block';
+      document.getElementById('participants-field').style.display = isProduct ? 'none' : 'block';
       document.getElementById('product-fields').style.display = isProduct ? 'block' : 'none';
       // TVA : produits ET services desormais (colonne ajoutee sur services), uniquement
       // si le pro est assujetti a la TVA (businesses.is_tva_assujetti).
@@ -390,6 +396,7 @@ ini_set('log_errors', 1);
         document.getElementById('item-description').value = item.description || '';
         document.getElementById('item-price').value = item.price != null ? item.price : '';
         document.getElementById('item-duration').value = item.duration || '';
+        document.getElementById('item-max-participants').value = item.max_participants || 1;
         document.getElementById('item-category').value = item.category_id || '';
         document.getElementById('item-active').checked = item.is_active !== false;
         if (isProduct) {
@@ -412,6 +419,7 @@ ini_set('log_errors', 1);
         document.getElementById('item-description').value = '';
         document.getElementById('item-price').value = '';
         document.getElementById('item-duration').value = '';
+        document.getElementById('item-max-participants').value = 1;
         document.getElementById('item-category').value = categoryId || '';
         document.getElementById('item-active').checked = true;
         document.getElementById('item-track-stock').checked = false;
@@ -494,6 +502,7 @@ ini_set('log_errors', 1);
           description: document.getElementById('item-description').value.trim(),
           price: price,
           duration: parseInt(document.getElementById('item-duration').value, 10) || null,
+          maxParticipants: parseInt(document.getElementById('item-max-participants').value, 10) || 1,
           isActive: document.getElementById('item-active').checked,
           trackStock: document.getElementById('item-track-stock').checked,
           stockQty: parseInt(document.getElementById('item-stock-qty').value, 10) || 0,

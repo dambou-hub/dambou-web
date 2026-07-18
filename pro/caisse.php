@@ -47,17 +47,26 @@ ini_set('log_errors', 1);
 
   #loading { text-align: center; padding: 60px 20px; color: var(--text-medium); }
   .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .catalogue-item { background: white; border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; cursor: pointer; text-align: left; font-family: inherit; }
-  .catalogue-item:hover { border-color: var(--primary); }
-  .catalogue-item .ci-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .catalogue-item .ci-price { font-size: 13px; font-weight: 800; color: var(--primary-dark); }
-  .catalogue-item .ci-badge { font-size: 9px; font-weight: 700; color: var(--text-light); text-transform: uppercase; }
+  .catalogue-item { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 0; cursor: pointer; text-align: left; font-family: inherit; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s; }
+  .catalogue-item:hover { border-color: var(--primary); box-shadow: 0 6px 18px -6px rgba(0,191,165,0.25); transform: translateY(-1px); }
+  .ci-thumb { width: 100%; height: 84px; display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; }
+  .ci-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .ci-thumb.product { background: linear-gradient(135deg, rgba(244,162,97,0.18), rgba(244,162,97,0.06)); }
+  .ci-thumb.service { background: linear-gradient(135deg, rgba(0,191,165,0.18), rgba(0,191,165,0.06)); }
+  .ci-body { padding: 10px 12px 12px; }
+  .catalogue-item .ci-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .catalogue-item .ci-price { font-size: 14px; font-weight: 800; color: var(--primary-dark); }
+  .catalogue-item .ci-badge { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 7px; border-radius: 6px; margin-bottom: 6px; }
+  .ci-badge.product { color: #C2703B; background: rgba(244,162,97,0.15); }
+  .ci-badge.service { color: var(--primary-dark); background: rgba(0,191,165,0.12); }
 
   /* Panneau caisse (droite) */
   .cart-panel { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 18px; position: sticky; top: 20px; }
   .cart-panel h2 { font-size: 15px; font-weight: 800; margin-bottom: 12px; }
 
-  .client-box { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1.5px solid var(--card-border); border-radius: 12px; cursor: pointer; margin-bottom: 14px; }
+  .client-box { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1.5px dashed var(--card-border); border-radius: 12px; cursor: pointer; margin-bottom: 14px; transition: border-color 0.15s, background 0.15s; }
+  .client-box:hover { border-color: var(--primary); }
+  .client-box.has-client { border-style: solid; border-color: rgba(0,191,165,0.35); background: rgba(0,191,165,0.06); }
   .client-box .placeholder { color: var(--text-light); font-size: 13px; flex: 1; }
   .client-box .selected { display: none; align-items: center; gap: 8px; flex: 1; min-width: 0; }
   .client-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,191,165,0.15); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
@@ -80,7 +89,13 @@ ini_set('log_errors', 1);
 
   .totals { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 6px; }
   .totals-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-medium); padding: 2px 0; }
-  .totals-row.grand { font-size: 20px; font-weight: 900; color: var(--text-dark); padding-top: 6px; }
+  .total-block {
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 14px; padding: 14px 16px; margin-top: 10px; color: white;
+  }
+  .total-block span:first-child { font-size: 13px; font-weight: 700; opacity: 0.9; }
+  .total-block span:last-child { font-size: 24px; font-weight: 900; }
 
   .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
   .pay-btn { padding: 12px; border-radius: 12px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -154,7 +169,10 @@ ini_set('log_errors', 1);
         <div class="totals-row"><span>Sous-total</span><span id="t-subtotal">0</span></div>
         <div class="totals-row" id="t-discount-row" style="display:none"><span>Remise</span><span id="t-discount">0</span></div>
         <div class="totals-row" id="t-loyalty-row" style="display:none"><span>Fidelite</span><span id="t-loyalty">0</span></div>
-        <div class="totals-row grand"><span>Total</span><span id="t-total">0</span></div>
+      </div>
+      <div class="total-block">
+        <span>Total</span>
+        <span id="t-total">0</span>
       </div>
 
       <div class="pay-grid">
@@ -270,11 +288,20 @@ ini_set('log_errors', 1);
       if (q) list = list.filter((i) => i.name.toLowerCase().includes(q));
       grid.innerHTML = '';
       list.forEach((item) => {
+        const typeClass = item._isProduct ? 'product' : 'service';
+        const fallbackIcon = item._isProduct ? '&#128230;' : '&#10024;';
+        const thumb = item.image_url
+          ? '<div class="ci-thumb ' + typeClass + '"><img src="' + escapeHtml(item.image_url) + '" alt=""></div>'
+          : '<div class="ci-thumb ' + typeClass + '">' + fallbackIcon + '</div>';
+
         const btn = document.createElement('button');
         btn.className = 'catalogue-item';
-        btn.innerHTML = '<div class="ci-badge">' + (item._isProduct ? 'Produit' : 'Service') + '</div>' +
+        btn.innerHTML = thumb +
+          '<div class="ci-body">' +
+          '<div class="ci-badge ' + typeClass + '">' + (item._isProduct ? 'Produit' : 'Service') + '</div>' +
           '<div class="ci-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="ci-price">' + fmt(item.price || 0) + '</div>';
+          '<div class="ci-price">' + fmt(item.price || 0) + '</div>' +
+          '</div>';
         btn.addEventListener('click', () => addToCart(item));
         grid.appendChild(btn);
       });
@@ -365,16 +392,19 @@ ini_set('log_errors', 1);
       const placeholder = document.getElementById('client-placeholder');
       const sel = document.getElementById('client-selected');
       const loyaltyRow = document.getElementById('loyalty-row');
+      const box = document.getElementById('client-box');
       if (!selectedClient) {
         placeholder.style.display = 'block';
         sel.style.display = 'none';
         loyaltyRow.style.display = 'none';
+        box.classList.remove('has-client');
         useLoyalty = false;
         document.getElementById('use-loyalty-cb').checked = false;
         return;
       }
       placeholder.style.display = 'none';
       sel.style.display = 'flex';
+      box.classList.add('has-client');
       document.getElementById('cb-avatar').textContent = (selectedClient.name || '?').charAt(0).toUpperCase();
       document.getElementById('cb-name').textContent = selectedClient.name || 'Client';
       document.getElementById('cb-badge').style.display = selectedClient.type === 'dambou' ? 'inline-block' : 'none';

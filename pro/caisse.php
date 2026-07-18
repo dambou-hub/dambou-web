@@ -49,16 +49,11 @@ ini_set('log_errors', 1);
   .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .catalogue-item { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 0; cursor: pointer; text-align: left; font-family: inherit; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s; }
   .catalogue-item:hover { border-color: var(--primary); box-shadow: 0 6px 18px -6px rgba(0,191,165,0.25); transform: translateY(-1px); }
-  .ci-thumb { width: 100%; height: 84px; display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; }
-  .ci-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .ci-thumb.product { background: linear-gradient(135deg, rgba(244,162,97,0.18), rgba(244,162,97,0.06)); }
-  .ci-thumb.service { background: linear-gradient(135deg, rgba(0,191,165,0.18), rgba(0,191,165,0.06)); }
+  .ci-thumb { width: 100%; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
   .ci-body { padding: 10px 12px 12px; }
   .catalogue-item .ci-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .catalogue-item .ci-price { font-size: 14px; font-weight: 800; color: var(--primary-dark); }
   .catalogue-item .ci-badge { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 7px; border-radius: 6px; margin-bottom: 6px; }
-  .ci-badge.product { color: #C2703B; background: rgba(244,162,97,0.15); }
-  .ci-badge.service { color: var(--primary-dark); background: rgba(0,191,165,0.12); }
 
   /* Panneau caisse (droite) */
   .cart-panel { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 18px; position: sticky; top: 20px; }
@@ -273,12 +268,25 @@ ini_set('log_errors', 1);
       allChip.addEventListener('click', () => { selectedCategoryId = null; renderCategoryChips(); renderGrid(document.getElementById('item-search').value); });
       wrap.appendChild(allChip);
       categories.forEach((cat) => {
+        const isActive = selectedCategoryId === cat.id;
+        const color = categoryColor(cat.id);
         const chip = document.createElement('button');
-        chip.className = 'cat-chip' + (selectedCategoryId === cat.id ? ' active' : '');
+        chip.className = 'cat-chip' + (isActive ? ' active' : '');
+        if (isActive) { chip.style.background = color; chip.style.borderColor = color; }
         chip.textContent = cat.name;
         chip.addEventListener('click', () => { selectedCategoryId = cat.id; renderCategoryChips(); renderGrid(document.getElementById('item-search').value); });
         wrap.appendChild(chip);
       });
+    }
+
+    // Couleur toujours identique pour une meme categorie (hash du category_id sur une palette fixe).
+    // Pas de couleur au hasard a chaque affichage, et pas configurable par le pro.
+    const CATEGORY_PALETTE = ['#F4A261', '#00BFA5', '#E91E8C', '#0097A7', '#6C63FF', '#38A169', '#DD6B20', '#3182CE', '#B7891E', '#805AD5'];
+    function categoryColor(categoryId) {
+      if (!categoryId) return '#A0AEC0';
+      let hash = 0;
+      for (let i = 0; i < categoryId.length; i++) { hash = (hash * 31 + categoryId.charCodeAt(i)) >>> 0; }
+      return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
     }
 
     function renderGrid(filter) {
@@ -288,17 +296,16 @@ ini_set('log_errors', 1);
       if (q) list = list.filter((i) => i.name.toLowerCase().includes(q));
       grid.innerHTML = '';
       list.forEach((item) => {
-        const typeClass = item._isProduct ? 'product' : 'service';
-        const fallbackIcon = item._isProduct ? '&#128230;' : '&#10024;';
-        const thumb = item.image_url
-          ? '<div class="ci-thumb ' + typeClass + '"><img src="' + escapeHtml(item.image_url) + '" alt=""></div>'
-          : '<div class="ci-thumb ' + typeClass + '">' + fallbackIcon + '</div>';
+        const color = categoryColor(item.category_id);
+        const icon = item._isProduct ? '&#128230;' : '&#10024;';
 
         const btn = document.createElement('button');
         btn.className = 'catalogue-item';
-        btn.innerHTML = thumb +
+        btn.innerHTML =
+          '<div class="ci-thumb" style="background:linear-gradient(135deg, ' + color + '2E, ' + color + '0D)">' +
+          '<span style="color:' + color + '">' + icon + '</span></div>' +
           '<div class="ci-body">' +
-          '<div class="ci-badge ' + typeClass + '">' + (item._isProduct ? 'Produit' : 'Service') + '</div>' +
+          '<div class="ci-badge" style="background:' + color + '1F; color:' + color + '">' + (item._isProduct ? 'Produit' : 'Service') + '</div>' +
           '<div class="ci-name">' + escapeHtml(item.name) + '</div>' +
           '<div class="ci-price">' + fmt(item.price || 0) + '</div>' +
           '</div>';

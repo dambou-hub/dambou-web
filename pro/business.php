@@ -86,7 +86,10 @@ ini_set('log_errors', 1);
 <body>
   <div class="topbar">
     <a class="brand" href="/pro"><img src="/assets/icon.png" alt=""> Dambou Pro</a>
-    <a class="back-link" href="/pro">Retour au tableau de bord</a>
+    <div style="display:flex; align-items:center; gap:16px">
+      <a class="back-link" href="/pro/modules">Modules</a>
+      <a class="back-link" href="/pro">Retour au tableau de bord</a>
+    </div>
   </div>
 
   <div class="container">

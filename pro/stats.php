@@ -112,63 +112,80 @@ ini_set('log_errors', 1);
 
     async function loadAndRender() {
       document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').textContent = 'Chargement des statistiques...';
       document.getElementById('content').style.display = 'none';
 
-      const stats = await loadStats(business.id, periodIndex);
+      try {
+        const stats = await loadStats(business.id, periodIndex);
 
-      const container = document.getElementById('content');
-      container.innerHTML = '';
+        const container = document.getElementById('content');
+        container.innerHTML = '';
 
-      if (stats.errors && stats.errors.length) {
-        const errBanner = document.createElement('div');
-        errBanner.className = 'warning-banner';
-        errBanner.style.background = 'rgba(229,62,62,0.08)';
-        errBanner.style.borderColor = 'rgba(229,62,62,0.25)';
-        errBanner.style.color = 'var(--error)';
-        errBanner.innerHTML = '<strong>Erreur de chargement</strong> (voir la console) :<br>' + stats.errors.map(escapeHtml).join('<br>');
-        container.appendChild(errBanner);
+        if (stats.errors && stats.errors.length) {
+          const errBanner = document.createElement('div');
+          errBanner.className = 'warning-banner';
+          errBanner.style.background = 'rgba(229,62,62,0.08)';
+          errBanner.style.borderColor = 'rgba(229,62,62,0.25)';
+          errBanner.style.color = 'var(--error)';
+          errBanner.innerHTML = '<strong>Erreur de chargement</strong> (voir la console) :<br>' + stats.errors.map(escapeHtml).join('<br>');
+          container.appendChild(errBanner);
+        }
+
+        const totalCard = document.createElement('div');
+        totalCard.className = 'total-card';
+        totalCard.innerHTML = '<div class="label">Total encaisse</div><div class="value">' + fmt(stats.totalGlobal) + '</div>';
+        container.appendChild(totalCard);
+
+        if (stats.nbPaidNotDone > 0) {
+          const warn = document.createElement('div');
+          warn.className = 'warning-banner';
+          warn.textContent = stats.nbPaidNotDone + ' commande(s) payee(s) en ligne (' + fmt(stats.totalPaidNotDone) + ') n\'ont pas encore le statut "terminee". Verifiez qu\'elles ont bien ete preparees.';
+          container.appendChild(warn);
+        }
+
+        try {
+          renderCharts(container, stats);
+        } catch (chartErr) {
+          console.error('Erreur graphiques:', chartErr);
+          const chartErrBanner = document.createElement('div');
+          chartErrBanner.className = 'warning-banner';
+          chartErrBanner.textContent = 'Les graphiques n\'ont pas pu s\'afficher (voir la console), le reste des statistiques est correct.';
+          container.appendChild(chartErrBanner);
+        }
+
+        container.appendChild(sourceCard('Caisse sur place', 'var(--c-caisse)', stats.totalCaisse, null, stats.caisseByMode));
+        container.appendChild(sourceCard('Commandes Dambou', 'var(--c-commandes)', stats.totalCommandes, stats.nbCommandes + ' commande(s)', null));
+        container.appendChild(sourceCard('Reservations', 'var(--c-rdv)', stats.totalRdv, stats.nbRdv + ' RDV confirme(s)' + (stats.rdvEnLigne > 0 ? ' - dont ' + fmt(stats.rdvEnLigne) + ' payes en ligne' : ''), stats.rdvSurPlaceByMode));
+
+        const secTitle = document.createElement('div');
+        secTitle.className = 'section-title';
+        secTitle.textContent = 'Articles les plus vendus';
+        container.appendChild(secTitle);
+
+        if (stats.topProducts.length === 0) {
+          container.innerHTML += '<div id="empty-products">Aucune vente sur cette periode.</div>';
+        } else {
+          stats.topProducts.slice(0, 10).forEach((p, i) => {
+            const row = document.createElement('div');
+            row.className = 'product-row';
+            row.innerHTML =
+              '<div class="product-rank">' + (i + 1) + '</div>' +
+              '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+              '<div class="product-qty">x' + p.qty + '</div>' +
+              '<div class="product-revenue">' + fmt(p.revenue) + '</div>';
+            container.appendChild(row);
+          });
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        container.style.display = 'block';
+      } catch (err) {
+        console.error('Erreur chargement statistiques:', err);
+        const loadingEl = document.getElementById('loading');
+        loadingEl.textContent = 'Erreur lors du chargement des statistiques (voir la console pour le detail).';
+        loadingEl.style.color = 'var(--error)';
+        loadingEl.style.display = 'block';
       }
-
-      const totalCard = document.createElement('div');
-      totalCard.className = 'total-card';
-      totalCard.innerHTML = '<div class="label">Total encaisse</div><div class="value">' + fmt(stats.totalGlobal) + '</div>';
-      container.appendChild(totalCard);
-
-      if (stats.nbPaidNotDone > 0) {
-        const warn = document.createElement('div');
-        warn.className = 'warning-banner';
-        warn.textContent = stats.nbPaidNotDone + ' commande(s) payee(s) en ligne (' + fmt(stats.totalPaidNotDone) + ') n\'ont pas encore le statut "terminee". Verifiez qu\'elles ont bien ete preparees.';
-        container.appendChild(warn);
-      }
-
-      renderCharts(container, stats);
-
-      container.appendChild(sourceCard('Caisse sur place', 'var(--c-caisse)', stats.totalCaisse, null, stats.caisseByMode));
-      container.appendChild(sourceCard('Commandes Dambou', 'var(--c-commandes)', stats.totalCommandes, stats.nbCommandes + ' commande(s)', null));
-      container.appendChild(sourceCard('Reservations', 'var(--c-rdv)', stats.totalRdv, stats.nbRdv + ' RDV confirme(s)' + (stats.rdvEnLigne > 0 ? ' - dont ' + fmt(stats.rdvEnLigne) + ' payes en ligne' : ''), stats.rdvSurPlaceByMode));
-
-      const secTitle = document.createElement('div');
-      secTitle.className = 'section-title';
-      secTitle.textContent = 'Articles les plus vendus';
-      container.appendChild(secTitle);
-
-      if (stats.topProducts.length === 0) {
-        container.innerHTML += '<div id="empty-products">Aucune vente sur cette periode.</div>';
-      } else {
-        stats.topProducts.slice(0, 10).forEach((p, i) => {
-          const row = document.createElement('div');
-          row.className = 'product-row';
-          row.innerHTML =
-            '<div class="product-rank">' + (i + 1) + '</div>' +
-            '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
-            '<div class="product-qty">x' + p.qty + '</div>' +
-            '<div class="product-revenue">' + fmt(p.revenue) + '</div>';
-          container.appendChild(row);
-        });
-      }
-
-      document.getElementById('loading').style.display = 'none';
-      container.style.display = 'block';
     }
 
     function sourceCard(name, color, total, sub, byMode) {

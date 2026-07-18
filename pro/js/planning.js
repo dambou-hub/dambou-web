@@ -38,7 +38,7 @@ export async function loadEmployees(businessId) {
 export async function loadBookingsForDay(businessId, dateKey) {
     const { data, error } = await supabase
         .from('bookings')
-        .select('*, booking_employees(employee_id), services(name, duration, price), users!customer_id(id, first_name, last_name, phone)')
+        .select('*, booking_employees(employee_id), services(name, duration, price, max_participants), users!customer_id(id, first_name, last_name, phone)')
         .eq('business_id', businessId)
         .eq('booking_date', dateKey)
         .neq('status', 'cancelled')
@@ -54,7 +54,7 @@ export async function loadBookingsForDay(businessId, dateKey) {
 export async function loadBookingsForRange(businessId, fromKey, toKeyExclusive) {
     const { data, error } = await supabase
         .from('bookings')
-        .select('*, booking_employees(employee_id), services(name, duration, price), users!customer_id(id, first_name, last_name, phone)')
+        .select('*, booking_employees(employee_id), services(name, duration, price, max_participants), users!customer_id(id, first_name, last_name, phone)')
         .eq('business_id', businessId)
         .gte('booking_date', fromKey)
         .lt('booking_date', toKeyExclusive)
@@ -176,7 +176,86 @@ export async function createBooking(params) {
     return data.id;
 }
 
-// Met a jour une reservation existante (utilise par le modal en mode edition).
+// ------------------------------------------------------------
+// ATELIERS (services a plusieurs participants, services.max_participants > 1)
+// ------------------------------------------------------------
+// Cree la "coquille" d'un atelier : une ligne bookings sans client, juste pour
+// que le creneau apparaisse et bloque le planning des sa creation, avant meme
+// la premiere inscription. Reproduit l'idee proposee par Jean : au moment de
+// creer un RDV, si le service a plus d'une place, on ne demande pas de client.
+export async function createWorkshopShell(params) {
+    const insertData = {
+        business_id: params.businessId,
+        service_id: params.serviceId,
+        booking_date: params.dateKey,
+        start_time: params.startTime,
+        end_time: params.endTime,
+        status: 'confirmed',
+        price: 0,
+        preferred_employee_id: params.employeeId || null,
+        is_workshop_shell: true,
+    };
+    const { data, error } = await supabase.from('bookings').insert(insertData).select('id').single();
+    if (error) throw error;
+
+    if (params.employeeId) {
+        await supabase.from('booking_employees').insert({ booking_id: data.id, employee_id: params.employeeId });
+    }
+    return data.id;
+}
+
+// Inscrit un participant sur une session d'atelier existante (reprend service,
+// date, heure et employe de la coquille -- seul le client change).
+export async function addWorkshopParticipant(shellBooking, clientParams) {
+    const insertData = {
+        business_id: shellBooking.business_id,
+        service_id: shellBooking.service_id,
+        booking_date: shellBooking.booking_date,
+        start_time: shellBooking.start_time,
+        end_time: shellBooking.end_time,
+        status: 'confirmed',
+        price: (shellBooking.services && shellBooking.services.price) || 0,
+        preferred_employee_id: shellBooking.preferred_employee_id || null,
+        workshop_shell_id: shellBooking.id,
+    };
+    if (clientParams.customerId) {
+        insertData.customer_id = clientParams.customerId;
+    } else {
+        insertData.manual_customer_name = clientParams.customerName;
+        if (clientParams.customerPhone) insertData.manual_customer_phone = clientParams.customerPhone;
+        if (clientParams.manualClientId) insertData.manual_client_id = clientParams.manualClientId;
+    }
+
+    const { data, error } = await supabase.from('bookings').insert(insertData).select('id').single();
+    if (error) throw error;
+
+    const empId = shellBooking.preferred_employee_id ||
+        (bookingEmployeeIds(shellBooking).length ? bookingEmployeeIds(shellBooking)[0] : null);
+    if (empId) {
+        await supabase.from('booking_employees').insert({ booking_id: data.id, employee_id: empId });
+    }
+    return data.id;
+}
+
+// Retire un participant (annule sa reservation individuelle, la session
+// elle-meme et les autres inscrits ne sont pas affectes).
+export async function removeWorkshopParticipant(bookingId) {
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+    if (error) throw error;
+}
+
+// Regroupe une liste de reservations d'une journee : chaque coquille d'atelier
+// avec ses inscrits (bookings actifs dont workshop_shell_id pointe vers elle).
+// Renvoie { shell, participants } pour chaque atelier trouve.
+export function groupWorkshopSessions(dayBookings) {
+    const shells = dayBookings.filter((b) => b.is_workshop_shell);
+    return shells.map((shell) => ({
+        shell: shell,
+        participants: dayBookings.filter((b) => b.workshop_shell_id === shell.id && b.status !== 'cancelled'),
+    }));
+}
+
+
 // Ne touche au nom/telephone que si c'est une reservation manuelle (pas un vrai compte client app).
 export async function updateBooking(bookingId, params) {
     // Auto-confirmation si le RDV etait en attente (reproduit _update() de
@@ -395,10 +474,14 @@ export function timeToMinutes(t) {
 
 // Verifie si deplacer une reservation vers un employe/creneau entre en conflit
 // avec une autre reservation deja assignee a cet employe ce jour-la.
+// Les reservations liees a un atelier (coquille ou inscrit) sont exclues :
+// plusieurs inscrits partagent volontairement le meme employe/creneau, ce
+// n'est pas un conflit.
 export function hasConflict(dayBookings, employeeId, newStart, newEnd, excludeBookingId) {
     return dayBookings.some((b) => {
         if (b.id === excludeBookingId) return false;
         if (b.status === 'cancelled') return false;
+        if (b.is_workshop_shell || b.workshop_shell_id) return false;
         if (!bookingEmployeeIds(b).includes(employeeId)) return false;
         const s = timeToMinutes((b.start_time || '').substring(0, 5));
         const e = timeToMinutes((b.end_time || '').substring(0, 5));

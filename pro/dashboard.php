@@ -137,6 +137,11 @@ ini_set('log_errors', 1);
           <h3>Clients</h3>
           <p>Fiches et historique de vos clients</p>
         </a>
+        <a class="nav-card" href="/pro/business">
+          <div class="icon" style="background:rgba(221,107,32,0.1)">&#127970;</div>
+          <h3>Mon business</h3>
+          <p>Infos, photos, adresse et horaires</p>
+        </a>
       </div>
     </div>
   </div>

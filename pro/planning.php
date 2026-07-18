@@ -1103,7 +1103,21 @@ ini_set('log_errors', 1);
           ({ EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[business.currency_code] || '\u20ac');
         serviceSelect.appendChild(opt);
       });
+      const urlParams = new URLSearchParams(window.location.search);
+      const dateParam = urlParams.get('date');
+      if (dateParam) selectedDate = new Date(dateParam + 'T00:00:00');
+
       await renderDayView();
+
+      const openParam = urlParams.get('open');
+      if (openParam) {
+        const target = dayBookings.find((b) => b.id === openParam);
+        if (target) {
+          const empIds = bookingEmployeeIds(target);
+          const emp = empIds.length ? employees.find((e) => e.id === empIds[0]) : null;
+          openPanel(target, (emp && emp.color) || '#00BFA5');
+        }
+      }
     })();
   </script>
 </body>

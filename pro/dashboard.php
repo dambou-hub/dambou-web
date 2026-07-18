@@ -59,7 +59,7 @@ ini_set('log_errors', 1);
   }
   .logout-btn:hover { border-color: var(--error); color: var(--error); }
 
-  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 22px 24px 32px; }
   #loading { text-align: center; padding: 80px 20px; color: var(--text-medium); }
 
   #content { display: none; }
@@ -111,12 +111,13 @@ ini_set('log_errors', 1);
   .pending-client { font-size: 14px; font-weight: 700; }
   .pending-meta { font-size: 12px; color: var(--text-medium); margin-top: 2px; }
   .pending-phone { font-size: 12px; color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+  .pending-emp { font-size: 11px; color: var(--primary-dark); font-weight: 600; margin-top: 3px; }
   .pending-date { font-size: 12px; font-weight: 700; color: var(--text-dark); background: var(--background); padding: 4px 10px; border-radius: 8px; }
   .pending-conflict { background: rgba(221,107,32,0.08); color: #a3591e; font-size: 11px; padding: 6px 10px; border-radius: 8px; margin: 8px 0; }
-  .pending-actions { display: flex; gap: 8px; margin-top: 10px; }
-  .pending-actions button { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--card-border); background: white; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-  .pending-actions button.confirm { background: var(--primary); color: white; border-color: var(--primary); }
-  .pending-actions button.confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pending-actions { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+  .pending-actions button, .pending-actions a { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--card-border); background: white; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; }
+  .pending-actions a.confirm { background: var(--primary); color: white; border-color: var(--primary); flex: 2; }
+  .pending-actions a.call-btn { flex: 0 0 40px; font-size: 16px; }
   .pending-actions button.cancel { color: var(--error); }
   #pending-empty { text-align: center; padding: 20px; color: var(--text-light); font-size: 13px; background: white; border: 1px dashed var(--card-border); border-radius: 14px; }
 </style>
@@ -130,11 +131,6 @@ ini_set('log_errors', 1);
   <div class="container">
     <div id="loading">Chargement...</div>
     <div id="content">
-      <div class="welcome">
-        <h1 id="business-name">-</h1>
-        <p>Bienvenue dans votre espace de gestion Dambou.</p>
-      </div>
-
       <div class="ca-card" id="ca-card" style="display:none">
         <div>
           <div class="label">Chiffre d'affaires aujourd'hui</div>
@@ -197,7 +193,7 @@ ini_set('log_errors', 1);
 
   <script type="module">
     import { requireAuth, getBusinessForUser, getActiveModules, logout } from '/pro/js/auth.js';
-    import { loadPendingBookings, checkConflictForPendingBooking, confirmBooking, cancelBooking, clientName, bookingPhone } from '/pro/js/planning.js';
+    import { loadPendingBookings, checkConflictForPendingBooking, cancelBooking, clientName, bookingPhone } from '/pro/js/planning.js';
     import { loadStats } from '/pro/js/stats.js';
 
     const loadingEl = document.getElementById('loading');
@@ -242,22 +238,27 @@ ini_set('log_errors', 1);
       for (const b of pending) {
         const svc = b.services;
         const phone = bookingPhone(b);
+        const prefEmp = b.employees;
+        const prefEmpName = prefEmp ? ((prefEmp.first_name || '') + ' ' + (prefEmp.last_name || '')).trim() : '';
         const card = document.createElement('div');
         card.className = 'pending-card';
         card.innerHTML =
           '<div class="pending-top">' +
           '<div><div class="pending-client">' + escapeHtml(clientName(b)) + '</div>' +
-          '<div class="pending-meta">' + escapeHtml(svc ? svc.name : 'Rendez-vous') + (phone ? ' &middot; <a class="pending-phone" href="tel:' + escapeHtml(phone) + '">' + escapeHtml(phone) + '</a>' : '') + '</div></div>' +
+          '<div class="pending-meta">' + escapeHtml(svc ? svc.name : 'Rendez-vous') + (svc && svc.duration ? ' &middot; ' + svc.duration + ' min' : '') + '</div>' +
+          (prefEmpName ? '<div class="pending-emp">&#128100; Demande : ' + escapeHtml(prefEmpName) + '</div>' : '') +
+          '</div>' +
           '<div class="pending-date">' + escapeHtml(b.booking_date) + ' ' + escapeHtml((b.start_time || '').substring(0, 5)) + '</div>' +
           '</div>' +
           '<div class="pending-actions">' +
           '<button class="cancel" data-action="cancel" data-id="' + b.id + '">Refuser</button>' +
-          '<button class="confirm" data-action="confirm" data-id="' + b.id + '">Confirmer</button>' +
+          (phone ? '<a class="call-btn" href="tel:' + escapeHtml(phone) + '" title="Appeler">&#128222;</a>' : '') +
+          '<a class="confirm" href="/pro/planning?date=' + encodeURIComponent(b.booking_date) + '&open=' + encodeURIComponent(b.id) + '">Gerer</a>' +
           '</div>';
         list.appendChild(card);
 
-        // Verification de conflit -- amelioration par rapport a l'app mobile qui confirme
-        // sans aucune verification. On ne bloque pas, on informe juste le pro.
+        // Verification de conflit -- amelioration par rapport a l'app mobile qui ne
+        // verifie rien du tout avant confirmation. On ne bloque pas, on informe juste.
         checkConflictForPendingBooking(business.id, b).then((warning) => {
           if (!warning) return;
           const warn = document.createElement('div');
@@ -267,18 +268,6 @@ ini_set('log_errors', 1);
         });
       }
 
-      list.querySelectorAll('[data-action="confirm"]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          try {
-            await confirmBooking(btn.dataset.id);
-            await loadPending();
-          } catch (err) {
-            console.error(err);
-            btn.disabled = false;
-          }
-        });
-      });
       list.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
         btn.addEventListener('click', async () => {
           if (!confirm('Refuser cette reservation ?')) return;
@@ -305,7 +294,6 @@ ini_set('log_errors', 1);
         return;
       }
 
-      document.getElementById('business-name').textContent = business.name || 'Votre etablissement';
       if (business.logo_url) {
         document.getElementById('topbar-logo').src = business.logo_url;
       }

@@ -319,7 +319,13 @@ export async function checkConflictForPendingBooking(businessId, booking) {
 
 export function bookingEmployeeIds(booking) {
     const rel = booking.booking_employees || [];
-    return rel.map((r) => r.employee_id);
+    if (rel.length > 0) return rel.map((r) => r.employee_id);
+    // Une reservation prise par le client depuis l'app (booking_screen.dart) ne renseigne
+    // que preferred_employee_id, jamais de ligne booking_employees -- celle-ci n'est creee
+    // que quand le pro cree lui-meme le RDV (employee_planning_screen.dart). Sans ce
+    // fallback, ces reservations n'apparaissent nulle part dans le planning, meme confirmees.
+    if (booking.preferred_employee_id) return [booking.preferred_employee_id];
+    return [];
 }
 
 const FRENCH_DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];

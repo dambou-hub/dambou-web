@@ -59,6 +59,14 @@ ini_set('log_errors', 1);
   .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
   .toggle-row:last-child { border-bottom: none; }
   .toggle-row label { font-size: 13px; font-weight: 600; }
+
+  .capacity-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+  .capacity-chip { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--card-border); background: var(--background); color: var(--text-medium); font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .capacity-chip.selected { background: var(--primary); border-color: var(--primary); color: white; }
+  .capacity-label { text-align: center; margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--primary-dark); }
+  .prep-time-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+  .prep-chip { padding: 8px 12px; border-radius: 20px; border: 1px solid var(--card-border); background: var(--background); color: var(--text-medium); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .prep-chip.selected { background: #DD6B20; border-color: #DD6B20; color: white; }
   .toggle-row .toggle-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
 
   .btn { padding: 12px 20px; border-radius: 12px; border: none; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
@@ -153,6 +161,23 @@ ini_set('log_errors', 1);
           </div>
         </div>
 
+        <div class="card" id="capacity-card" style="display:none">
+          <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Capacite simultanee</h3>
+          <p style="font-size:11px; color:var(--text-medium); margin-bottom:14px">Sieges, cabines ou tables disponibles en meme temps</p>
+          <div class="capacity-picker" id="capacity-picker"></div>
+          <div class="capacity-label" id="capacity-label"></div>
+        </div>
+
+        <div class="card" id="order-capacity-card" style="display:none">
+          <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Commandes &amp; file d'attente</h3>
+          <p style="font-size:11px; color:var(--text-medium); margin-bottom:14px">Parametres pour les commandes food truck / restaurant</p>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:8px">Temps moyen de preparation</label>
+          <div class="prep-time-picker" id="prep-time-picker"></div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin:16px 0 8px">Commandes simultanees en preparation</label>
+          <div class="capacity-picker" id="order-capacity-picker"></div>
+          <div class="capacity-label" id="order-capacity-label"></div>
+        </div>
+
         <div class="card">
           <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Options</h3>
           <div class="toggle-row"><label>WhatsApp active</label><input type="checkbox" id="f-whatsapp"></div>
@@ -199,7 +224,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, getActiveModules, fr } from '/pro/js/auth.js';
     import {
       loadFullBusiness, saveBusinessInfo, saveOpeningHours, saveAddress, uploadLogo, uploadCover,
     } from '/pro/js/business.js';
@@ -215,12 +240,60 @@ ini_set('log_errors', 1);
       'Dimanche': { isOpen: false, start: '10:00', end: '17:00' },
     };
     let selectedPlace = null;
+    let capacity = 1;
+    let orderCapacity = 1;
+    let prepTime = 15;
 
     function showToast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
+    }
+
+    function renderCapacityPicker() {
+      const wrap = document.getElementById('capacity-picker');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'capacity-chip' + (capacity === i ? ' selected' : '');
+        chip.textContent = i;
+        chip.addEventListener('click', () => { capacity = i; renderCapacityPicker(); });
+        wrap.appendChild(chip);
+      }
+      document.getElementById('capacity-label').textContent = fr(
+        capacity === 1 ? '1 client &agrave; la fois' : capacity + ' clients peuvent r&eacute;server le m&ecirc;me cr&eacute;neau'
+      );
+    }
+
+    function renderOrderCapacityPicker() {
+      const wrap = document.getElementById('order-capacity-picker');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'capacity-chip' + (orderCapacity === i ? ' selected' : '');
+        chip.textContent = i;
+        chip.addEventListener('click', () => { orderCapacity = i; renderOrderCapacityPicker(); });
+        wrap.appendChild(chip);
+      }
+      document.getElementById('order-capacity-label').textContent = fr(
+        orderCapacity === 1 ? '1 commande &agrave; la fois' : 'Vous pr&eacute;parez ' + orderCapacity + ' commandes en m&ecirc;me temps'
+      );
+    }
+
+    function renderPrepTimePicker() {
+      const wrap = document.getElementById('prep-time-picker');
+      wrap.innerHTML = '';
+      [5, 10, 15, 20, 30, 45, 60].forEach((min) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'prep-chip' + (prepTime === min ? ' selected' : '');
+        chip.textContent = min + ' min';
+        chip.addEventListener('click', () => { prepTime = min; renderPrepTimePicker(); });
+        wrap.appendChild(chip);
+      });
     }
 
     // ----- Onglets -----
@@ -295,6 +368,9 @@ ini_set('log_errors', 1);
           siret: document.getElementById('f-siret').value.trim(),
           closureEnabled: document.getElementById('f-closure-enabled').checked,
           closureMessage: document.getElementById('f-closure-message').value,
+          capacity: capacity,
+          orderCapacity: orderCapacity,
+          prepTime: prepTime,
         });
         showToast('Informations enregistrees.');
       } catch (err) {
@@ -519,6 +595,21 @@ ini_set('log_errors', 1);
         });
       }
       renderHours();
+
+      capacity = business.capacity || 1;
+      orderCapacity = business.order_capacity || 1;
+      prepTime = business.prep_time || 15;
+      renderCapacityPicker();
+      renderOrderCapacityPicker();
+      renderPrepTimePicker();
+
+      const activeModules = await getActiveModules(business.id);
+      if (activeModules.some((m) => m.module_type === 'booking')) {
+        document.getElementById('capacity-card').style.display = 'block';
+      }
+      if (activeModules.some((m) => m.module_type === 'orders')) {
+        document.getElementById('order-capacity-card').style.display = 'block';
+      }
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';

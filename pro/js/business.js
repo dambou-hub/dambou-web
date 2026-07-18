@@ -50,6 +50,9 @@ export async function saveBusinessInfo(businessId, params) {
         siret: params.siret || null,
         numero_tva: params.numeroTva || null,
         closure_message: params.closureEnabled && params.closureMessage ? params.closureMessage.trim() : null,
+        capacity: params.capacity || 1,
+        order_capacity: params.orderCapacity || 1,
+        prep_time: params.prepTime || 15,
         updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('businesses').update(updateData).eq('id', businessId);

@@ -18,7 +18,7 @@ ini_set('log_errors', 1);
   :root {
     --primary: #00BFA5; --primary-dark: #00897B; --text-dark: #2D3748; --text-medium: #718096;
     --text-light: #A0AEC0; --background: #F7F8FA; --card-border: #E2E8F0; --warning: #DD6B20; --error: #E53E3E;
-    --c-caisse: #52B788; --c-commandes: #F4A261; --c-rdv: #00BFA5;
+    --c-caisse: #52B788; --c-commandes: #F4A261; --c-rdv: #3182CE;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--background); color: var(--text-dark); min-height: 100vh; }
@@ -263,7 +263,7 @@ ini_set('log_errors', 1);
             labels: ['Caisse sur place', 'Commandes Dambou', 'Reservations'],
             datasets: [{
               data: [stats.totalCaisse, stats.totalCommandes, stats.totalRdv],
-              backgroundColor: ['#52B788', '#F4A261', '#00BFA5'],
+              backgroundColor: ['#52B788', '#F4A261', '#3182CE'],
               borderWidth: 0,
             }],
           },

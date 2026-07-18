@@ -142,6 +142,11 @@ ini_set('log_errors', 1);
           <h3>Mon business</h3>
           <p>Infos, photos, adresse et horaires</p>
         </a>
+        <a class="nav-card" href="/pro/stats" id="card-stats">
+          <div class="icon" style="background:rgba(21,101,192,0.1)">&#128202;</div>
+          <h3>Statistiques</h3>
+          <p>Chiffre d'affaires et articles vendus</p>
+        </a>
       </div>
     </div>
   </div>
@@ -177,6 +182,10 @@ ini_set('log_errors', 1);
       const hasPos = activeModules.some((m) => m.module_type === 'pos');
       if (!hasPos) {
         document.getElementById('card-caisse').remove();
+      }
+      const hasStats = activeModules.some((m) => m.module_type === 'stats');
+      if (!hasStats) {
+        document.getElementById('card-stats').remove();
       }
 
       loadingEl.style.display = 'none';

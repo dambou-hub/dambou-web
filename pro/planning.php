@@ -150,7 +150,7 @@ ini_set('log_errors', 1);
           <button id="view-week">Semaine</button>
         </div>
         <button class="today-btn" id="today-btn">Aujourd'hui</button>
-        <button class="today-btn" id="new-booking-btn" style="background:var(--primary); color:white;">+ Nouvelle reservation</button>
+        <button class="today-btn" id="new-booking-btn" style="background:var(--primary); color:white;">+ Nouvelle r&eacute;servation</button>
       </div>
     </div>
 
@@ -161,7 +161,7 @@ ini_set('log_errors', 1);
     </div>
 
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#38A169"></div>Confirme / paye</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#38A169"></div>Confirm&eacute; / pay&eacute;</div>
       <div class="legend-item"><div class="legend-dot" style="background:#DD6B20"></div>En attente</div>
       <div class="legend-item"><div class="legend-dot" style="background:#A0AEC0"></div>No-show</div>
     </div>
@@ -200,7 +200,7 @@ ini_set('log_errors', 1);
     <div class="panel" id="new-panel" style="max-width:420px">
       <div class="panel-head" style="align-items:flex-start">
         <div class="panel-info">
-          <div class="panel-client" id="new-modal-title">Nouvelle reservation</div>
+          <div class="panel-client" id="new-modal-title">Nouvelle r&eacute;servation</div>
           <div class="panel-service" id="new-date-label"></div>
         </div>
         <button class="nav-btn" id="new-close-btn" style="border:none">&times;</button>
@@ -227,14 +227,14 @@ ini_set('log_errors', 1);
         </div>
 
         <div style="margin-bottom:12px" id="new-employees-wrap">
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Employe</label>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Employ&eacute;</label>
           <div id="new-employees-chips" style="display:flex; flex-wrap:wrap; gap:8px"></div>
         </div>
 
         <div style="margin-bottom:16px">
           <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Client</label>
           <div id="client-selector-box" style="display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid var(--card-border); border-radius:12px; cursor:pointer;">
-            <span id="client-box-placeholder" style="color:var(--text-light); font-size:14px; flex:1">Rechercher ou creer un client...</span>
+            <span id="client-box-placeholder" style="color:var(--text-light); font-size:14px; flex:1">Rechercher ou cr&eacute;er un client...</span>
             <div id="client-box-selected" style="display:none; align-items:center; gap:10px; flex:1; min-width:0">
               <div id="csb-avatar" style="width:30px; height:30px; border-radius:50%; background:rgba(0,191,165,0.15); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0"></div>
               <div style="flex:1; min-width:0">
@@ -253,7 +253,7 @@ ini_set('log_errors', 1);
 
         <div class="error-msg" id="new-error" style="display:none; background:rgba(229,62,62,0.08); color:var(--error); font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:12px"></div>
 
-        <button type="submit" id="new-submit-btn" style="width:100%; padding:13px; background:var(--primary); color:white; border:none; border-radius:14px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer">Creer la reservation</button>
+        <button type="submit" id="new-submit-btn" style="width:100%; padding:13px; background:var(--primary); color:white; border:none; border-radius:14px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer">Cr&eacute;er la r&eacute;servation</button>
       </form>
     </div>
   </div>
@@ -268,27 +268,27 @@ ini_set('log_errors', 1);
         <button class="nav-btn" id="client-search-close" style="border:none">&times;</button>
       </div>
 
-      <input type="text" id="client-search-input" placeholder="Nom ou telephone..." autocomplete="off"
+      <input type="text" id="client-search-input" placeholder="Nom ou t&eacute;l&eacute;phone..." autocomplete="off"
         style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit; margin-bottom:10px">
 
       <div id="client-results" style="overflow-y:auto; flex:1; min-height:60px"></div>
 
       <button type="button" id="client-create-toggle" class="action-tile" style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:14px; color:var(--primary-dark)">
-        <span class="a-icon">+</span><span>Creer une fiche client</span>
+        <span class="a-icon">+</span><span>Cr&eacute;er une fiche client</span>
       </button>
 
       <div id="client-create-form" style="display:none">
-        <input type="text" id="cc-first-name" placeholder="Prenom" required style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="text" id="cc-first-name" placeholder="Pr&eacute;nom" required style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
         <input type="text" id="cc-last-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
-        <input type="tel" id="cc-phone" placeholder="Telephone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="tel" id="cc-phone" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
         <input type="email" id="cc-email" placeholder="Email (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
-        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Creer et selectionner</button>
+        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Cr&eacute;er et s&eacute;lectionner</button>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import {
       toDateKey, formatDateLong, loadEmployees, loadBookingsForDay, loadBookingsForRange,
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
@@ -319,7 +319,7 @@ ini_set('log_errors', 1);
 
     function showToast(message) {
       const t = document.getElementById('toast');
-      t.textContent = message;
+      t.textContent = fr(message);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -354,7 +354,7 @@ ini_set('log_errors', 1);
       if (employees.length === 0) {
         agendaEl.style.display = 'none';
         loadingEl.style.display = 'block';
-        loadingEl.textContent = "Aucun employe actif. Ajoutez votre equipe depuis l'application mobile.";
+        loadingEl.textContent = fr("Aucun employ&eacute; actif. Ajoutez votre &eacute;quipe depuis l'application mobile.");
         return;
       }
       agendaEl.style.display = 'block';
@@ -499,7 +499,7 @@ ini_set('log_errors', 1);
 
         const conflictCheckEnabled = business.check_employee_conflicts !== false;
         if (conflictCheckEnabled && hasConflict(dayBookings, employeeId, newStart, newEnd, bookingId)) {
-          showToast('Conflit : cet employe a deja un RDV sur ce creneau.');
+          showToast('Conflit : cet employ&eacute; a d&eacute;j&agrave; un RDV sur ce cr&eacute;neau.');
           return;
         }
 
@@ -509,11 +509,11 @@ ini_set('log_errors', 1);
         try {
           if (timeChanged) await updateBookingTime(bookingId, startStr, endStr);
           if (employeeChanged) await reassignEmployee(bookingId, employeeId);
-          showToast('Rendez-vous deplace.');
+          showToast('Rendez-vous d&eacute;plac&eacute;.');
           await renderDayView();
         } catch (err) {
           console.error(err);
-          showToast('Erreur lors du deplacement.');
+          showToast('Erreur lors du d&eacute;placement.');
         }
       });
     }
@@ -658,7 +658,7 @@ ini_set('log_errors', 1);
       if (booking.status === 'no_show') {
         container.appendChild(makeAction('\u21A9', 'Annuler le no-show (restaurer le RDV)', async () => {
           await restoreNoShow(booking);
-          showToast('No-show annule, RDV restaure.');
+          showToast('No-show annul&eacute;, RDV restaur&eacute;.');
           closePanel();
           await reloadCurrentView();
         }));
@@ -668,7 +668,7 @@ ini_set('log_errors', 1);
       if (booking.status === 'pending') {
         container.appendChild(makeAction('\u2705', 'Confirmer le rendez-vous', async () => {
           await confirmBooking(booking.id);
-          showToast('Rendez-vous confirme.');
+          showToast('Rendez-vous confirm&eacute;.');
           closePanel();
           await reloadCurrentView();
         }));
@@ -708,7 +708,7 @@ ini_set('log_errors', 1);
         container.appendChild(makeAction('\u{1F6AB}', 'Client absent (no-show)', async () => {
           const businessName = (business && business.name) || 'le professionnel';
           const result = await markNoShow(booking, business.id, businessName);
-          showToast(result.blocked ? 'Client bloque apres 3 no-shows.' : 'No-show enregistre (' + result.count + '/3).');
+          showToast(result.blocked ? 'Client bloqu&eacute; apr&egrave;s 3 no-shows.' : 'No-show enregistr&eacute; (' + result.count + '/3).');
           closePanel();
           await reloadCurrentView();
         }));
@@ -753,7 +753,7 @@ ini_set('log_errors', 1);
     document.getElementById('confirm-cancel-yes').addEventListener('click', async () => {
       if (!currentBooking) return;
       await cancelBooking(currentBooking.id);
-      showToast('Rendez-vous annule.');
+      showToast('Rendez-vous annul&eacute;.');
       closePanel();
       await reloadCurrentView();
     });
@@ -855,8 +855,8 @@ ini_set('log_errors', 1);
       } else {
         editingBookingId = null;
         editingOriginalBooking = null;
-        document.getElementById('new-modal-title').textContent = 'Nouvelle reservation';
-        document.getElementById('new-submit-btn').textContent = 'Creer la reservation';
+        document.getElementById('new-modal-title').textContent = fr('Nouvelle r&eacute;servation');
+        document.getElementById('new-submit-btn').textContent = fr('Cr&eacute;er la r&eacute;servation');
         document.getElementById('new-date').value = toDateKey(selectedDate);
         selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
         selectedClient = null;
@@ -930,7 +930,7 @@ ini_set('log_errors', 1);
 
     function openClientSearch() {
       document.getElementById('client-search-input').value = '';
-      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un telephone</div>';
+      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un t&eacute;l&eacute;phone</div>';
       document.getElementById('client-create-form').style.display = 'none';
       document.getElementById('client-search-overlay').classList.add('visible');
       document.getElementById('client-search-input').focus();
@@ -960,7 +960,7 @@ ini_set('log_errors', 1);
       clientSearchDebounce = setTimeout(async () => {
         const resultsBox = document.getElementById('client-results');
         if (query.trim().length < 2) {
-          resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un telephone</div>';
+          resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom ou un t&eacute;l&eacute;phone</div>';
           return;
         }
         resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Recherche...</div>';
@@ -1012,13 +1012,13 @@ ini_set('log_errors', 1);
         selectedClient = { id: created.id, type: 'manual', name: name, phone: created.phone || '' };
         updateClientBoxDisplay();
         closeClientSearch();
-        showToast('Fiche client creee.');
+        showToast('Fiche client cr&eacute;&eacute;e.');
       } catch (err) {
         console.error(err);
-        showToast('Erreur lors de la creation du client.');
+        showToast('Erreur lors de la cr&eacute;ation du client.');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Creer et selectionner';
+        btn.textContent = fr('Cr&eacute;er et s&eacute;lectionner');
       }
     });
 
@@ -1057,13 +1057,13 @@ ini_set('log_errors', 1);
         : await loadBookingsForDay(business.id, dateKey);
 
       if (employeeId && hasConflict(conflictSource, employeeId, startMin, endMin, editingBookingId)) {
-        const proceed = confirm('Cet employe a deja un rendez-vous sur ce creneau. Continuer quand meme ?');
+        const proceed = confirm(fr('Cet employ&eacute; a d&eacute;j&agrave; un rendez-vous sur ce cr&eacute;neau. Continuer quand m&ecirc;me ?'));
         if (!proceed) return;
       }
 
       const submitBtn = document.getElementById('new-submit-btn');
       submitBtn.disabled = true;
-      submitBtn.textContent = editingBookingId ? 'Enregistrement...' : 'Creation...';
+      submitBtn.textContent = fr(editingBookingId ? 'Enregistrement...' : 'Cr&eacute;ation...');
 
       const clientParams = selectedClient.type === 'dambou'
         ? { customerId: selectedClient.id }
@@ -1087,7 +1087,7 @@ ini_set('log_errors', 1);
             serviceName: service.name,
           }, clientParams));
           const wasPending = editingOriginalBooking && editingOriginalBooking.status === 'pending';
-          showToast(wasPending ? 'Rendez-vous confirme.' : 'Rendez-vous modifie.');
+          showToast(wasPending ? 'Rendez-vous confirm&eacute;.' : 'Rendez-vous modifi&eacute;.');
         } else {
           await createBooking(Object.assign({
             businessId: business.id,
@@ -1098,18 +1098,18 @@ ini_set('log_errors', 1);
             price: service.price,
             employeeId: employeeId,
           }, clientParams));
-          showToast('Reservation creee.');
+          showToast('R&eacute;servation cr&eacute;&eacute;e.');
         }
         closeNewBookingModal();
         selectedDate = new Date(dateKey + 'T00:00:00');
         await renderDayView();
       } catch (err) {
         console.error(err);
-        errorEl.textContent = 'Erreur lors de l\'enregistrement de la reservation.';
+        errorEl.textContent = fr('Erreur lors de l\'enregistrement de la r&eacute;servation.');
         errorEl.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = editingBookingId ? 'Enregistrer les modifications' : 'Creer la reservation';
+        submitBtn.textContent = fr(editingBookingId ? 'Enregistrer les modifications' : 'Cr&eacute;er la r&eacute;servation');
       }
     });
 
@@ -1122,7 +1122,7 @@ ini_set('log_errors', 1);
 
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        loadingEl.textContent = 'Aucun etablissement associe a ce compte.';
+        loadingEl.textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       employees = await loadEmployees(business.id);

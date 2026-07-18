@@ -227,16 +227,16 @@ export async function updateBooking(bookingId, params) {
 
         try {
             if (wasConfirmed) {
-                let message = (params.businessName || 'Le professionnel') + ' a confirme votre RDV - ' +
-                    (params.serviceName || 'votre rendez-vous') + ' a ' + newTimeShort + ' le ' + params.dateKey + '.';
+                let message = (params.businessName || 'Le professionnel') + ' a confirmé votre RDV - ' +
+                    (params.serviceName || 'votre rendez-vous') + ' à ' + newTimeShort + ' le ' + params.dateKey + '.';
                 const changes = [];
-                if (timeChanged) changes.push("l'horaire a ete ajuste (initialement demande a " + originalTimeShort + ')');
+                if (timeChanged) changes.push("l'horaire a été ajusté (initialement demandé à " + originalTimeShort + ')');
                 if (employeeChanged && params.assignedEmployeeName) changes.push("c'est " + params.assignedEmployeeName + ' qui s\'occupera de vous');
                 if (changes.length) message += ' A noter : ' + changes.join(', ') + '.';
 
                 await supabase.from('notifications').insert({
                     user_id: params.customerId,
-                    title: 'Rendez-vous confirme',
+                    title: 'Rendez-vous confirmé',
                     message: message,
                     type: 'booking_confirmed',
                     data: { booking_id: bookingId },
@@ -245,9 +245,9 @@ export async function updateBooking(bookingId, params) {
             } else if (timeChanged) {
                 await supabase.from('notifications').insert({
                     user_id: params.customerId,
-                    title: 'Heure de RDV modifiee',
-                    message: (params.businessName || 'Le professionnel') + ' a modifie votre RDV - ' +
-                        (params.serviceName || 'votre rendez-vous') + ' est maintenant a ' + newTimeShort + ' le ' + params.dateKey + '.',
+                    title: 'Heure de RDV modifiée',
+                    message: (params.businessName || 'Le professionnel') + ' a modifié votre RDV - ' +
+                        (params.serviceName || 'votre rendez-vous') + ' est maintenant à ' + newTimeShort + ' le ' + params.dateKey + '.',
                     type: 'booking_updated',
                     data: { booking_id: bookingId },
                     is_read: false,
@@ -358,8 +358,8 @@ export async function checkConflictForPendingBooking(businessId, booking) {
 
     if (hasConflict(dayBookings, empId, start, end, booking.id)) {
         const employee = booking.employees;
-        return (employee ? ((employee.first_name || '') + ' ' + (employee.last_name || '')).trim() : 'Cet employe') +
-            ' a deja un rendez-vous confirme sur ce creneau.';
+        return (employee ? ((employee.first_name || '') + ' ' + (employee.last_name || '')).trim() : 'Cet employé') +
+            ' a déjà un rendez-vous confirmé sur ce créneau.';
     }
     return null;
 }
@@ -466,17 +466,17 @@ export async function markNoShow(booking, businessId, businessName) {
 
     let title, message;
     if (count === 1) {
-        title = 'Rendez-vous manque';
-        message = 'Vous ne vous etes pas presente(e) a votre rendez-vous chez ' + businessName + '. ' +
-            "Pensez a annuler au moins 2h a l'avance si vous ne pouvez pas venir.";
+        title = 'Rendez-vous manqué';
+        message = 'Vous ne vous êtes pas présenté(e) à votre rendez-vous chez ' + businessName + '. ' +
+            "Pensez à annuler au moins 2h à l'avance si vous ne pouvez pas venir.";
     } else if (count === 2) {
-        title = '2eme absence non signalee';
-        message = "C'est votre 2eme absence non annulee chez " + businessName + '. ' +
-            'Attention : apres une 3eme absence, vous ne pourrez plus reserver en ligne chez ce professionnel.';
+        title = '2ème absence non signalée';
+        message = "C'est votre 2ème absence non annulée chez " + businessName + '. ' +
+            'Attention : après une 3ème absence, vous ne pourrez plus réserver en ligne chez ce professionnel.';
     } else {
-        title = 'Reservations en ligne desactivees';
-        message = 'Suite a 3 absences non annulees chez ' + businessName + ', ' +
-            'les reservations en ligne ne sont plus disponibles. Contactez ' + businessName + ' directement pour prendre rendez-vous.';
+        title = 'Réservations en ligne désactivées';
+        message = 'Suite à 3 absences non annulées chez ' + businessName + ', ' +
+            'les réservations en ligne ne sont plus disponibles. Contactez ' + businessName + ' directement pour prendre rendez-vous.';
         try {
             await supabase.from('client_blocks').upsert({ customer_id: customerId, business_id: businessId, reason: 'no_show' });
         } catch (e) { /* ignore */ }

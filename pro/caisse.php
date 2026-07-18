@@ -47,10 +47,8 @@ ini_set('log_errors', 1);
 
   #loading { text-align: center; padding: 60px 20px; color: var(--text-medium); }
   .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .catalogue-item { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 0; cursor: pointer; text-align: left; font-family: inherit; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s; }
+  .catalogue-item { background: white; border: 1px solid var(--card-border); border-left: 3px solid transparent; border-radius: 14px; padding: 12px; cursor: pointer; text-align: left; font-family: inherit; transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s; }
   .catalogue-item:hover { border-color: var(--primary); box-shadow: 0 6px 18px -6px rgba(0,191,165,0.25); transform: translateY(-1px); }
-  .ci-thumb { width: 100%; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-  .ci-body { padding: 10px 12px 12px; }
   .catalogue-item .ci-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .catalogue-item .ci-price { font-size: 14px; font-weight: 800; color: var(--primary-dark); }
   .catalogue-item .ci-badge { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 7px; border-radius: 6px; margin-bottom: 6px; }
@@ -93,8 +91,9 @@ ini_set('log_errors', 1);
   .total-block span:last-child { font-size: 24px; font-weight: 900; }
 
   .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
-  .pay-btn { padding: 12px; border-radius: 12px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .pay-btn { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px; border-radius: 12px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
   .pay-btn:hover { border-color: var(--primary); background: rgba(0,191,165,0.06); color: var(--primary-dark); }
+  .pay-btn .pi { font-size: 15px; }
   .pay-btn.free { grid-column: 1 / -1; }
   .pay-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -170,13 +169,7 @@ ini_set('log_errors', 1);
         <span id="t-total">0</span>
       </div>
 
-      <div class="pay-grid">
-        <button class="pay-btn" data-method="cash">Especes</button>
-        <button class="pay-btn" data-method="card">Carte</button>
-        <button class="pay-btn" data-method="check">Cheque</button>
-        <button class="pay-btn" data-method="ticket_restaurant">Ticket resto</button>
-        <button class="pay-btn free" data-method="free">Offert</button>
-      </div>
+      <div class="pay-grid" id="pay-grid"></div>
     </div>
   </div>
 
@@ -297,18 +290,14 @@ ini_set('log_errors', 1);
       grid.innerHTML = '';
       list.forEach((item) => {
         const color = categoryColor(item.category_id);
-        const icon = item._isProduct ? '&#128230;' : '&#10024;';
 
         const btn = document.createElement('button');
         btn.className = 'catalogue-item';
+        btn.style.borderLeftColor = color;
         btn.innerHTML =
-          '<div class="ci-thumb" style="background:linear-gradient(135deg, ' + color + '2E, ' + color + '0D)">' +
-          '<span style="color:' + color + '">' + icon + '</span></div>' +
-          '<div class="ci-body">' +
           '<div class="ci-badge" style="background:' + color + '1F; color:' + color + '">' + (item._isProduct ? 'Produit' : 'Service') + '</div>' +
           '<div class="ci-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="ci-price">' + fmt(item.price || 0) + '</div>' +
-          '</div>';
+          '<div class="ci-price">' + fmt(item.price || 0) + '</div>';
         btn.addEventListener('click', () => addToCart(item));
         grid.appendChild(btn);
       });
@@ -577,23 +566,51 @@ ini_set('log_errors', 1);
     // -----------------------------------------------------
     // PAIEMENT
     // -----------------------------------------------------
-    document.querySelectorAll('.pay-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (cart.length === 0) { showToast('Le panier est vide.'); return; }
-        const method = btn.dataset.method;
-        if (method === 'cash') {
-          const t = computeTotals();
-          document.getElementById('cash-total-label').textContent = 'A encaisser : ' + fmt(t.total);
-          document.getElementById('cash-received').value = '';
-          document.getElementById('cash-change-box').style.display = 'none';
-          document.getElementById('cash-confirm-btn').disabled = true;
-          document.getElementById('cash-overlay').classList.add('visible');
-          document.getElementById('cash-received').focus();
-          return;
-        }
-        finalizePayment(method);
+    const PAY_METHODS = [
+      { method: 'cash', icon: '\u{1F4B5}', label: 'Especes' },
+      { method: 'card', icon: '\u{1F4B3}', label: 'Carte' },
+      { method: 'check', icon: '\u{1F4DD}', label: 'Cheque' },
+      { method: 'ticket_restaurant', icon: '\u{1F37D}', label: 'Ticket resto' },
+      { method: 'free', icon: '\u{1F381}', label: 'Offert', full: true },
+    ];
+
+    // Ticket resto n'a de sens que pour les secteurs alimentaires. Le champ
+    // businesses.category est du texte libre (pas une liste fixe), donc on
+    // detecte par mots-cles plutot que par correspondance exacte.
+    function allowsTicketRestaurant(category) {
+      if (!category) return true; // categorie inconnue : on ne filtre pas par defaut
+      const c = category.toLowerCase();
+      const foodKeywords = ['restaurant', 'food', 'snack', 'traiteur', 'boulanger', 'patiss', 'epicerie', 'alimentation', 'cuisine', 'pizza', 'boucherie', 'primeur'];
+      return foodKeywords.some((k) => c.includes(k));
+    }
+
+    function renderPayButtons() {
+      const grid = document.getElementById('pay-grid');
+      grid.innerHTML = '';
+      const showTicketResto = allowsTicketRestaurant(business.category);
+      PAY_METHODS.forEach((pm) => {
+        if (pm.method === 'ticket_restaurant' && !showTicketResto) return;
+        const btn = document.createElement('button');
+        btn.className = 'pay-btn' + (pm.full ? ' free' : '');
+        btn.dataset.method = pm.method;
+        btn.innerHTML = '<span class="pi">' + pm.icon + '</span><span>' + pm.label + '</span>';
+        btn.addEventListener('click', () => {
+          if (cart.length === 0) { showToast('Le panier est vide.'); return; }
+          if (pm.method === 'cash') {
+            const t = computeTotals();
+            document.getElementById('cash-total-label').textContent = 'A encaisser : ' + fmt(t.total);
+            document.getElementById('cash-received').value = '';
+            document.getElementById('cash-change-box').style.display = 'none';
+            document.getElementById('cash-confirm-btn').disabled = true;
+            document.getElementById('cash-overlay').classList.add('visible');
+            document.getElementById('cash-received').focus();
+            return;
+          }
+          finalizePayment(pm.method);
+        });
+        grid.appendChild(btn);
       });
-    });
+    }
 
     document.getElementById('cash-received').addEventListener('input', () => {
       const t = computeTotals();
@@ -657,6 +674,7 @@ ini_set('log_errors', 1);
       renderCategoryChips();
       renderGrid('');
       renderCart();
+      renderPayButtons();
 
       // Arrivee depuis "Encaisser" sur un RDV du planning : precharge service + client.
       const urlParams = new URLSearchParams(window.location.search);

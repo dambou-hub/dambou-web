@@ -13,6 +13,7 @@ ini_set('log_errors', 1);
 <meta name="theme-color" content="#00BFA5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root {
     --primary: #00BFA5; --primary-dark: #00897B; --text-dark: #2D3748; --text-medium: #718096;
@@ -37,6 +38,13 @@ ini_set('log_errors', 1);
   .total-card { background: linear-gradient(160deg, var(--primary), var(--primary-dark)); border-radius: 20px; padding: 26px; color: white; margin-bottom: 20px; }
   .total-card .label { font-size: 13px; opacity: 0.85; margin-bottom: 4px; }
   .total-card .value { font-size: 38px; font-weight: 900; }
+
+  .chart-card { background: white; border: 1px solid var(--card-border); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+  .chart-card h3 { font-size: 13px; font-weight: 800; color: var(--text-medium); margin-bottom: 14px; }
+  .charts-row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 720px) { .charts-row.two-col { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+  .chart-canvas-wrap { position: relative; height: 220px; }
+  .chart-canvas-wrap.donut { height: 200px; }
 
   .warning-banner { background: rgba(221,107,32,0.08); border: 1px solid rgba(221,107,32,0.25); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #a3591e; margin-bottom: 16px; }
 
@@ -133,6 +141,8 @@ ini_set('log_errors', 1);
         container.appendChild(warn);
       }
 
+      renderCharts(container, stats);
+
       container.appendChild(sourceCard('Caisse sur place', 'var(--c-caisse)', stats.totalCaisse, null, stats.caisseByMode));
       container.appendChild(sourceCard('Commandes Dambou', 'var(--c-commandes)', stats.totalCommandes, stats.nbCommandes + ' commande(s)', null));
       container.appendChild(sourceCard('Reservations', 'var(--c-rdv)', stats.totalRdv, stats.nbRdv + ' RDV confirme(s)' + (stats.rdvEnLigne > 0 ? ' - dont ' + fmt(stats.rdvEnLigne) + ' payes en ligne' : ''), stats.rdvSurPlaceByMode));
@@ -174,6 +184,82 @@ ini_set('log_errors', 1);
       }
       card.innerHTML = html;
       return card;
+    }
+
+    let trendChartInstance = null;
+    let donutChartInstance = null;
+
+    function renderCharts(container, stats) {
+      const hasTrend = stats.trend && stats.trend.length > 0;
+      const hasBreakdown = stats.totalGlobal > 0;
+      if (!hasTrend && !hasBreakdown) return;
+
+      const row = document.createElement('div');
+      row.className = 'charts-row' + (hasTrend && hasBreakdown ? ' two-col' : '');
+
+      if (hasTrend) {
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.innerHTML = '<h3>Evolution du chiffre d\'affaires</h3><div class="chart-canvas-wrap"><canvas id="trend-chart"></canvas></div>';
+        row.appendChild(card);
+      }
+      if (hasBreakdown) {
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.innerHTML = '<h3>Repartition par source</h3><div class="chart-canvas-wrap donut"><canvas id="donut-chart"></canvas></div>';
+        row.appendChild(card);
+      }
+      container.appendChild(row);
+
+      if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+      if (donutChartInstance) { donutChartInstance.destroy(); donutChartInstance = null; }
+
+      if (hasTrend) {
+        const ctx = document.getElementById('trend-chart').getContext('2d');
+        trendChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: stats.trend.map((t) => t.label),
+            datasets: [{
+              data: stats.trend.map((t) => t.total),
+              backgroundColor: 'rgba(0,191,165,0.55)',
+              borderRadius: 4,
+              maxBarThickness: 28,
+            }],
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => fmt(c.parsed.y) } } },
+            scales: {
+              y: { beginAtZero: true, grid: { color: '#F0F2F5' }, ticks: { font: { family: 'Inter', size: 10 } } },
+              x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 } } },
+            },
+          },
+        });
+      }
+
+      if (hasBreakdown) {
+        const ctx2 = document.getElementById('donut-chart').getContext('2d');
+        donutChartInstance = new Chart(ctx2, {
+          type: 'doughnut',
+          data: {
+            labels: ['Caisse sur place', 'Commandes Dambou', 'Reservations'],
+            datasets: [{
+              data: [stats.totalCaisse, stats.totalCommandes, stats.totalRdv],
+              backgroundColor: ['#52B788', '#F4A261', '#00BFA5'],
+              borderWidth: 0,
+            }],
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+              legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 10 } },
+              tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.parsed) } },
+            },
+          },
+        });
+      }
     }
 
     (async () => {

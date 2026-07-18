@@ -37,6 +37,8 @@ function toDateKey(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export const PAY_LABELS = {
     cash: 'Especes', card: 'Carte bancaire', check: 'Cheque',
     ticket_restaurant: 'Ticket restaurant', free: 'Offert', transfer: 'Virement',
@@ -54,15 +56,15 @@ export async function loadStats(businessId, periodIndex) {
     const toDate = toDateKey(range.end);
 
     const [txRes, ordersOnlineRes, bookingsRes, exportOrdersRes, paidNotDoneRes] = await Promise.all([
-        supabase.from('transactions').select('total, payment_method, source_order_id, items')
+        supabase.from('transactions').select('total, payment_method, source_order_id, items, created_at')
             .eq('business_id', businessId)
             .not('payment_method', 'in', '(stripe_online,online,dambou)')
             .gte('created_at', fromIso).lt('created_at', toIso),
-        supabase.from('orders').select('id, total, payment_method, payment_status, is_paid')
+        supabase.from('orders').select('id, total, payment_method, payment_status, is_paid, created_at')
             .eq('business_id', businessId).eq('status', 'completed')
             .in('payment_method', ['stripe_online', 'online', 'dambou'])
             .gte('created_at', fromIso).lt('created_at', toIso),
-        supabase.from('bookings').select('price, payment_method, services(name, price)')
+        supabase.from('bookings').select('price, payment_method, booking_date, services(name, price)')
             .eq('business_id', businessId).eq('status', 'confirmed')
             .gte('booking_date', fromDate).lt('booking_date', toDate),
         supabase.from('orders').select('id, order_items(quantity, unit_price, products(name))')
@@ -160,12 +162,46 @@ export async function loadStats(businessId, periodIndex) {
     });
     const topProducts = Object.values(productStats).sort((a, b) => b.qty - a.qty);
 
+    // ----- Tendance temporelle (reutilise les donnees deja chargees, pas de requete en plus) -----
+    // Semaine/Mois : bucket par jour. Annee : bucket par mois (365 points serait illisible).
+    const byMonth = periodIndex === 3;
+    const trendMap = {};
+    function bucketKey(dateStr) {
+        return byMonth ? dateStr.substring(0, 7) : dateStr.substring(0, 10);
+    }
+    function addToTrend(dateStr, amount) {
+        const key = bucketKey(dateStr);
+        trendMap[key] = (trendMap[key] || 0) + amount;
+    }
+    (txRes.data || []).forEach((t) => addToTrend(t.created_at, t.total || 0));
+    (ordersOnlineRes.data || []).forEach((o) => addToTrend(o.created_at, o.total || 0));
+    (bookingsRes.data || []).forEach((b) => addToTrend(b.booking_date, b.price || (b.services && b.services.price) || 0));
+
+    // Genere tous les buckets de la periode, meme a 0, pour un graphique continu.
+    const trend = [];
+    if (periodIndex !== 0) {
+        if (byMonth) {
+            for (let m = 0; m < 12; m++) {
+                const key = range.start.getFullYear() + '-' + String(m + 1).padStart(2, '0');
+                trend.push({ key: key, label: MONTH_LABELS[m], total: trendMap[key] || 0 });
+            }
+        } else {
+            let cursor = new Date(range.start);
+            while (cursor < range.end) {
+                const key = toDateKey(cursor);
+                trend.push({ key: key, label: String(cursor.getDate()), total: trendMap[key] || 0 });
+                cursor = addDays(cursor, 1);
+            }
+        }
+    }
+
     return {
         totalCaisse, caisseByMode,
         totalCommandes, nbCommandes, totalPaidNotDone, nbPaidNotDone: paidNotDone.length,
         totalRdv, nbRdv, rdvEnLigne, rdvSurPlaceByMode,
         totalGlobal: totalCaisse + totalCommandes + totalRdv,
         topProducts,
+        trend,
         errors,
     };
 }

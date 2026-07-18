@@ -79,7 +79,7 @@ ini_set('log_errors', 1);
 
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
-    import { ALL_MODULES, loadModuleStates, toggleModule, toggleOnlineOrders } from '/pro/js/modules.js';
+    import { ALL_MODULES, loadModuleStates, toggleModule, toggleOnlineOrders, saveAiContext } from '/pro/js/modules.js';
 
     let business = null;
     let moduleStates = {};
@@ -133,6 +133,18 @@ ini_set('log_errors', 1);
             card.querySelector('.module-row').parentNode.appendChild(sub);
           }
 
+          if (m.type === 'ai_assistant' && isEnabled) {
+            const aiZone = document.createElement('div');
+            aiZone.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px solid var(--card-border)';
+            aiZone.innerHTML =
+              '<div style="font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:4px">Instructions pour l\'assistant</div>' +
+              '<div style="font-size:11px; color:var(--text-light); margin-bottom:8px; line-height:1.4">Ajoutez des informations specifiques : regles de prise de RDV, promotions, FAQ, conditions particulieres...</div>' +
+              '<textarea id="ai-context-input" rows="5" placeholder="Ex: Le stationnement est gratuit. Prevoir 10 min supplementaires pour la 1ere consultation..." ' +
+              'style="width:100%; padding:10px; border:none; background:var(--background); border-radius:10px; font-size:12px; font-family:inherit; resize:vertical; margin-bottom:8px">' + escapeHtml(business.ai_context || '') + '</textarea>' +
+              '<button type="button" id="ai-context-save-btn" style="width:100%; padding:10px; border:none; border-radius:10px; background:var(--primary); color:white; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer">Sauvegarder</button>';
+            card.appendChild(aiZone);
+          }
+
           container.appendChild(card);
         });
       });
@@ -173,6 +185,26 @@ ini_set('log_errors', 1);
             onlineCb.checked = !enabled;
           } finally {
             onlineCb.disabled = false;
+          }
+        });
+      }
+
+      const aiSaveBtn = document.getElementById('ai-context-save-btn');
+      if (aiSaveBtn) {
+        aiSaveBtn.addEventListener('click', async () => {
+          aiSaveBtn.disabled = true;
+          aiSaveBtn.textContent = 'Enregistrement...';
+          try {
+            const value = document.getElementById('ai-context-input').value;
+            await saveAiContext(business.id, value);
+            business.ai_context = value;
+            showToast('Instructions sauvegardees.');
+          } catch (err) {
+            console.error(err);
+            showToast('Erreur lors de l\'enregistrement.');
+          } finally {
+            aiSaveBtn.disabled = false;
+            aiSaveBtn.textContent = 'Sauvegarder';
           }
         });
       }

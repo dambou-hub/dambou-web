@@ -29,12 +29,14 @@ ini_set('log_errors', 1);
   .container { max-width: 720px; margin: 0 auto; padding: 24px 24px 60px; }
   #loading { text-align: center; padding: 60px 20px; color: var(--text-medium); }
 
-  .cover-wrap { position: relative; height: 160px; border-radius: 16px; overflow: hidden; background: var(--card-border); margin-bottom: 48px; cursor: pointer; }
+  .profile-media { position: relative; margin-bottom: 48px; }
+  .cover-wrap { position: relative; height: 160px; border-radius: 16px; overflow: hidden; background: var(--card-border); cursor: pointer; }
   .cover-wrap img { width: 100%; height: 100%; object-fit: cover; }
   .cover-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-light); font-size: 13px; font-weight: 700; }
-  .logo-wrap { position: absolute; left: 20px; bottom: -32px; width: 80px; height: 80px; border-radius: 20px; background: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; }
+  .logo-wrap { position: absolute; left: 20px; bottom: -32px; width: 80px; height: 80px; border-radius: 20px; background: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; cursor: pointer; z-index: 2; }
   .logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
   .logo-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(0,191,165,0.1); color: var(--primary-dark); font-size: 22px; font-weight: 900; }
+  .logo-upload-hint { position: absolute; bottom: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid white; }
   .upload-hint { position: absolute; bottom: 8px; right: 12px; background: rgba(0,0,0,0.55); color: white; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
 
   .tabs { display: flex; gap: 4px; background: white; border: 1px solid var(--card-border); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
@@ -49,9 +51,10 @@ ini_set('log_errors', 1);
   .field input, .field textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 14px; font-family: inherit; }
   .field textarea { resize: vertical; min-height: 60px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .slug-row { display: flex; gap: 8px; }
-  .slug-row input { flex: 1; }
-  .slug-row button { padding: 0 14px; border-radius: 12px; border: 1px solid var(--card-border); background: white; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .slug-row { display: flex; align-items: center; gap: 8px; background: var(--background); border: 1px solid var(--card-border); border-radius: 12px; padding: 11px 12px; }
+  .slug-row span { flex: 1; font-size: 13px; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slug-row span.set { color: var(--primary-dark); font-weight: 700; }
+  .slug-row button { padding: 6px 12px; border-radius: 8px; border: none; background: rgba(0,191,165,0.1); color: var(--primary-dark); font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
   .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
   .toggle-row:last-child { border-bottom: none; }
@@ -71,12 +74,14 @@ ini_set('log_errors', 1);
   .locate-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--primary); background: rgba(0,191,165,0.08); border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer; margin-top: 8px; font-family: inherit; }
 
   /* Horaires */
-  .day-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+  .day-row { padding: 10px 0; border-bottom: 1px solid var(--card-border); }
   .day-row:last-child { border-bottom: none; }
+  .day-row-top { display: flex; align-items: center; gap: 10px; }
   .day-name { width: 90px; font-size: 13px; font-weight: 700; flex-shrink: 0; }
   .day-times { display: flex; align-items: center; gap: 6px; flex: 1; }
   .day-times input[type=time] { padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 12px; font-family: inherit; }
   .day-closed-label { font-size: 12px; color: var(--text-light); flex: 1; }
+  .copy-all-btn { display: flex; align-items: center; gap: 4px; margin-top: 6px; margin-left: 100px; border: none; background: none; font-family: inherit; font-size: 11px; font-weight: 600; color: var(--primary); cursor: pointer; padding: 0; }
 
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 60; display: none; }
   .toast.visible { display: block; }
@@ -96,13 +101,16 @@ ini_set('log_errors', 1);
     <div id="loading">Chargement...</div>
     <div id="content" style="display:none">
 
-      <div class="cover-wrap" id="cover-wrap">
-        <div class="cover-placeholder" id="cover-placeholder">Ajouter une banniere</div>
-        <img id="cover-img" style="display:none">
-        <div class="upload-hint">Changer</div>
+      <div class="profile-media" id="profile-media">
+        <div class="cover-wrap" id="cover-wrap">
+          <div class="cover-placeholder" id="cover-placeholder">Ajouter une banniere</div>
+          <img id="cover-img" style="display:none">
+          <div class="upload-hint">Changer la banniere</div>
+        </div>
         <div class="logo-wrap" id="logo-wrap">
           <div class="logo-placeholder" id="logo-placeholder">?</div>
           <img id="logo-img" style="display:none">
+          <div class="logo-upload-hint">&#9998;</div>
         </div>
       </div>
       <input type="file" id="cover-input" accept="image/*">
@@ -118,8 +126,12 @@ ini_set('log_errors', 1);
       <div class="tab-panel active" id="tab-infos">
         <div class="card">
           <div class="field"><label>Nom du business</label><input type="text" id="f-name"></div>
-          <div class="field"><label>Slug (dambou.fr/...)</label>
-            <div class="slug-row"><input type="text" id="f-slug"><button type="button" id="regen-slug-btn">Regenerer</button></div>
+          <div class="field">
+            <label>Votre lien vitrine web</label>
+            <div class="slug-row">
+              <span id="slug-display">Sauvegardez pour generer votre lien</span>
+              <button type="button" id="copy-slug-btn" style="display:none">Copier</button>
+            </div>
           </div>
           <div class="field"><label>Description</label><textarea id="f-description"></textarea></div>
           <div class="field"><label>Slogan (50 caracteres max)</label><input type="text" id="f-slogan" maxlength="50"></div>
@@ -189,7 +201,7 @@ ini_set('log_errors', 1);
   <script type="module">
     import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
     import {
-      loadFullBusiness, generateUniqueSlug, saveBusinessInfo, saveOpeningHours, saveAddress, uploadLogo, uploadCover,
+      loadFullBusiness, saveBusinessInfo, saveOpeningHours, saveAddress, uploadLogo, uploadCover,
     } from '/pro/js/business.js';
 
     let business = null;
@@ -254,11 +266,9 @@ ini_set('log_errors', 1);
     document.getElementById('f-closure-enabled').addEventListener('change', (e) => {
       document.getElementById('closure-msg-field').style.display = e.target.checked ? 'block' : 'none';
     });
-    document.getElementById('regen-slug-btn').addEventListener('click', async () => {
-      const name = document.getElementById('f-name').value.trim();
-      if (!name) return;
-      const slug = await generateUniqueSlug(name, business.id);
-      document.getElementById('f-slug').value = slug;
+    document.getElementById('copy-slug-btn').addEventListener('click', () => {
+      const url = 'https://dambou.fr/' + (business.slug || '');
+      navigator.clipboard.writeText(url).then(() => showToast('Lien copie.'));
     });
     document.getElementById('save-infos-btn').addEventListener('click', async () => {
       const name = document.getElementById('f-name').value.trim();
@@ -267,9 +277,12 @@ ini_set('log_errors', 1);
       btn.disabled = true;
       btn.textContent = 'Enregistrement...';
       try {
+        // Le slug n'est jamais modifie ici : il est genere une seule fois a la
+        // creation du compte et garanti unique. Le rendre editable risquerait
+        // de creer deux business avec le meme slug.
         await saveBusinessInfo(business.id, {
           name: name,
-          slug: document.getElementById('f-slug').value.trim(),
+          slug: business.slug,
           description: document.getElementById('f-description').value.trim(),
           slogan: document.getElementById('f-slogan').value.trim(),
           phone: document.getElementById('f-phone').value.trim(),
@@ -402,11 +415,14 @@ ini_set('log_errors', 1);
         const row = document.createElement('div');
         row.className = 'day-row';
         row.innerHTML =
+          '<div class="day-row-top">' +
           '<span class="day-name">' + day + '</span>' +
           '<label style="display:flex; align-items:center; gap:6px"><input type="checkbox" class="day-open-cb" data-day="' + day + '" ' + (h.isOpen ? 'checked' : '') + '></label>' +
           (h.isOpen
             ? '<div class="day-times"><input type="time" class="day-start" data-day="' + day + '" value="' + h.start + '"><span>-</span><input type="time" class="day-end" data-day="' + day + '" value="' + h.end + '"></div>'
-            : '<span class="day-closed-label">Ferme</span>');
+            : '<span class="day-closed-label">Ferme</span>') +
+          '</div>' +
+          (h.isOpen ? '<button type="button" class="copy-all-btn" data-day="' + day + '">&#128203; Appliquer a tous les jours</button>' : '');
         container.appendChild(row);
       });
 
@@ -421,6 +437,18 @@ ini_set('log_errors', 1);
       });
       container.querySelectorAll('.day-end').forEach((inp) => {
         inp.addEventListener('input', () => { hours[inp.dataset.day].end = inp.value; });
+      });
+      container.querySelectorAll('.copy-all-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const source = hours[btn.dataset.day];
+          Object.keys(hours).forEach((d) => {
+            hours[d].start = source.start;
+            hours[d].end = source.end;
+            hours[d].isOpen = true;
+          });
+          renderHours();
+          showToast('Horaires ' + source.start + ' - ' + source.end + ' appliques a tous les jours.');
+        });
       });
     }
     document.getElementById('save-hours-btn').addEventListener('click', async () => {
@@ -445,7 +473,11 @@ ini_set('log_errors', 1);
       business = await loadFullBusiness(businessBasic.id);
 
       document.getElementById('f-name').value = business.name || '';
-      document.getElementById('f-slug').value = business.slug || '';
+      if (business.slug) {
+        document.getElementById('slug-display').textContent = 'dambou.fr/' + business.slug;
+        document.getElementById('slug-display').classList.add('set');
+        document.getElementById('copy-slug-btn').style.display = 'inline-block';
+      }
       document.getElementById('f-description').value = business.description || '';
       document.getElementById('f-slogan').value = business.slogan || '';
       document.getElementById('f-phone').value = business.phone || '';

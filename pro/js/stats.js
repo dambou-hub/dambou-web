@@ -78,6 +78,22 @@ export async function loadStats(businessId, periodIndex) {
             .gte('created_at', fromIso).lt('created_at', toIso),
     ]);
 
+    // On journalise chaque erreur individuellement au lieu de les avaler
+    // silencieusement (un tableau vide en cas d'erreur ressemble a "aucune donnee").
+    const errors = [];
+    [
+        ['transactions (caisse)', txRes],
+        ['orders (en ligne)', ordersOnlineRes],
+        ['bookings', bookingsRes],
+        ['orders (export/top articles)', exportOrdersRes],
+        ['orders (payees non terminees)', paidNotDoneRes],
+    ].forEach(([label, res]) => {
+        if (res.error) {
+            console.error('Erreur stats -', label, ':', res.error);
+            errors.push(label + ' : ' + res.error.message);
+        }
+    });
+
     // ----- Caisse (hors paiements en ligne, deja comptes dans Commandes) -----
     const caisseByMode = {};
     let totalCaisse = 0;
@@ -150,5 +166,6 @@ export async function loadStats(businessId, periodIndex) {
         totalRdv, nbRdv, rdvEnLigne, rdvSurPlaceByMode,
         totalGlobal: totalCaisse + totalCommandes + totalRdv,
         topProducts,
+        errors,
     };
 }

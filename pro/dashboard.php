@@ -147,6 +147,11 @@ ini_set('log_errors', 1);
           <h3>Statistiques</h3>
           <p>Chiffre d'affaires et articles vendus</p>
         </a>
+        <a class="nav-card" href="/pro/modules">
+          <div class="icon" style="background:rgba(94,53,177,0.1)">&#9881;&#65039;</div>
+          <h3>Modules</h3>
+          <p>Activez ce dont vous avez besoin</p>
+        </a>
       </div>
     </div>
   </div>

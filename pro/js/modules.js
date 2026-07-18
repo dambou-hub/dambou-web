@@ -41,6 +41,11 @@ export async function toggleModule(businessId, moduleType, enabled) {
     }
 }
 
+export async function saveAiContext(businessId, aiContext) {
+    const { error } = await supabase.from('businesses').update({ ai_context: aiContext }).eq('id', businessId);
+    if (error) throw error;
+}
+
 export async function toggleOnlineOrders(businessId, enabled) {
     const { error } = await supabase.from('modules')
         .update({ online_enabled: enabled, updated_at: new Date().toISOString() })

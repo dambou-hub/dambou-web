@@ -16,7 +16,7 @@ ini_set('log_errors', 1);
 <style>
   :root {
     --primary: #00BFA5; --primary-dark: #00897B; --text-dark: #2D3748; --text-medium: #718096;
-    --text-light: #A0AEC0; --background: #F7F8FA; --card-border: #E2E8F0; --warning: #DD6B20;
+    --text-light: #A0AEC0; --background: #F7F8FA; --card-border: #E2E8F0; --warning: #DD6B20; --error: #E53E3E;
     --c-caisse: #52B788; --c-commandes: #F4A261; --c-rdv: #00BFA5;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -110,6 +110,16 @@ ini_set('log_errors', 1);
 
       const container = document.getElementById('content');
       container.innerHTML = '';
+
+      if (stats.errors && stats.errors.length) {
+        const errBanner = document.createElement('div');
+        errBanner.className = 'warning-banner';
+        errBanner.style.background = 'rgba(229,62,62,0.08)';
+        errBanner.style.borderColor = 'rgba(229,62,62,0.25)';
+        errBanner.style.color = 'var(--error)';
+        errBanner.innerHTML = '<strong>Erreur de chargement</strong> (voir la console) :<br>' + stats.errors.map(escapeHtml).join('<br>');
+        container.appendChild(errBanner);
+      }
 
       const totalCard = document.createElement('div');
       totalCard.className = 'total-card';

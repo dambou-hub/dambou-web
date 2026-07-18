@@ -156,6 +156,22 @@ function slugify(name) {
         .replace(/^-|-$/g, '');
 }
 
+// Genere un slug et verifie son unicite en base, avec suffixe numerique en
+// cas de collision (-2, -3, ...). L'ancienne version (ici comme dans
+// template_injection_service.dart cote mobile) ne verifiait pas l'unicite :
+// deux business avec un nom proche pouvaient recevoir le meme slug.
+async function uniqueSlugify(name) {
+    const base = slugify(name);
+    let candidate = base;
+    let suffix = 2;
+    while (true) {
+        const { data } = await supabase.from('businesses').select('id').eq('slug', candidate).maybeSingle();
+        if (!data) return candidate;
+        candidate = base + '-' + suffix;
+        suffix++;
+    }
+}
+
 export async function createBusinessWithTemplate({ ownerId, businessName, templateId, phone, email, place, currencyCode }) {
     // Charger category + allow_customer_ingredients depuis le template
     const { data: tplInfo, error: tplInfoError } = await supabase
@@ -167,7 +183,7 @@ export async function createBusinessWithTemplate({ ownerId, businessName, templa
 
     const category = tplInfo.category || 'autre';
     const allowIngredients = tplInfo.allow_customer_ingredients || false;
-    const slug = slugify(businessName);
+    const slug = await uniqueSlugify(businessName);
 
     const bizInsert = {
         owner_id: ownerId,

@@ -195,6 +195,29 @@ ini_set('log_errors', 1);
 
   <div class="toast" id="toast"></div>
 
+  <!-- Gestion des inscrits a un atelier -->
+  <div class="overlay" id="workshop-overlay">
+    <div class="panel" id="workshop-panel" style="max-width:420px">
+      <div class="panel-head" style="align-items:flex-start">
+        <div class="panel-icon" id="workshop-icon" style="background:#00BFA5">&#127881;</div>
+        <div class="panel-info">
+          <div class="panel-client" id="workshop-service-name"></div>
+          <div class="panel-service" id="workshop-datetime"></div>
+        </div>
+        <button class="nav-btn" id="workshop-close" style="border:none">&times;</button>
+      </div>
+      <div class="panel-divider"></div>
+      <div id="workshop-count-label" style="font-size:13px; font-weight:800; margin-bottom:10px"></div>
+      <div id="workshop-participants-list" style="margin-bottom:14px"></div>
+      <button type="button" id="workshop-add-btn" class="action-tile" style="border-top:1px solid var(--card-border); padding-top:14px; color:var(--primary-dark)">
+        <span class="a-icon">+</span><span>Inscrire un participant</span>
+      </button>
+      <button type="button" id="workshop-cancel-session-btn" class="action-tile" style="color:var(--error)">
+        <span class="a-icon">&#128465;</span><span>Annuler tout l'atelier</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Nouvelle reservation -->
   <div class="overlay" id="new-overlay">
     <div class="panel" id="new-panel" style="max-width:420px">
@@ -231,7 +254,7 @@ ini_set('log_errors', 1);
           <div id="new-employees-chips" style="display:flex; flex-wrap:wrap; gap:8px"></div>
         </div>
 
-        <div style="margin-bottom:16px">
+        <div style="margin-bottom:16px" id="client-field-wrap">
           <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Client</label>
           <div id="client-selector-box" style="display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid var(--card-border); border-radius:12px; cursor:pointer;">
             <span id="client-box-placeholder" style="color:var(--text-light); font-size:14px; flex:1">Rechercher ou cr&eacute;er un client...</span>
@@ -248,6 +271,7 @@ ini_set('log_errors', 1);
             </div>
           </div>
         </div>
+        <div class="panel-note" id="workshop-create-note" style="display:none; margin-bottom:16px">&#127881; Ce service accepte plusieurs participants. Aucun client &agrave; choisir maintenant : vous inscrirez les participants ensuite, depuis la brique cr&eacute;&eacute;e sur le planning.</div>
 
         <div class="panel-note" id="modal-note" style="display:none; margin-bottom:12px"></div>
 
@@ -294,6 +318,7 @@ ini_set('log_errors', 1);
       clientName, bookingEmployeeIds, bookingPhone, getDayHours, timeToMinutes, layoutOverlaps,
       hasConflict, reassignEmployee, updateBookingTime, confirmBooking, cancelBooking, restoreNoShow, markNoShow,
       loadServices, searchClients, createManualClient, createBooking, updateBooking,
+      createWorkshopShell, addWorkshopParticipant, removeWorkshopParticipant,
     } from '/pro/js/planning.js';
 
     let business = null;
@@ -301,6 +326,7 @@ ini_set('log_errors', 1);
     let selectedDate = new Date();
     let viewMode = 'day'; // 'day' | 'week'
     let dayBookings = []; // donnees du jour affiche (utilisees pour la verif de conflits)
+    let weekBookings = []; // donnees de la semaine affichee (vue semaine)
     let currentBooking = null;
     let currentGridStartMin = 0;
 
@@ -364,7 +390,7 @@ ini_set('log_errors', 1);
       bodyEl.style.gridTemplateColumns = '56px repeat(' + cols + ', 1fr)';
 
       headEl.innerHTML = '<div class="corner"></div>' + employees.map((emp) => {
-        const count = dayBookings.filter((b) => bookingEmployeeIds(b).includes(emp.id)).length;
+        const count = dayBookings.filter((b) => bookingEmployeeIds(b).includes(emp.id) && !b.workshop_shell_id).length;
         const color = emp.color || '#00BFA5';
         return '<div class="col-head"><div class="emp-avatar" style="background:' + color + '">' +
           escapeHtml((emp.first_name || '?').charAt(0).toUpperCase()) + '</div>' +
@@ -394,17 +420,52 @@ ini_set('log_errors', 1);
         col.dataset.employeeId = emp.id;
         attachDropZone(col, emp.id);
 
-        const empBookings = dayBookings.filter((b) => bookingEmployeeIds(b).includes(emp.id));
+        // Les inscrits a un atelier (workshop_shell_id) ne sont pas affiches
+        // individuellement : ils sont comptes dans la brique de la coquille.
+        const empBookings = dayBookings.filter((b) => bookingEmployeeIds(b).includes(emp.id) && !b.workshop_shell_id);
         const layouts = layoutOverlaps(empBookings.map((b) => ({
           start: timeToMinutes((b.start_time || '').substring(0, 5)),
           end: timeToMinutes((b.end_time || '').substring(0, 5)) || 0,
         })));
         empBookings.forEach((b, i) => {
-          const el = renderApptBlock(b, emp.color || '#00BFA5', startMin, layouts[i]);
+          const el = b.is_workshop_shell
+            ? renderWorkshopBlock(b, emp.color || '#00BFA5', startMin, layouts[i])
+            : renderApptBlock(b, emp.color || '#00BFA5', startMin, layouts[i]);
           col.appendChild(el);
         });
         bodyEl.appendChild(col);
       });
+    }
+
+    function renderWorkshopBlock(shell, employeeColor, gridStartMin, layout) {
+      const start = timeToMinutes((shell.start_time || '').substring(0, 5));
+      const end = timeToMinutes((shell.end_time || '').substring(0, 5)) || (start + 30);
+      const top = (start - gridStartMin) * PX_PER_MIN;
+      const height = Math.max((end - start) * PX_PER_MIN, 22);
+      const lay = layout || { col: 0, total: 1 };
+      const widthPct = 100 / lay.total;
+      const leftPct = lay.col * widthPct;
+
+      const svc = shell.services;
+      const maxP = (svc && svc.max_participants) || 1;
+      const count = dayBookings.filter((p) => p.workshop_shell_id === shell.id && p.status !== 'cancelled').length;
+      const full = count >= maxP;
+
+      const el = document.createElement('div');
+      el.className = 'appt workshop-appt';
+      el.style.top = top + 'px';
+      el.style.height = height + 'px';
+      el.style.left = 'calc(' + leftPct + '% + 3px)';
+      el.style.width = 'calc(' + widthPct + '% - 6px)';
+      el.style.right = 'auto';
+      el.style.background = employeeColor + '17';
+      el.style.borderLeftColor = employeeColor;
+      el.innerHTML =
+        '<div class="t" style="color:' + employeeColor + '">&#127881; ' + (shell.start_time || '').substring(0, 5) + '</div>' +
+        (height > 34 ? '<div class="c">' + escapeHtml(svc ? svc.name : 'Atelier') + '</div>' : '') +
+        (height > 48 ? '<div class="s" style="font-weight:800; color:' + (full ? 'var(--warning)' : employeeColor) + '">' + count + ' / ' + maxP + ' inscrits</div>' : '');
+      el.addEventListener('click', () => openWorkshopPanel(shell, employeeColor));
+      return el;
     }
 
     function renderApptBlock(booking, employeeColor, gridStartMin, layout) {
@@ -540,7 +601,7 @@ ini_set('log_errors', 1);
       dateLabelEl.textContent = 'Semaine du ' + monday.getDate() + ' au ' + sunday.getDate() +
         ' ' + formatDateLong(sunday).split(' ').slice(2).join(' ');
 
-      const weekBookings = await loadBookingsForRange(business.id, toDateKey(monday), toDateKey(afterSunday));
+      weekBookings = await loadBookingsForRange(business.id, toDateKey(monday), toDateKey(afterSunday));
       const employeeById = {};
       employees.forEach((e) => { employeeById[e.id] = e; });
 
@@ -564,7 +625,7 @@ ini_set('log_errors', 1);
 
       headEl.innerHTML = days.map((d, i) => {
         const key = toDateKey(d);
-        const count = weekBookings.filter((b) => b.booking_date === key).length;
+        const count = weekBookings.filter((b) => b.booking_date === key && !b.workshop_shell_id).length;
         const isToday = key === todayKey;
         return '<div class="col-head" style="justify-content:center' + (isToday ? ';background:rgba(0,191,165,0.06)' : '') + '">' +
           '<div style="text-align:center"><div class="col-name">' + dayLabels[i] + ' ' + d.getDate() + '</div>' +
@@ -573,7 +634,9 @@ ini_set('log_errors', 1);
 
       bodyEl.innerHTML = days.map((d) => {
         const key = toDateKey(d);
-        const dayItems = weekBookings.filter((b) => b.booking_date === key)
+        // Les inscrits (workshop_shell_id) ne s'affichent pas individuellement,
+        // ils sont comptes dans la puce de la coquille de l'atelier.
+        const dayItems = weekBookings.filter((b) => b.booking_date === key && !b.workshop_shell_id)
           .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
         const rows = dayItems.map((b) => {
@@ -584,9 +647,14 @@ ini_set('log_errors', 1);
           const mainColor = accent || employeeColor;
           const start = (b.start_time || '').substring(0, 5);
           const topBorder = accent ? ('border-top:3px solid ' + accent + ';') : '';
+          const label = b.is_workshop_shell
+            ? '\u{1F389} ' + (b.services ? b.services.name : 'Atelier') + ' (' +
+              weekBookings.filter((p) => p.workshop_shell_id === b.id && p.status !== 'cancelled').length +
+              '/' + ((b.services && b.services.max_participants) || 1) + ')'
+            : escapeHtml(clientName(b));
           return '<div class="week-chip" data-booking-id="' + b.id + '" style="border-left-color:' + employeeColor + ';' + topBorder + ' background:' + mainColor + '10">' +
             '<span class="wc-time" style="color:' + mainColor + '">' + escapeHtml(start) + '</span>' +
-            '<span class="wc-name">' + escapeHtml(clientName(b)) + '</span>' +
+            '<span class="wc-name">' + label + '</span>' +
             '</div>';
         }).join('');
 
@@ -599,7 +667,12 @@ ini_set('log_errors', 1);
           if (!b) return;
           const empIds = bookingEmployeeIds(b);
           const emp = empIds.length ? employeeById[empIds[0]] : null;
-          openPanel(b, (emp && emp.color) || '#00BFA5');
+          if (b.is_workshop_shell) {
+            dayBookings = weekBookings.filter((x) => x.booking_date === b.booking_date);
+            openWorkshopPanel(b, (emp && emp.color) || '#00BFA5');
+          } else {
+            openPanel(b, (emp && emp.color) || '#00BFA5');
+          }
         });
       });
     }
@@ -650,6 +723,136 @@ ini_set('log_errors', 1);
       document.getElementById('panel-overlay').classList.remove('visible');
       currentBooking = null;
     }
+
+    // -----------------------------------------------------
+    // ATELIERS (services a plusieurs participants)
+    // -----------------------------------------------------
+    function openWorkshopPanel(shell, employeeColor) {
+      currentWorkshopShell = shell;
+      const svc = shell.services;
+      const maxP = (svc && svc.max_participants) || 1;
+
+      document.getElementById('workshop-icon').style.background = employeeColor + '1A';
+      document.getElementById('workshop-icon').style.color = employeeColor;
+      document.getElementById('workshop-service-name').textContent = svc ? svc.name : 'Atelier';
+      document.getElementById('workshop-datetime').textContent =
+        shell.booking_date + ' \u00e0 ' + (shell.start_time || '').substring(0, 5);
+
+      renderWorkshopParticipants(maxP);
+      document.getElementById('workshop-overlay').classList.add('visible');
+    }
+
+    function closeWorkshopPanel() {
+      document.getElementById('workshop-overlay').classList.remove('visible');
+      currentWorkshopShell = null;
+    }
+
+    function renderWorkshopParticipants(maxP) {
+      const shell = currentWorkshopShell;
+      const source = viewMode === 'week' ? weekBookings : dayBookings;
+      const participants = source.filter((b) => b.workshop_shell_id === shell.id && b.status !== 'cancelled');
+      const full = participants.length >= maxP;
+
+      document.getElementById('workshop-count-label').innerHTML =
+        '<span style="color:' + (full ? 'var(--warning)' : 'var(--primary-dark)') + '">' + participants.length + ' / ' + maxP + ' inscrits</span>' +
+        (full ? ' <span style="font-weight:600; color:var(--warning); font-size:11px">(complet)</span>' : '');
+
+      const list = document.getElementById('workshop-participants-list');
+      if (participants.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:16px; color:var(--text-light); font-size:13px">Aucun inscrit pour le moment.</div>';
+      } else {
+        list.innerHTML = '';
+        participants.forEach((p) => {
+          const phone = bookingPhone(p);
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid var(--card-border)';
+          row.innerHTML =
+            '<div style="width:30px;height:30px;border-radius:50%;background:rgba(0,191,165,0.12);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">' +
+            escapeHtml((clientName(p) || '?').charAt(0).toUpperCase()) + '</div>' +
+            '<div style="flex:1; min-width:0"><div style="font-size:13px; font-weight:700">' + escapeHtml(clientName(p)) + '</div>' +
+            (phone ? '<div style="font-size:11px; color:var(--text-medium)">' + escapeHtml(phone) + '</div>' : '') + '</div>' +
+            '<button type="button" class="workshop-remove-btn" data-id="' + p.id + '" style="border:none; background:none; color:var(--error); font-size:16px; cursor:pointer">&times;</button>';
+          list.appendChild(row);
+        });
+        list.querySelectorAll('.workshop-remove-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm(fr('D&eacute;sinscrire ce participant ?'))) return;
+            try {
+              await removeWorkshopParticipant(btn.dataset.id);
+              showToast('Participant d&eacute;sinscrit.');
+              await reloadCurrentView();
+              const refreshedSource = viewMode === 'week' ? weekBookings : dayBookings;
+              currentWorkshopShell = refreshedSource.find((b) => b.id === shell.id) || shell;
+              renderWorkshopParticipants(maxP);
+            } catch (err) {
+              console.error(err);
+              showToast("Erreur lors de la d&eacute;sinscription.");
+            }
+          });
+        });
+      }
+
+      const addBtn = document.getElementById('workshop-add-btn');
+      addBtn.style.opacity = full ? '0.5' : '1';
+    }
+
+    async function registerWorkshopParticipant() {
+      if (!currentWorkshopShell || !selectedClient) return;
+      try {
+        await addWorkshopParticipant(currentWorkshopShell, {
+          customerId: selectedClient.type === 'dambou' ? selectedClient.id : null,
+          customerName: selectedClient.name,
+          customerPhone: selectedClient.phone,
+          manualClientId: selectedClient.type === 'manual' ? selectedClient.id : null,
+        });
+        showToast('Participant inscrit.');
+        selectedClient = null;
+        const shellId = currentWorkshopShell.id;
+        await reloadCurrentView();
+        const refreshedSource = viewMode === 'week' ? weekBookings : dayBookings;
+        const refreshedShell = refreshedSource.find((b) => b.id === shellId);
+        if (refreshedShell) {
+          currentWorkshopShell = refreshedShell;
+          const maxP = (refreshedShell.services && refreshedShell.services.max_participants) || 1;
+          renderWorkshopParticipants(maxP);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Erreur lors de l'inscription.");
+      }
+    }
+
+    document.getElementById('workshop-close').addEventListener('click', closeWorkshopPanel);
+    document.getElementById('workshop-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'workshop-overlay') closeWorkshopPanel();
+    });
+    document.getElementById('workshop-add-btn').addEventListener('click', () => {
+      if (!currentWorkshopShell) return;
+      const svc = currentWorkshopShell.services;
+      const maxP = (svc && svc.max_participants) || 1;
+      const source = viewMode === 'week' ? weekBookings : dayBookings;
+      const count = source.filter((b) => b.workshop_shell_id === currentWorkshopShell.id && b.status !== 'cancelled').length;
+      if (count >= maxP && !confirm(fr('Cet atelier est d&eacute;j&agrave; complet (' + count + '/' + maxP + '). Inscrire quand m&ecirc;me ?'))) return;
+      clientSearchMode = 'workshop';
+      openClientSearch();
+    });
+    document.getElementById('workshop-cancel-session-btn').addEventListener('click', async () => {
+      if (!currentWorkshopShell) return;
+      if (!confirm(fr("Annuler tout l'atelier ? Tous les inscrits seront d&eacute;sinscrits."))) return;
+      try {
+        const shellId = currentWorkshopShell.id;
+        const source = viewMode === 'week' ? weekBookings : dayBookings;
+        const participants = source.filter((b) => b.workshop_shell_id === shellId && b.status !== 'cancelled');
+        await Promise.all(participants.map((p) => removeWorkshopParticipant(p.id)));
+        await cancelBooking(shellId);
+        showToast('Atelier annul&eacute;.');
+        closeWorkshopPanel();
+        await reloadCurrentView();
+      } catch (err) {
+        console.error(err);
+        showToast("Erreur lors de l'annulation.");
+      }
+    });
 
     function renderPanelActions(booking) {
       const container = document.getElementById('panel-actions');
@@ -799,6 +1002,8 @@ ini_set('log_errors', 1);
     let services = [];
     let selectedNewEmployeeId = null;
     let selectedClient = null; // {id, type:'dambou'|'manual', name, phone} ou null
+    let clientSearchMode = 'booking'; // 'booking' | 'workshop'
+    let currentWorkshopShell = null;
     let editingBookingId = null;
     let editingOriginalBooking = null; // RDV complet avant modification (statut, heure de depart)
 
@@ -866,6 +1071,7 @@ ini_set('log_errors', 1);
       updateClientBoxDisplay();
       renderEmployeeChips();
       updateEndHint();
+      updateClientFieldVisibility();
       document.getElementById('new-overlay').classList.add('visible');
     }
     function closeNewBookingModal() {
@@ -905,8 +1111,16 @@ ini_set('log_errors', 1);
       const m = String(endMin % 60).padStart(2, '0');
       hint.textContent = 'Se termine a ' + h + ':' + m + ' (' + service.duration + ' min)';
     }
+    function updateClientFieldVisibility() {
+      const serviceId = document.getElementById('new-service').value;
+      const service = services.find((s) => s.id === serviceId);
+      const isWorkshop = !!(service && service.max_participants > 1);
+      document.getElementById('client-field-wrap').style.display = isWorkshop ? 'none' : 'block';
+      document.getElementById('workshop-create-note').style.display = isWorkshop ? 'block' : 'none';
+      if (isWorkshop) selectedClient = null;
+    }
     document.getElementById('new-time').addEventListener('input', updateEndHint);
-    document.getElementById('new-service').addEventListener('change', updateEndHint);
+    document.getElementById('new-service').addEventListener('change', () => { updateEndHint(); updateClientFieldVisibility(); });
 
     document.getElementById('new-booking-btn').addEventListener('click', () => openNewBookingModal());
     document.getElementById('new-close-btn').addEventListener('click', closeNewBookingModal);
@@ -917,7 +1131,10 @@ ini_set('log_errors', 1);
     // -----------------------------------------------------
     // SELECTEUR CLIENT (recherche Dambou + manuels, ou creation)
     // -----------------------------------------------------
-    document.getElementById('client-selector-box').addEventListener('click', openClientSearch);
+    document.getElementById('client-selector-box').addEventListener('click', () => {
+      clientSearchMode = 'booking';
+      openClientSearch();
+    });
     document.getElementById('csb-clear').addEventListener('click', (e) => {
       e.stopPropagation();
       selectedClient = null;
@@ -937,6 +1154,15 @@ ini_set('log_errors', 1);
     }
     function closeClientSearch() {
       document.getElementById('client-search-overlay').classList.remove('visible');
+    }
+
+    async function onClientPicked() {
+      closeClientSearch();
+      if (clientSearchMode === 'workshop') {
+        await registerWorkshopParticipant();
+      } else {
+        updateClientBoxDisplay();
+      }
     }
 
     function clientTile(name, phone, badge, onClick) {
@@ -975,16 +1201,14 @@ ini_set('log_errors', 1);
           const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || 'Client Dambou';
           resultsBox.appendChild(clientTile(name, u.phone || '', true, () => {
             selectedClient = { id: u.id, type: 'dambou', name: name, phone: u.phone || '' };
-            updateClientBoxDisplay();
-            closeClientSearch();
+            onClientPicked();
           }));
         });
         results.manual.forEach((cl) => {
           const name = ((cl.first_name || '') + ' ' + (cl.last_name || '')).trim() || 'Client';
           resultsBox.appendChild(clientTile(name, cl.phone || '', false, () => {
             selectedClient = { id: cl.id, type: 'manual', name: name, phone: cl.phone || '' };
-            updateClientBoxDisplay();
-            closeClientSearch();
+            onClientPicked();
           }));
         });
       }, 350);
@@ -1010,9 +1234,8 @@ ini_set('log_errors', 1);
         const created = await createManualClient(business.id, { firstName, lastName, phone, email });
         const name = ((created.first_name || '') + ' ' + (created.last_name || '')).trim();
         selectedClient = { id: created.id, type: 'manual', name: name, phone: created.phone || '' };
-        updateClientBoxDisplay();
-        closeClientSearch();
         showToast('Fiche client cr&eacute;&eacute;e.');
+        await onClientPicked();
       } catch (err) {
         console.error(err);
         showToast('Erreur lors de la cr&eacute;ation du client.');
@@ -1034,9 +1257,10 @@ ini_set('log_errors', 1);
       const time = document.getElementById('new-time').value; // 'HH:MM'
       const serviceId = document.getElementById('new-service').value;
       const service = services.find((s) => s.id === serviceId);
+      const isWorkshop = !!(service && service.max_participants > 1);
 
-      if (!dateKey || !time || !service || !selectedClient) {
-        errorEl.textContent = 'Merci de remplir la date, l\'heure, le service et le client.';
+      if (!dateKey || !time || !service || (!isWorkshop && !selectedClient)) {
+        errorEl.textContent = fr(isWorkshop ? 'Merci de remplir la date, l\'heure et le service.' : 'Merci de remplir la date, l\'heure, le service et le client.');
         errorEl.style.display = 'block';
         return;
       }
@@ -1065,12 +1289,22 @@ ini_set('log_errors', 1);
       submitBtn.disabled = true;
       submitBtn.textContent = fr(editingBookingId ? 'Enregistrement...' : 'Cr&eacute;ation...');
 
-      const clientParams = selectedClient.type === 'dambou'
+      const clientParams = !selectedClient ? {} : (selectedClient.type === 'dambou'
         ? { customerId: selectedClient.id }
-        : { customerName: selectedClient.name, customerPhone: selectedClient.phone, manualClientId: selectedClient.id };
+        : { customerName: selectedClient.name, customerPhone: selectedClient.phone, manualClientId: selectedClient.id });
 
       try {
-        if (editingBookingId) {
+        if (isWorkshop && !editingBookingId) {
+          await createWorkshopShell({
+            businessId: business.id,
+            serviceId: service.id,
+            dateKey: dateKey,
+            startTime: startTime,
+            endTime: endTime,
+            employeeId: employeeId,
+          });
+          showToast('Atelier cr&eacute;&eacute; sur le planning.');
+        } else if (editingBookingId) {
           const assignedEmployee = employeeId ? employees.find((e) => e.id === employeeId) : null;
           await updateBooking(editingBookingId, Object.assign({
             serviceId: service.id,

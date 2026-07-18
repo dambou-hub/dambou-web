@@ -182,12 +182,19 @@ export async function createBooking(params) {
 // Met a jour une reservation existante (utilise par le modal en mode edition).
 // Ne touche au nom/telephone que si c'est une reservation manuelle (pas un vrai compte client app).
 export async function updateBooking(bookingId, params) {
+    // Auto-confirmation si le RDV etait en attente (reproduit _update() de
+    // EditBookingSheet : "Gerer" un RDV en attente = le confirmer, il n'y a
+    // pas de bouton "Confirmer" separe dans l'app).
+    const wasPending = params.originalStatus === 'pending';
+    const newStatus = wasPending ? 'confirmed' : (params.originalStatus || 'confirmed');
+
     const updateData = {
         service_id: params.serviceId,
         booking_date: params.dateKey,
         start_time: params.startTime,
         end_time: params.endTime,
         price: params.price || 0,
+        status: newStatus,
     };
     if (params.customerId) {
         updateData.customer_id = params.customerId;
@@ -207,6 +214,40 @@ export async function updateBooking(bookingId, params) {
     await supabase.from('booking_employees').delete().eq('booking_id', bookingId);
     if (params.employeeId) {
         await supabase.from('booking_employees').insert({ booking_id: bookingId, employee_id: params.employeeId });
+    }
+
+    // Notifications au client -- uniquement pour un vrai compte Dambou (customerId),
+    // jamais pour une fiche manuelle. Une seule notif par sauvegarde, jamais les deux :
+    // confirmation OU changement d'heure, pas les deux a la fois (meme logique que l'app).
+    if (params.customerId) {
+        const wasConfirmed = wasPending && newStatus === 'confirmed';
+        const originalTimeShort = (params.originalStartTime || '').substring(0, 5);
+        const newTimeShort = (params.startTime || '').substring(0, 5);
+        const timeChanged = !wasConfirmed && originalTimeShort !== newTimeShort;
+
+        try {
+            if (wasConfirmed) {
+                await supabase.from('notifications').insert({
+                    user_id: params.customerId,
+                    title: 'Rendez-vous confirme',
+                    message: (params.businessName || 'Le professionnel') + ' a confirme votre RDV - ' +
+                        (params.serviceName || 'votre rendez-vous') + ' a ' + newTimeShort + ' le ' + params.dateKey + '.',
+                    type: 'booking_confirmed',
+                    data: { booking_id: bookingId },
+                    is_read: false,
+                });
+            } else if (timeChanged) {
+                await supabase.from('notifications').insert({
+                    user_id: params.customerId,
+                    title: 'Heure de RDV modifiee',
+                    message: (params.businessName || 'Le professionnel') + ' a modifie votre RDV - ' +
+                        (params.serviceName || 'votre rendez-vous') + ' est maintenant a ' + newTimeShort + ' le ' + params.dateKey + '.',
+                    type: 'booking_updated',
+                    data: { booking_id: bookingId },
+                    is_read: false,
+                });
+            }
+        } catch (e) { /* ignore */ }
     }
 }
 

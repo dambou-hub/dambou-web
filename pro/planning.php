@@ -787,6 +787,7 @@ ini_set('log_errors', 1);
     let selectedNewEmployeeId = null;
     let selectedClient = null; // {id, type:'dambou'|'manual', name, phone} ou null
     let editingBookingId = null;
+    let editingOriginalBooking = null; // RDV complet avant modification (statut, heure de depart)
 
     function updateClientBoxDisplay() {
       const placeholder = document.getElementById('client-box-placeholder');
@@ -812,6 +813,7 @@ ini_set('log_errors', 1);
 
       if (existingBooking) {
         editingBookingId = existingBooking.id;
+        editingOriginalBooking = existingBooking;
         document.getElementById('new-modal-title').textContent = 'Modifier le rendez-vous';
         document.getElementById('new-submit-btn').textContent = 'Enregistrer les modifications';
 
@@ -831,6 +833,7 @@ ini_set('log_errors', 1);
         selectedNewEmployeeId = empIds.length ? empIds[0] : null;
       } else {
         editingBookingId = null;
+        editingOriginalBooking = null;
         document.getElementById('new-modal-title').textContent = 'Nouvelle reservation';
         document.getElementById('new-submit-btn').textContent = 'Creer la reservation';
         document.getElementById('new-date').value = toDateKey(selectedDate);
@@ -1053,8 +1056,13 @@ ini_set('log_errors', 1);
             endTime: endTime,
             price: service.price,
             employeeId: employeeId,
+            originalStatus: editingOriginalBooking ? editingOriginalBooking.status : null,
+            originalStartTime: editingOriginalBooking ? editingOriginalBooking.start_time : null,
+            businessName: business.name,
+            serviceName: service.name,
           }, clientParams));
-          showToast('Rendez-vous modifie.');
+          const wasPending = editingOriginalBooking && editingOriginalBooking.status === 'pending';
+          showToast(wasPending ? 'Rendez-vous confirme.' : 'Rendez-vous modifie.');
         } else {
           await createBooking(Object.assign({
             businessId: business.id,

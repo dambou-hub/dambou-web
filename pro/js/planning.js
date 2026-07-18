@@ -280,6 +280,43 @@ export async function createManualClient(businessId, { firstName, lastName, phon
     return data;
 }
 
+// RDV en attente de confirmation, pour le tableau de bord (reproduit la requete
+// de pro_home_screen.dart : status='pending', avec employe prefere si renseigne).
+export async function loadPendingBookings(businessId, limit) {
+    const { data, error } = await supabase
+        .from('bookings')
+        .select('*, booking_employees(employee_id), services(name, duration), users!customer_id(id, first_name, last_name, phone), employees!preferred_employee_id(first_name, last_name, color)')
+        .eq('business_id', businessId)
+        .eq('status', 'pending')
+        .order('booking_date')
+        .limit(limit || 10);
+    if (error) {
+        console.error('Erreur chargement RDV en attente:', error);
+        return [];
+    }
+    return data || [];
+}
+
+// Verifie si confirmer ce RDV entrerait en conflit avec un autre RDV deja
+// confirme du meme employe ce jour-la. L'app mobile ne fait AUCUNE verification
+// avant de confirmer depuis le tableau de bord -- c'est une amelioration web.
+export async function checkConflictForPendingBooking(businessId, booking) {
+    const empId = booking.preferred_employee_id ||
+        (bookingEmployeeIds(booking).length ? bookingEmployeeIds(booking)[0] : null);
+    if (!empId) return null;
+
+    const dayBookings = await loadBookingsForDay(businessId, booking.booking_date);
+    const start = timeToMinutes((booking.start_time || '').substring(0, 5));
+    const end = timeToMinutes((booking.end_time || '').substring(0, 5)) || (start + 30);
+
+    if (hasConflict(dayBookings, empId, start, end, booking.id)) {
+        const employee = booking.employees;
+        return (employee ? ((employee.first_name || '') + ' ' + (employee.last_name || '')).trim() : 'Cet employe') +
+            ' a deja un rendez-vous confirme sur ce creneau.';
+    }
+    return null;
+}
+
 export function bookingEmployeeIds(booking) {
     const rel = booking.booking_employees || [];
     return rel.map((r) => r.employee_id);

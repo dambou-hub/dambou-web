@@ -5,9 +5,9 @@
 import { supabase } from '/pro/js/auth.js';
 
 export const PAYMENT_METHOD_LABELS = {
-    cash: 'Especes',
+    cash: 'Espèces',
     card: 'Carte',
-    check: 'Cheque',
+    check: 'Chèque',
     ticket_restaurant: 'Ticket resto',
     free: 'Offert',
 };

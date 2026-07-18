@@ -162,7 +162,7 @@ ini_set('log_errors', 1);
       <div class="totals">
         <div class="totals-row"><span>Sous-total</span><span id="t-subtotal">0</span></div>
         <div class="totals-row" id="t-discount-row" style="display:none"><span>Remise</span><span id="t-discount">0</span></div>
-        <div class="totals-row" id="t-loyalty-row" style="display:none"><span>Fidelite</span><span id="t-loyalty">0</span></div>
+        <div class="totals-row" id="t-loyalty-row" style="display:none"><span>Fid&eacute;lit&eacute;</span><span id="t-loyalty">0</span></div>
       </div>
       <div class="total-block">
         <span>Total</span>
@@ -180,22 +180,22 @@ ini_set('log_errors', 1);
         <span class="panel-title">Choisir un client</span>
         <button class="nav-btn" id="client-search-close">&times;</button>
       </div>
-      <input type="text" id="client-search-input" placeholder="Nom, telephone, ou scannez un QR client..." autocomplete="off"
+      <input type="text" id="client-search-input" placeholder="Nom, t&eacute;l&eacute;phone, ou scannez un QR client..." autocomplete="off"
         style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit; margin-bottom:6px">
       <div style="font-size:11px; color:var(--text-light); margin-bottom:10px">Une douchette USB/Bluetooth scanne directement dans ce champ.</div>
       <div id="client-results" style="overflow-y:auto; max-height:280px; min-height:60px"></div>
-      <button type="button" class="action-tile" id="client-create-toggle"><span>+</span><span>Creer une fiche client</span></button>
+      <button type="button" class="action-tile" id="client-create-toggle"><span>+</span><span>Cr&eacute;er une fiche client</span></button>
       <div id="client-create-form" style="display:none">
-        <input type="text" id="cc-first-name" placeholder="Prenom" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin:8px 0">
+        <input type="text" id="cc-first-name" placeholder="Pr&eacute;nom" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin:8px 0">
         <input type="text" id="cc-last-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
-        <input type="tel" id="cc-phone" placeholder="Telephone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="tel" id="cc-phone" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
         <input type="email" id="cc-email" placeholder="Email (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
-        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Creer et selectionner</button>
+        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Cr&eacute;er et s&eacute;lectionner</button>
       </div>
       <button type="button" class="action-tile" id="guest-client-toggle" style="color:var(--text-medium)"><span>&#128100;</span><span>Client de passage (sans fiche)</span></button>
       <div id="guest-form" style="display:none">
         <input type="text" id="guest-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin:8px 0">
-        <input type="tel" id="guest-phone" placeholder="Telephone (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
+        <input type="tel" id="guest-phone" placeholder="T&eacute;l&eacute;phone (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
         <button type="button" id="guest-save-btn" style="width:100%; padding:11px; background:var(--text-dark); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Valider</button>
       </div>
     </div>
@@ -205,7 +205,7 @@ ini_set('log_errors', 1);
   <div class="overlay" id="cash-overlay">
     <div class="panel" style="max-width:340px">
       <div class="panel-title" id="cash-total-label" style="margin-bottom:10px">A encaisser</div>
-      <input type="number" id="cash-received" step="0.01" placeholder="Montant recu">
+      <input type="number" id="cash-received" step="0.01" placeholder="Montant re&ccedil;u">
       <div id="cash-change-box"><span id="cash-change-label" style="font-weight:700; font-size:13px"></span><span id="cash-change-value" style="font-weight:900; font-size:18px"></span></div>
       <div class="confirm-actions">
         <button id="cash-cancel-btn">Annuler</button>
@@ -217,7 +217,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser, supabase } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, supabase, fr } from '/pro/js/auth.js';
     import { searchClients, createManualClient } from '/pro/js/planning.js';
     import { loadCatalogueItems, loadLoyaltyCard, payCart, PAYMENT_METHOD_LABELS } from '/pro/js/caisse.js';
     import { loadCategories } from '/pro/js/catalogue.js';
@@ -239,7 +239,7 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -426,7 +426,7 @@ ini_set('log_errors', 1);
 
     function openClientSearch() {
       document.getElementById('client-search-input').value = '';
-      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un telephone, ou scannez</div>';
+      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un t&eacute;l&eacute;phone, ou scannez</div>';
       document.getElementById('client-create-form').style.display = 'none';
       document.getElementById('guest-form').style.display = 'none';
       document.getElementById('client-search-overlay').classList.add('visible');
@@ -499,14 +499,14 @@ ini_set('log_errors', 1);
     async function triggerSearch(query) {
       const resultsBox = document.getElementById('client-results');
       if (query.trim().length < 2) {
-        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un telephone, ou scannez</div>';
+        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un t&eacute;l&eacute;phone, ou scannez</div>';
         return;
       }
       resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Recherche...</div>';
       const results = await searchClients(business.id, query);
       resultsBox.innerHTML = '';
       if (!results.dambou.length && !results.manual.length) {
-        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Aucun resultat</div>';
+        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Aucun r&eacute;sultat</div>';
         return;
       }
       results.dambou.forEach((u) => {
@@ -542,10 +542,10 @@ ini_set('log_errors', 1);
         loyaltyCard = null;
         updateClientBox(); renderTotals();
         closeClientSearch();
-        showToast('Fiche client creee.');
+        showToast('Fiche client cr&eacute;&eacute;e.');
       } catch (err) {
         console.error(err);
-        showToast('Erreur lors de la creation.');
+        showToast('Erreur lors de la cr&eacute;ation.');
       }
     });
 
@@ -567,9 +567,9 @@ ini_set('log_errors', 1);
     // PAIEMENT
     // -----------------------------------------------------
     const PAY_METHODS = [
-      { method: 'cash', icon: '\u{1F4B5}', label: 'Especes' },
+      { method: 'cash', icon: '\u{1F4B5}', label: 'Esp&egrave;ces' },
       { method: 'card', icon: '\u{1F4B3}', label: 'Carte' },
-      { method: 'check', icon: '\u{1F4DD}', label: 'Cheque' },
+      { method: 'check', icon: '\u{1F4DD}', label: 'Ch&egrave;que' },
       { method: 'ticket_restaurant', icon: '\u{1F37D}', label: 'Ticket resto' },
       { method: 'free', icon: '\u{1F381}', label: 'Offert', full: true },
     ];
@@ -644,7 +644,7 @@ ini_set('log_errors', 1);
           loyaltyDiscount: t.loyaltyDiscount, useLoyalty: useLoyalty, loyaltyCard: loyaltyCard,
           method: method, bookingId: sourceBookingId,
         });
-        showToast('Vente encaissee (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
+        showToast('Vente encaiss&eacute;e (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
         cart = []; selectedClient = null; loyaltyCard = null; useLoyalty = false; sourceBookingId = null;
         document.getElementById('discount-value').value = '';
         document.getElementById('booking-banner').style.display = 'none';
@@ -664,7 +664,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       allItems = await loadCatalogueItems(business.id);

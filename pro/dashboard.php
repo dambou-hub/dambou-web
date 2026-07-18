@@ -143,7 +143,7 @@ ini_set('log_errors', 1);
 
       <div class="pending-section" id="pending-section" style="display:none">
         <div class="pending-head">
-          <h2>Reservations a confirmer <span class="pending-count" id="pending-count">0</span></h2>
+          <h2>R&eacute;servations &agrave; confirmer <span class="pending-count" id="pending-count">0</span></h2>
         </div>
         <div id="pending-list"></div>
       </div>
@@ -156,8 +156,8 @@ ini_set('log_errors', 1);
         </a>
         <a class="nav-card" href="/pro/reservations" id="card-reservations">
           <div class="icon" style="background:rgba(244,162,97,0.1)">&#128203;</div>
-          <h3>Reservations</h3>
-          <p>Liste et gestion de vos reservations</p>
+          <h3>R&eacute;servations</h3>
+          <p>Liste et gestion de vos r&eacute;servations</p>
         </a>
         <a class="nav-card" href="/pro/catalogue">
           <div class="icon" style="background:rgba(108,99,255,0.1)">&#129534;</div>
@@ -194,7 +194,7 @@ ini_set('log_errors', 1);
   </div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser, getActiveModules, logout } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, getActiveModules, logout, fr } from '/pro/js/auth.js';
     import { loadPendingBookings, checkConflictForPendingBooking, cancelBooking, clientName, bookingPhone } from '/pro/js/planning.js';
     import { loadStats } from '/pro/js/stats.js';
 
@@ -256,7 +256,7 @@ ini_set('log_errors', 1);
           '<div class="pending-actions">' +
           '<button class="cancel" data-action="cancel" data-id="' + b.id + '">Refuser</button>' +
           (phone ? '<a class="call-btn" href="tel:' + escapeHtml(phone) + '" title="Appeler">&#128222;</a>' : '') +
-          '<a class="confirm" href="/pro/planning?date=' + encodeURIComponent(b.booking_date) + '&open=' + encodeURIComponent(b.id) + '">Gerer</a>' +
+          '<a class="confirm" href="/pro/planning?date=' + encodeURIComponent(b.booking_date) + '&open=' + encodeURIComponent(b.id) + '">G&eacute;rer</a>' +
           '</div>';
         list.appendChild(card);
 
@@ -273,7 +273,7 @@ ini_set('log_errors', 1);
 
       list.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
         btn.addEventListener('click', async () => {
-          if (!confirm('Refuser cette reservation ?')) return;
+          if (!confirm(fr('Refuser cette r&eacute;servation ?'))) return;
           btn.disabled = true;
           try {
             await cancelBooking(btn.dataset.id);
@@ -293,7 +293,7 @@ ini_set('log_errors', 1);
       business = await getBusinessForUser(session.user.id);
 
       if (!business) {
-        loadingEl.innerHTML = '<div class="error-box">Aucun etablissement associe a ce compte.</div>';
+        loadingEl.innerHTML = '<div class="error-box">Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.</div>';
         return;
       }
 

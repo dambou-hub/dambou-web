@@ -113,8 +113,8 @@ ini_set('log_errors', 1);
 
     <!-- ETAPE 1 : COMPTE -->
     <div id="step-account">
-      <div class="step-title">Creons votre compte</div>
-      <div class="step-sub">Vous pourrez gerer votre activite et recevoir des clients.</div>
+      <div class="step-title">Cr&eacute;ons votre compte</div>
+      <div class="step-sub">Vous pourrez g&eacute;rer votre activit&eacute; et recevoir des clients.</div>
       <form id="account-form">
         <div class="row">
           <div class="field"><label>Prenom</label><input type="text" id="first-name" required></div>
@@ -144,9 +144,9 @@ ini_set('log_errors', 1);
 
     <!-- ETAPE 2 : ACTIVITE -->
     <div id="step-activity" style="display:none">
-      <div class="step-title">Votre type d'activite</div>
-      <div class="step-sub">Votre espace sera configure automatiquement selon votre activite.</div>
-      <div id="templates-container" class="templates-loading">Chargement des activites...</div>
+      <div class="step-title">Votre type d'activit&eacute;</div>
+      <div class="step-sub">Votre espace sera configur&eacute; automatiquement selon votre activit&eacute;.</div>
+      <div id="templates-container" class="templates-loading">Chargement des activit&eacute;s...</div>
       <div class="error-msg" id="activity-error"></div>
       <button type="button" class="primary" id="activity-submit" disabled>Continuer</button>
     </div>
@@ -175,7 +175,7 @@ ini_set('log_errors', 1);
 
 <script type="module">
   import { createAccount, loadTemplates, searchAddress, reverseGeocode, createBusinessWithTemplate, COUNTRIES, flagEmoji } from '/pro/js/register.js';
-  import { supabase } from '/pro/js/auth.js';
+  import { supabase, fr } from '/pro/js/auth.js';
 
   // -----------------------------
   // Etat partage entre les etapes
@@ -209,7 +209,7 @@ ini_set('log_errors', 1);
   // Navigation entre etapes
   // -----------------------------
   const steps = ['account', 'activity', 'business'];
-  const titles = ['Creer votre compte', 'Votre activite', 'Votre business'];
+  const titles = ['Cr&eacute;er votre compte', 'Votre activit&eacute;', 'Votre business'];
   let currentStepIndex = 0;
 
   function goToStep(index) {
@@ -218,7 +218,7 @@ ini_set('log_errors', 1);
       document.getElementById('step-' + s).style.display = i === index ? 'block' : 'none';
       document.getElementById('seg-' + (i + 1)).classList.toggle('done', i <= index);
     });
-    document.getElementById('step-title').textContent = titles[index];
+    document.getElementById('step-title').textContent = fr(titles[index]);
     document.getElementById('step-sub').textContent = 'Etape ' + (index + 1) + ' sur 3';
     document.getElementById('step-pct').textContent = Math.round(((index + 1) / 3) * 100) + '%';
     document.getElementById('back-btn').href = index === 0 ? '/pro/login' : '#';
@@ -272,7 +272,7 @@ ini_set('log_errors', 1);
       return;
     }
     if (password.length < 8) {
-      showError('account-error', '8 caracteres minimum pour le mot de passe.');
+      showError('account-error', fr('8 caract&egrave;res minimum pour le mot de passe.'));
       return;
     }
 
@@ -295,7 +295,7 @@ ini_set('log_errors', 1);
     } catch (err) {
       const msg = (err && err.message) || '';
       if (msg.includes('already registered') || msg.includes('already exists')) {
-        showError('account-error', 'Cet email est deja utilise. Connectez-vous.');
+        showError('account-error', fr('Cet email est d&eacute;j&agrave; utilis&eacute;. Connectez-vous.'));
       } else if (msg.includes('password')) {
         showError('account-error', 'Mot de passe trop faible (8 caracteres minimum).');
       } else {
@@ -318,7 +318,7 @@ ini_set('log_errors', 1);
     const templates = await loadTemplates();
 
     if (!templates.length) {
-      container.textContent = 'Aucune activite disponible pour le moment.';
+      container.textContent = fr('Aucune activit&eacute; disponible pour le moment.');
       return;
     }
 
@@ -350,7 +350,7 @@ ini_set('log_errors', 1);
   document.getElementById('activity-submit').addEventListener('click', () => {
     hideError('activity-error');
     if (!selectedTemplate) {
-      showError('activity-error', 'Choisissez une activite pour continuer.');
+      showError('activity-error', fr('Choisissez une activit&eacute; pour continuer.'));
       return;
     }
     goToStep(2);
@@ -413,10 +413,10 @@ ini_set('log_errors', 1);
         selectedPlace = place;
         addressInput.value = place.formatted;
         const confirmed = document.getElementById('address-confirmed');
-        confirmed.textContent = 'Position recuperee avec succes';
+        confirmed.textContent = fr('Position r&eacute;cup&eacute;r&eacute;e avec succ&egrave;s');
         confirmed.classList.add('visible');
       } else {
-        showError('business-error', "Impossible de recuperer l'adresse depuis votre position.");
+        showError('business-error', fr("Impossible de r&eacute;cup&eacute;rer l'adresse depuis votre position."));
       }
     }, () => {
       btn.disabled = false;

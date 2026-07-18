@@ -8,6 +8,18 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Decode les entites HTML (accents francais) dans une chaine litterale ecrite
+// en dur dans le code, avant assignation via .textContent (qui ne decode pas
+// les entites, contrairement a innerHTML). N'utiliser QUE sur des chaines
+// statiques que l'on ecrit soi-meme -- jamais sur une valeur venant de
+// l'utilisateur, meme si la fonction est techniquement sans danger cote XSS
+// (le div n'est jamais insere dans le document).
+export function fr(str) {
+    const div = document.createElement('div');
+    div.innerHTML = str;
+    return div.textContent;
+}
+
 // Verifie qu'une session existe. Redirige vers /pro/login si absente.
 // Retourne la session si presente, sinon null (apres redirection).
 export async function requireAuth() {

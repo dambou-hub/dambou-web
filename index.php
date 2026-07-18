@@ -5,7 +5,7 @@ $rawParts = trim($uriPath, '/') === '' ? [] : explode('/', trim($uriPath, '/'));
 $parts = array_map('strtolower', $rawParts);
 if (!empty($parts)) {
     $lastIdx = count($parts) - 1;
-    // Retirer une éventuelle extension .php tapée par l'utilisateur
+    // Retirer une eventuelle extension .php tapee par l'utilisateur
     $parts[$lastIdx] = preg_replace('/\.php$/', '', $parts[$lastIdx]);
 }
 $fullPath = implode('/', $parts);
@@ -15,7 +15,7 @@ if (count($parts) >= 1 && !empty($parts[0])) {
     $slug = preg_replace('/[^a-z0-9\-]/', '', $parts[0]);
 }
 
-// Pages réservées (servies directement, pas traitées comme slug de business)
+// Pages reservees (servies directement, pas traitees comme slug de business)
 // Comparaison sur le chemin complet, donc les sous-chemins (ex: pro/login) fonctionnent.
 $reservedPages = [
     'privacy'             => 'privacy.php',
@@ -69,7 +69,7 @@ if (!empty($slug) && count($parts) === 1) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dambou - Gerez votre activite simplement</title>
+<title>Dambou - G&eacute;rez votre activit&eacute; simplement</title>
 <meta name="theme-color" content="#00BFA5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -159,7 +159,7 @@ if (!empty($slug) && count($parts) === 1) {
   <nav>
     <div class="nav-brand"><img src="/assets/icon.png" alt=""> Dambou</div>
     <div class="nav-links">
-      <a href="#fonctionnalites">Fonctionnalites</a>
+      <a href="#fonctionnalites">Fonctionnalit&eacute;s</a>
       <a href="/abonnement">Tarifs</a>
       <a href="mailto:contact@dambou.fr">Contact</a>
     </div>
@@ -171,17 +171,17 @@ if (!empty($slug) && count($parts) === 1) {
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <div class="eyebrow">L'appli tout-en-un pour les pros independants</div>
-        <h1 class="headline">Votre activite, <span>pilotee depuis votre poche.</span></h1>
-        <p class="sub">Commandes, reservations, caisse, fidelite et statistiques : Dambou reunit tout ce qu'il faut pour gerer votre business au quotidien, sans prise de tete.</p>
+        <div class="eyebrow">L'appli tout-en-un pour les pros ind&eacute;pendants</div>
+        <h1 class="headline">Votre activit&eacute;, <span>pilot&eacute;e depuis votre poche.</span></h1>
+        <p class="sub">Commandes, r&eacute;servations, caisse, fid&eacute;lit&eacute; et statistiques : Dambou r&eacute;unit tout ce qu'il faut pour g&eacute;rer votre business au quotidien, sans prise de t&ecirc;te.</p>
         <div class="store-row">
-          <a class="store-btn" href="https://apps.apple.com/app/dambou/idXXXXXXXXX"><span><span class="store-sub">Telecharger sur</span><span class="store-main">App Store</span></span></a>
+          <a class="store-btn" href="https://apps.apple.com/app/dambou/idXXXXXXXXX"><span><span class="store-sub">T&eacute;l&eacute;charger sur</span><span class="store-main">App Store</span></span></a>
           <a class="store-btn" href="https://play.google.com/store/apps/details?id=com.num0.dambou"><span><span class="store-sub">Disponible sur</span><span class="store-main">Google Play</span></span></a>
         </div>
         <p class="trust-line"><strong>2 mois gratuits</strong>, sans carte bancaire</p>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total encaisse</div>
+        <div class="stat-label">Total encaiss&eacute;</div>
         <div class="stat-value">463,52&nbsp;&euro;</div>
         <div class="stat-sub">juin 2026</div>
         <div class="stat-rows">
@@ -196,30 +196,30 @@ if (!empty($slug) && count($parts) === 1) {
 <section class="features" id="fonctionnalites">
   <div class="wrap">
     <div class="section-head">
-      <div class="eyebrow">Fonctionnalites</div>
+      <div class="eyebrow">Fonctionnalit&eacute;s</div>
       <h2>Bien plus qu'une caisse</h2>
-      <p>Six modules qui couvrent tout votre quotidien, deja utilises par des food trucks, coiffeurs et artisans.</p>
+      <p>Six modules qui couvrent tout votre quotidien, d&eacute;j&agrave; utilis&eacute;s par des food trucks, coiffeurs et artisans.</p>
     </div>
     <div class="feature-grid">
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(244,162,97,0.1)">&#128722;</div>
         <h3>Commandes</h3>
-        <p>Recues en temps reel, avec notification instantanee des qu'un client commande.</p>
+        <p>Re&ccedil;ues en temps r&eacute;el, avec notification instantan&eacute;e d&egrave;s qu'un client commande.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(0,191,165,0.1)">&#128197;</div>
-        <h3>Reservations</h3>
-        <p>Agenda clair par employe, confirmation automatique pour vos clients.</p>
+        <h3>R&eacute;servations</h3>
+        <p>Agenda clair par employ&eacute;, confirmation automatique pour vos clients.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(82,183,136,0.1)">&#128179;</div>
         <h3>Caisse</h3>
-        <p>Encaissement sur place, carte ou especes, sans doublon avec les commandes en ligne.</p>
+        <p>Encaissement sur place, carte ou esp&egrave;ces, sans doublon avec les commandes en ligne.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(233,30,140,0.1)">&#127873;</div>
-        <h3>Fidelite</h3>
-        <p>Points cumules automatiquement, recompenses simples a configurer.</p>
+        <h3>Fid&eacute;lit&eacute;</h3>
+        <p>Points cumul&eacute;s automatiquement, r&eacute;compenses simples &agrave; configurer.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(0,151,167,0.1)">&#128202;</div>
@@ -229,7 +229,7 @@ if (!empty($slug) && count($parts) === 1) {
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(108,99,255,0.1)">&#129534;</div>
         <h3>Catalogue</h3>
-        <p>Produits et services a jour, visibles sur votre page en ligne.</p>
+        <p>Produits et services &agrave; jour, visibles sur votre page en ligne.</p>
       </div>
     </div>
   </div>
@@ -237,26 +237,26 @@ if (!empty($slug) && count($parts) === 1) {
 
 <section class="proof">
   <div class="wrap">
-    <p class="label">Deja utilise par</p>
+    <p class="label">D&eacute;j&agrave; utilis&eacute; par</p>
     <div class="proof-row">
       <div class="proof-pill" style="background:rgba(244,162,97,0.1);color:#a3591e">FREDDY'Z PIZZ, food truck</div>
       <div class="proof-pill" style="background:rgba(233,30,140,0.1);color:#a3115f">Salon de massage, Marrakech</div>
-      <div class="proof-pill" style="background:rgba(108,99,255,0.1);color:#4a41c9">Orabel, salon de beaute</div>
+      <div class="proof-pill" style="background:rgba(108,99,255,0.1);color:#4a41c9">Orabel, salon de beaut&eacute;</div>
     </div>
   </div>
 </section>
 
 <div class="pricing-band">
   <h2>Un tarif simple, sans surprise</h2>
-  <p class="price-line"><strong>29 EUR / mois</strong> apres 2 mois d'essai gratuit, sans carte bancaire</p>
-  <a class="pricing-cta" href="/abonnement">Demarrer gratuitement</a>
+  <p class="price-line"><strong>29 EUR / mois</strong> apr&egrave;s 2 mois d'essai gratuit, sans carte bancaire</p>
+  <a class="pricing-cta" href="/abonnement">D&eacute;marrer gratuitement</a>
 </div>
 
 <footer>
   <div class="wrap footer-row">
     <div class="footer-copy">&#169; 2026 Dambou</div>
     <div class="footer-links">
-      <a href="/privacy">Confidentialite</a>
+      <a href="/privacy">Confidentialit&eacute;</a>
       <a href="/cgu">CGU</a>
       <a href="mailto:contact@dambou.fr">Contact</a>
     </div>

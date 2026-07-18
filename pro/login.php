@@ -100,7 +100,7 @@ ini_set('log_errors', 1);
   <div class="card">
     <div class="logo"><img src="/assets/icon.png" alt="Dambou"></div>
     <h1>Espace Pro</h1>
-    <p class="subtitle">Connectez-vous pour gerer votre activite</p>
+    <p class="subtitle">Connectez-vous pour g&eacute;rer votre activit&eacute;</p>
 
     <form id="login-form">
       <label for="email">Email</label>
@@ -114,12 +114,12 @@ ini_set('log_errors', 1);
       <button type="submit" id="submit-btn">Se connecter</button>
     </form>
 
-    <a class="back-link" href="/pro/inscription">Pas encore de compte ? Creer un compte</a>
-    <a class="back-link" href="/">&larr; Retour a l'accueil</a>
+    <a class="back-link" href="/pro/inscription">Pas encore de compte ? Cr&eacute;er un compte</a>
+    <a class="back-link" href="/">&larr; Retour &agrave; l'accueil</a>
   </div>
 
   <script type="module">
-    import { supabase, getBusinessForUser } from '/pro/js/auth.js';
+    import { supabase, getBusinessForUser, fr } from '/pro/js/auth.js';
 
     const form = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
@@ -166,7 +166,7 @@ ini_set('log_errors', 1);
       if (!business) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Se connecter';
-        showError("Aucun etablissement associe a ce compte. Utilisez l'application mobile Dambou pour creer votre compte pro.");
+        showError(fr("Aucun &eacute;tablissement associ&eacute; &agrave; ce compte. Utilisez l'application mobile Dambou pour cr&eacute;er votre compte pro."));
         await supabase.auth.signOut();
         return;
       }

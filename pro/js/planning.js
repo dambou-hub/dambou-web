@@ -163,10 +163,7 @@ export async function createBooking(params) {
         insertData.customer_id = params.customerId;
     } else {
         insertData.manual_customer_name = params.customerName;
-        if (params.customerPhone) {
-            insertData.manual_customer_phone = params.customerPhone;
-            insertData.notes = 'Tel: ' + params.customerPhone;
-        }
+        if (params.customerPhone) insertData.manual_customer_phone = params.customerPhone;
         if (params.manualClientId) insertData.manual_client_id = params.manualClientId;
     }
 
@@ -206,7 +203,6 @@ export async function updateBooking(bookingId, params) {
         updateData.manual_customer_name = params.customerName;
         updateData.manual_customer_phone = params.customerPhone || null;
         updateData.manual_client_id = params.manualClientId || null;
-        if (params.customerPhone) updateData.notes = 'Tel: ' + params.customerPhone;
     }
     const { error } = await supabase.from('bookings').update(updateData).eq('id', bookingId);
     if (error) throw error;
@@ -219,19 +215,29 @@ export async function updateBooking(bookingId, params) {
     // Notifications au client -- uniquement pour un vrai compte Dambou (customerId),
     // jamais pour une fiche manuelle. Une seule notif par sauvegarde, jamais les deux :
     // confirmation OU changement d'heure, pas les deux a la fois (meme logique que l'app).
+    // La notification de confirmation mentionne en plus les changements d'horaire et/ou
+    // d'employe par rapport a la demande initiale du client.
     if (params.customerId) {
         const wasConfirmed = wasPending && newStatus === 'confirmed';
         const originalTimeShort = (params.originalStartTime || '').substring(0, 5);
         const newTimeShort = (params.startTime || '').substring(0, 5);
-        const timeChanged = !wasConfirmed && originalTimeShort !== newTimeShort;
+        const timeChanged = originalTimeShort && originalTimeShort !== newTimeShort;
+        const employeeChanged = params.originalPreferredEmployeeId && params.employeeId &&
+            params.originalPreferredEmployeeId !== params.employeeId;
 
         try {
             if (wasConfirmed) {
+                let message = (params.businessName || 'Le professionnel') + ' a confirme votre RDV - ' +
+                    (params.serviceName || 'votre rendez-vous') + ' a ' + newTimeShort + ' le ' + params.dateKey + '.';
+                const changes = [];
+                if (timeChanged) changes.push("l'horaire a ete ajuste (initialement demande a " + originalTimeShort + ')');
+                if (employeeChanged && params.assignedEmployeeName) changes.push("c'est " + params.assignedEmployeeName + ' qui s\'occupera de vous');
+                if (changes.length) message += ' A noter : ' + changes.join(', ') + '.';
+
                 await supabase.from('notifications').insert({
                     user_id: params.customerId,
                     title: 'Rendez-vous confirme',
-                    message: (params.businessName || 'Le professionnel') + ' a confirme votre RDV - ' +
-                        (params.serviceName || 'votre rendez-vous') + ' a ' + newTimeShort + ' le ' + params.dateKey + '.',
+                    message: message,
                     type: 'booking_confirmed',
                     data: { booking_id: bookingId },
                     is_read: false,

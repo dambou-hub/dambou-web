@@ -112,6 +112,8 @@ ini_set('log_errors', 1);
   .pending-meta { font-size: 12px; color: var(--text-medium); margin-top: 2px; }
   .pending-phone { font-size: 12px; color: var(--primary-dark); text-decoration: none; font-weight: 600; }
   .pending-emp { font-size: 11px; color: var(--primary-dark); font-weight: 600; margin-top: 3px; }
+  .pending-note { background: rgba(0,191,165,0.06); border: 1px solid rgba(0,191,165,0.2); border-radius: 8px; padding: 7px 10px; font-size: 11px; color: var(--text-dark); margin-top: 8px; line-height: 1.4; }
+  .pending-note strong { color: var(--primary-dark); }
   .pending-date { font-size: 12px; font-weight: 700; color: var(--text-dark); background: var(--background); padding: 4px 10px; border-radius: 8px; }
   .pending-conflict { background: rgba(221,107,32,0.08); color: #a3591e; font-size: 11px; padding: 6px 10px; border-radius: 8px; margin: 8px 0; }
   .pending-actions { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
@@ -250,6 +252,7 @@ ini_set('log_errors', 1);
           '</div>' +
           '<div class="pending-date">' + escapeHtml(b.booking_date) + ' ' + escapeHtml((b.start_time || '').substring(0, 5)) + '</div>' +
           '</div>' +
+          (b.notes ? '<div class="pending-note"><strong>Note :</strong> ' + escapeHtml(b.notes) + '</div>' : '') +
           '<div class="pending-actions">' +
           '<button class="cancel" data-action="cancel" data-id="' + b.id + '">Refuser</button>' +
           (phone ? '<a class="call-btn" href="tel:' + escapeHtml(phone) + '" title="Appeler">&#128222;</a>' : '') +

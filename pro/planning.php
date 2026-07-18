@@ -112,6 +112,8 @@ ini_set('log_errors', 1);
   .panel-client { font-size: 15px; font-weight: 800; }
   .panel-service { font-size: 12px; color: var(--text-medium); }
   .panel-phone { font-size: 11px; color: #25D366; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .panel-note { background: rgba(0,191,165,0.06); border: 1px solid rgba(0,191,165,0.2); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--text-dark); margin: 10px 0; line-height: 1.4; }
+  .panel-note strong { color: var(--primary-dark); }
   .panel-price { font-size: 17px; font-weight: 900; white-space: nowrap; }
   .panel-divider { height: 1px; background: var(--card-border); margin: 6px 0; }
   .action-tile { display: flex; align-items: center; gap: 12px; padding: 13px 4px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text-dark); }
@@ -177,6 +179,7 @@ ini_set('log_errors', 1);
         </div>
         <div class="panel-price" id="panel-price"></div>
       </div>
+      <div class="panel-note" id="panel-note" style="display:none"></div>
       <div class="panel-divider"></div>
       <div id="panel-actions"></div>
 
@@ -245,6 +248,8 @@ ini_set('log_errors', 1);
             </div>
           </div>
         </div>
+
+        <div class="panel-note" id="modal-note" style="display:none; margin-bottom:12px"></div>
 
         <div class="error-msg" id="new-error" style="display:none; background:rgba(229,62,62,0.08); color:var(--error); font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:12px"></div>
 
@@ -628,6 +633,14 @@ ini_set('log_errors', 1);
         phoneEl.style.display = 'none';
       }
 
+      const noteEl = document.getElementById('panel-note');
+      if (booking.notes) {
+        noteEl.style.display = 'block';
+        noteEl.innerHTML = '<strong>Note du client :</strong> ' + escapeHtml(booking.notes);
+      } else {
+        noteEl.style.display = 'none';
+      }
+
       hideSubPanels();
       renderPanelActions(booking);
       document.getElementById('panel-overlay').classList.add('visible');
@@ -831,6 +844,14 @@ ini_set('log_errors', 1);
 
         const empIds = bookingEmployeeIds(existingBooking);
         selectedNewEmployeeId = empIds.length ? empIds[0] : null;
+
+        const modalNoteEl = document.getElementById('modal-note');
+        if (existingBooking.notes) {
+          modalNoteEl.style.display = 'block';
+          modalNoteEl.innerHTML = '<strong>Note du client :</strong> ' + escapeHtml(existingBooking.notes);
+        } else {
+          modalNoteEl.style.display = 'none';
+        }
       } else {
         editingBookingId = null;
         editingOriginalBooking = null;
@@ -839,6 +860,7 @@ ini_set('log_errors', 1);
         document.getElementById('new-date').value = toDateKey(selectedDate);
         selectedNewEmployeeId = employees.length === 1 ? employees[0].id : null;
         selectedClient = null;
+        document.getElementById('modal-note').style.display = 'none';
       }
 
       updateClientBoxDisplay();
@@ -1049,6 +1071,7 @@ ini_set('log_errors', 1);
 
       try {
         if (editingBookingId) {
+          const assignedEmployee = employeeId ? employees.find((e) => e.id === employeeId) : null;
           await updateBooking(editingBookingId, Object.assign({
             serviceId: service.id,
             dateKey: dateKey,
@@ -1058,6 +1081,8 @@ ini_set('log_errors', 1);
             employeeId: employeeId,
             originalStatus: editingOriginalBooking ? editingOriginalBooking.status : null,
             originalStartTime: editingOriginalBooking ? editingOriginalBooking.start_time : null,
+            originalPreferredEmployeeId: editingOriginalBooking ? editingOriginalBooking.preferred_employee_id : null,
+            assignedEmployeeName: assignedEmployee ? (assignedEmployee.first_name || '') : null,
             businessName: business.name,
             serviceName: service.name,
           }, clientParams));

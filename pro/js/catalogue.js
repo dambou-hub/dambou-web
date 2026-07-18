@@ -7,9 +7,9 @@ import { supabase } from '/pro/js/auth.js';
 
 export const TVA_RATES = [
     { label: 'Non assujetti (0%)', value: 0.0 },
-    { label: 'Super reduit (2,1%)', value: 2.1 },
-    { label: 'Reduit (5,5%)', value: 5.5 },
-    { label: 'Intermediaire (10%)', value: 10.0 },
+    { label: 'Super réduit (2,1%)', value: 2.1 },
+    { label: 'Réduit (5,5%)', value: 5.5 },
+    { label: 'Intermédiaire (10%)', value: 10.0 },
     { label: 'Normal (20%)', value: 20.0 },
 ];
 

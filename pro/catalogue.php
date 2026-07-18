@@ -113,7 +113,7 @@ ini_set('log_errors', 1);
   <div class="container">
     <div class="page-head">
       <h1>Catalogue</h1>
-      <button class="btn btn-primary" id="add-category-btn">+ Nouvelle categorie</button>
+      <button class="btn btn-primary" id="add-category-btn">+ Nouvelle cat&eacute;gorie</button>
     </div>
 
     <div id="loading">Chargement du catalogue...</div>
@@ -130,7 +130,7 @@ ini_set('log_errors', 1);
       </button>
       <button type="button" class="type-choice-btn" id="choice-product">
         <span style="font-size:22px">&#128230;</span>
-        <span><strong>Produit a vendre</strong><br><span style="font-weight:400; color:var(--text-medium)">Whey, huile, creme...</span></span>
+        <span><strong>Produit &agrave; vendre</strong><br><span style="font-weight:400; color:var(--text-medium)">Whey, huile, cr&egrave;me...</span></span>
       </button>
       <button class="btn btn-outline" id="type-choice-cancel" style="width:100%; margin-top:8px">Annuler</button>
     </div>
@@ -152,9 +152,9 @@ ini_set('log_errors', 1);
       <div class="field"><label>Description (optionnel)</label><textarea id="item-description"></textarea></div>
       <div class="row2">
         <div class="field"><label>Prix</label><input type="number" id="item-price" step="0.01" min="0"></div>
-        <div class="field" id="duration-field"><label>Duree (min)</label><input type="number" id="item-duration" min="0"></div>
+        <div class="field" id="duration-field"><label>Dur&eacute;e (min)</label><input type="number" id="item-duration" min="0"></div>
       </div>
-      <div class="field"><label>Categorie</label><select id="item-category"></select></div>
+      <div class="field"><label>Cat&eacute;gorie</label><select id="item-category"></select></div>
 
       <div id="product-fields">
         <div class="toggle-row"><label>Suivre le stock</label><input type="checkbox" id="item-track-stock"></div>
@@ -181,7 +181,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import {
       TVA_RATES, loadCategories, loadProducts, loadServices,
       createCategory, deleteCategory, uploadItemImage, saveItem, deleteItem, updateItemImageUrl,
@@ -201,7 +201,7 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -237,7 +237,7 @@ ini_set('log_errors', 1);
       if (uncategorized.length) groups.push({ category: null, items: uncategorized });
 
       if (groups.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-medium)">Aucune categorie. Commencez par en creer une.</div>';
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-medium)">Aucune cat&eacute;gorie. Commencez par en cr&eacute;er une.</div>';
         return;
       }
 
@@ -250,14 +250,14 @@ ini_set('log_errors', 1);
 
       const head = document.createElement('div');
       head.className = 'category-head';
-      head.innerHTML = '<h2>' + escapeHtml(category ? category.name : 'Sans categorie') + '</h2>';
+      head.innerHTML = '<h2>' + escapeHtml(category ? category.name : 'Sans cat&eacute;gorie') + '</h2>';
       if (category) {
         const actions = document.createElement('div');
         actions.className = 'category-actions';
         const delBtn = document.createElement('button');
         delBtn.className = 'icon-btn';
         delBtn.textContent = '\u{1F5D1}';
-        delBtn.title = 'Supprimer la categorie';
+        delBtn.title = fr('Supprimer la cat&eacute;gorie');
         delBtn.addEventListener('click', () => onDeleteCategory(category));
         actions.appendChild(delBtn);
         head.appendChild(actions);
@@ -319,10 +319,10 @@ ini_set('log_errors', 1);
     });
 
     async function onDeleteCategory(category) {
-      if (!confirm('La categorie "' + category.name + '" et tous ses elements seront supprimes. Continuer ?')) return;
+      if (!confirm(fr('La cat&eacute;gorie "' + category.name + '" et tous ses &eacute;l&eacute;ments seront supprim&eacute;s. Continuer ?'))) return;
       try {
         await deleteCategory(category.id);
-        showToast('Categorie supprimee.');
+        showToast('Cat&eacute;gorie supprim&eacute;e.');
         await loadAll();
       } catch (err) {
         console.error(err);
@@ -331,15 +331,15 @@ ini_set('log_errors', 1);
     }
 
     document.getElementById('add-category-btn').addEventListener('click', async () => {
-      const name = prompt('Nom de la nouvelle categorie :');
+      const name = prompt(fr('Nom de la nouvelle cat&eacute;gorie :'));
       if (!name || !name.trim()) return;
       try {
         await createCategory(business.id, name.trim(), categories.length);
-        showToast('Categorie creee.');
+        showToast('Cat&eacute;gorie cr&eacute;&eacute;e.');
         await loadAll();
       } catch (err) {
         console.error(err);
-        showToast('Erreur lors de la creation.');
+        showToast('Erreur lors de la cr&eacute;ation.');
       }
     });
 
@@ -358,7 +358,7 @@ ini_set('log_errors', 1);
     }
     function populateCategorySelect() {
       const sel = document.getElementById('item-category');
-      sel.innerHTML = '<option value="">Sans categorie</option>';
+      sel.innerHTML = '<option value="">Sans cat&eacute;gorie</option>';
       categories.forEach((c) => {
         const opt = document.createElement('option');
         opt.value = c.id;
@@ -456,10 +456,10 @@ ini_set('log_errors', 1);
 
     document.getElementById('item-delete-btn').addEventListener('click', async () => {
       if (!editingItem || !editingItem.id) return;
-      if (!confirm('Supprimer cet element ?')) return;
+      if (!confirm(fr('Supprimer cet &eacute;l&eacute;ment ?'))) return;
       try {
         await deleteItem(editingItem.isProduct, editingItem.id);
-        showToast('Element supprime.');
+        showToast('&Eacute;l&eacute;ment supprim&eacute;.');
         closeItemModal();
         await loadAll();
       } catch (err) {
@@ -506,7 +506,7 @@ ini_set('log_errors', 1);
           await updateItemImageUrl(isProduct, itemId, url);
         }
 
-        showToast('Enregistre.');
+        showToast('Enregistr&eacute;.');
         closeItemModal();
         await loadAll();
       } catch (err) {
@@ -527,7 +527,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       await loadAll();

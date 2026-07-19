@@ -9,7 +9,7 @@ ini_set('log_errors', 1);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reservations - Dambou Pro</title>
+<title>R&eacute;servations - Dambou Pro</title>
 <meta name="theme-color" content="#00BFA5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -62,11 +62,11 @@ ini_set('log_errors', 1);
   </div>
 
   <div class="container">
-    <h1>Reservations</h1>
+    <h1>R&eacute;servations</h1>
 
     <div class="tabs">
       <button class="tab-btn active" data-status="pending">En attente <span class="tab-badge" id="badge-pending" style="display:none">0</span></button>
-      <button class="tab-btn" data-status="confirmed">Confirmees</button>
+      <button class="tab-btn" data-status="confirmed">Confirm&eacute;es</button>
       <button class="tab-btn" data-status="all">Toutes</button>
     </div>
 
@@ -75,7 +75,7 @@ ini_set('log_errors', 1);
   </div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import { loadReservations } from '/pro/js/reservations.js';
     import { clientName, bookingPhone, bookingEmployeeIds, toDateKey, formatDateLong } from '/pro/js/planning.js';
 
@@ -92,8 +92,8 @@ ini_set('log_errors', 1);
     }
 
     const STATUS_LABELS = {
-      pending: 'En attente', confirmed: 'Confirme', completed: 'Termine',
-      cancelled: 'Annule', no_show: 'No-show',
+      pending: 'En attente', confirmed: 'Confirm&eacute;', completed: 'Termin&eacute;',
+      cancelled: 'Annul&eacute;', no_show: 'No-show',
     };
     const STATUS_COLORS = {
       pending: '#DD6B20', confirmed: '#38A169', completed: '#718096',
@@ -124,7 +124,7 @@ ini_set('log_errors', 1);
       document.getElementById('loading').style.display = 'none';
 
       if (reservations.length === 0) {
-        container.innerHTML = '<div id="empty-state">Aucune reservation sur cette periode.</div>';
+        container.innerHTML = '<div id="empty-state">Aucune r&eacute;servation sur cette p&eacute;riode.</div>';
         container.style.display = 'block';
         return;
       }
@@ -193,7 +193,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       await loadAndRender();

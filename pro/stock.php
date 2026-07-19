@@ -85,7 +85,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import { loadStockProducts, updateStockQty, toggleTrackStock } from '/pro/js/catalogue.js';
 
     let business = null;
@@ -99,7 +99,7 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -137,7 +137,7 @@ ini_set('log_errors', 1);
       row.innerHTML =
         '<div class="stock-info">' +
         '<div class="stock-name">' + escapeHtml(p.name) + (low ? ' <span class="low-badge">Stock bas</span>' : '') + '</div>' +
-        '<div class="stock-cat">' + escapeHtml((p.categories && p.categories.name) || 'Sans categorie') + '</div>' +
+        '<div class="stock-cat">' + escapeHtml((p.categories && p.categories.name) || 'Sans cat&eacute;gorie') + '</div>' +
         '<label class="track-toggle"><input type="checkbox" ' + (p.track_stock ? 'checked' : '') + ' data-id="' + p.id + '" class="track-cb"> Suivre le stock</label>' +
         '</div>';
 
@@ -148,7 +148,7 @@ ini_set('log_errors', 1);
           '<button class="stock-btn" data-action="minus" data-id="' + p.id + '">-</button>' +
           '<span class="stock-qty' + (low ? ' low' : '') + '">' + (p.stock_qty || 0) + '</span>' +
           '<button class="stock-btn" data-action="plus" data-id="' + p.id + '">+</button>' +
-          '<button class="reappro-btn" data-action="reappro" data-id="' + p.id + '">Reappro</button>';
+          '<button class="reappro-btn" data-action="reappro" data-id="' + p.id + '">R&eacute;appro</button>';
         row.appendChild(qtyWrap);
       }
       return row;
@@ -177,13 +177,13 @@ ini_set('log_errors', 1);
         product.stock_qty = (product.stock_qty || 0) + 1;
         render();
       } else if (action === 'reappro') {
-        const qty = prompt('Quantite recue pour "' + product.name + '" :');
+        const qty = prompt(fr('Quantit&eacute; re&ccedil;ue pour "' + product.name + '" :'));
         const n = parseInt(qty, 10);
         if (!n || n <= 0) return;
         const newQty = (product.stock_qty || 0) + n;
         await updateStockQty(id, newQty);
         product.stock_qty = newQty;
-        showToast('+' + n + ' unites ajoutees.');
+        showToast('+' + n + ' unit&eacute;s ajout&eacute;es.');
         render();
       }
     });
@@ -208,7 +208,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       await loadAll();

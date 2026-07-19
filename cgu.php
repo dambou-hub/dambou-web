@@ -1,5 +1,5 @@
 <?php
-// dambou.fr/cgu — Conditions Générales d'Utilisation
+// dambou.fr/cgu - Conditions Générales d'Utilisation
 // Uploader dans public_html/cgu.php sur Hostinger
 // Accessible via https://dambou.fr/cgu
 $last_updated = "2 juin 2026";
@@ -9,7 +9,7 @@ $last_updated = "2 juin 2026";
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conditions Générales d'Utilisation — DAMBOU</title>
+  <title>Conditions Générales d'Utilisation - DAMBOU</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -80,7 +80,7 @@ $last_updated = "2 juin 2026";
 
 <header>
   <a href="https://dambou.fr">
-    <span class="logo">🥟 DAMBOU</span>
+    <span class="logo">&#129951; DAMBOU</span>
   </a>
 </header>
 
@@ -99,7 +99,7 @@ $last_updated = "2 juin 2026";
   <p>
     L'application permet aux professionnels indépendants (ci-après "Professionnels") de gérer leurs commandes, réservations, encaissements et fidélité clients, et aux clients finaux (ci-après "Clients") de commander et réserver auprès de ces Professionnels.
   </p>
-  <p>Contact : <a href="mailto:contact@dambou.fr">contact@dambou.fr</a> — <a href="https://dambou.fr">https://dambou.fr</a></p>
+  <p>Contact : <a href="mailto:contact@dambou.fr">contact@dambou.fr</a> - <a href="https://dambou.fr">https://dambou.fr</a></p>
 
   <h2>2. Acceptation des conditions</h2>
   <p>L'utilisation de l'application DAMBOU vaut acceptation pleine et entière des présentes CGU. Si vous n'acceptez pas ces conditions, vous ne devez pas utiliser l'application.</p>
@@ -125,8 +125,8 @@ $last_updated = "2 juin 2026";
   <p>L'accès aux fonctionnalités pro de DAMBOU est soumis à un abonnement.</p>
 
   <div class="pricing-box">
-    <p><strong>29 €</strong> / mois (TTC)</p>
-    <p style="margin:6px 0 0; font-size:14px; color:#555;">2 mois d'essai gratuit — sans carte bancaire requise à l'inscription</p>
+    <p><strong>29 &euro;</strong> / mois (TTC)</p>
+    <p style="margin:6px 0 0; font-size:14px; color:#555;">2 mois d'essai gratuit - sans carte bancaire requise à l'inscription</p>
   </div>
 
   <h3>5.1 Période d'essai</h3>
@@ -198,13 +198,13 @@ $last_updated = "2 juin 2026";
 
   <h2>13. Contact</h2>
   <p>Pour toute question relative aux présentes CGU :<br>
-  📧 <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br>
-  🌐 <a href="https://dambou.fr">https://dambou.fr</a>
+  &#128231; <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br>
+  &#127760; <a href="https://dambou.fr">https://dambou.fr</a>
   </p>
 </div>
 
 <footer>
-  &copy; <?= date('Y') ?> DAMBOU — <a href="https://dambou.fr/cgu">CGU</a> · <a href="https://dambou.fr/privacy">Confidentialité</a>
+  &copy; <?= date('Y') ?> DAMBOU - <a href="https://dambou.fr/cgu">CGU</a> · <a href="https://dambou.fr/privacy">Confidentialité</a>
 </footer>
 
 </body>

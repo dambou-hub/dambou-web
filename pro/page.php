@@ -30,7 +30,7 @@ $biz = supabase_get($SUPABASE_URL, $SUPABASE_KEY,
 
 if (empty($biz)) {
     http_response_code(404);
-    die('Business introuvable — slug: ' . htmlspecialchars($slug));
+    die('Business introuvable - slug: ' . htmlspecialchars($slug));
 }
 $b = $biz[0];
 
@@ -46,7 +46,7 @@ $logo = $b['logo_url'] ?? '';
 $cover = $b['cover_url'] ?? '';
 $closure = $b['closure_message'] ?? '';
 $currency = $b['currency_code'] ?? 'EUR';
-$currencySymbol = match($currency) { 'MAD' => 'DH', 'USD' => '$', 'GBP' => '£', default => '€' };
+$currencySymbol = match($currency) { 'MAD' => 'DH', 'USD' => '$', 'GBP' => '£', default => '&euro;' };
 
 $cats = supabase_get($SUPABASE_URL, $SUPABASE_KEY,
     "categories?business_id=eq.$bizId&is_activity=eq.false&select=id,name&order=sort_order");
@@ -76,7 +76,7 @@ foreach ($allItems as $p) {
     $byCategory[$cid][] = $p;
 }
 
-$pageTitle = "$name — Dambou";
+$pageTitle = "$name - Dambou";
 $deepLink = "dambou://business/$bizId";
 $appStoreUrl = "https://apps.apple.com/app/dambou/idXXXXXXXXX";
 $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
@@ -148,21 +148,21 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
   <?php if ($logo): ?>
     <img class="biz-logo" src="<?= htmlspecialchars($logo) ?>" alt="<?= $name ?>">
   <?php else: ?>
-    <div class="biz-logo-placeholder">🏪</div>
+    <div class="biz-logo-placeholder">&#127978;</div>
   <?php endif; ?>
   <div class="biz-info">
     <div class="biz-name"><?= $name ?></div>
     <?php if ($desc): ?><div class="biz-desc"><?= $desc ?></div><?php endif; ?>
     <div class="biz-meta">
-      <?php if ($address): ?><span class="biz-chip">📍 <?= $address ?></span><?php endif; ?>
-      <?php if ($phone): ?><span class="biz-chip">📞 <a href="tel:<?= $phone ?>" style="color:var(--text-med);text-decoration:none;"><?= $phone ?></a></span><?php endif; ?>
+      <?php if ($address): ?><span class="biz-chip">&#128205; <?= $address ?></span><?php endif; ?>
+      <?php if ($phone): ?><span class="biz-chip">&#128222; <a href="tel:<?= $phone ?>" style="color:var(--text-med);text-decoration:none;"><?= $phone ?></a></span><?php endif; ?>
     </div>
   </div>
 </div>
 
 <?php if ($closure): ?>
 <div class="closure-banner">
-  <span>🔒</span>
+  <span>&#128274;</span>
   <span><?= htmlspecialchars($closure) ?></span>
 </div>
 <?php endif; ?>
@@ -170,10 +170,10 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
 <?php if ($hasOrders || $hasBooking): ?>
 <div class="actions">
   <?php if ($hasBooking): ?>
-    <a href="<?= $deepLink ?>?action=book" class="btn btn-outline <?= $closure ? 'disabled' : '' ?>">📅 Réserver</a>
+    <a href="<?= $deepLink ?>?action=book" class="btn btn-outline <?= $closure ? 'disabled' : '' ?>">&#128197; Réserver</a>
   <?php endif; ?>
   <?php if ($hasOrders): ?>
-    <a href="<?= $deepLink ?>?action=order" class="btn btn-primary <?= $closure ? 'disabled' : '' ?>">🛒 Commander</a>
+    <a href="<?= $deepLink ?>?action=order" class="btn btn-primary <?= $closure ? 'disabled' : '' ?>">&#128722; Commander</a>
   <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -197,7 +197,7 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
           <?php if ($img): ?>
             <img class="product-img" src="<?= htmlspecialchars($img) ?>" alt="<?= $pname ?>">
           <?php else: ?>
-            <div class="product-img-placeholder">🍽️</div>
+            <div class="product-img-placeholder">&#127869;</div>
           <?php endif; ?>
           <div class="product-info">
             <div class="product-name"><?= $pname ?></div>
@@ -213,7 +213,7 @@ $playStoreUrl = "https://play.google.com/store/apps/details?id=com.num0.dambou";
 
 <div class="sticky-banner">
   <div class="sticky-inner">
-    <div class="sticky-logo">🌿</div>
+    <div class="sticky-logo">&#127807;</div>
     <div class="sticky-text">
       <strong>Commander sur Dambou</strong>
       <span>Téléchargez l'app gratuitement</span>

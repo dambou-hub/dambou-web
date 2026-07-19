@@ -111,9 +111,9 @@ ini_set('log_errors', 1);
 
       <div class="profile-media" id="profile-media">
         <div class="cover-wrap" id="cover-wrap">
-          <div class="cover-placeholder" id="cover-placeholder">Ajouter une banniere</div>
+          <div class="cover-placeholder" id="cover-placeholder">Ajouter une banni&egrave;re</div>
           <img id="cover-img" style="display:none">
-          <div class="upload-hint">Changer la banniere</div>
+          <div class="upload-hint">Changer la banni&egrave;re</div>
         </div>
         <div class="logo-wrap" id="logo-wrap">
           <div class="logo-placeholder" id="logo-placeholder">?</div>
@@ -137,14 +137,14 @@ ini_set('log_errors', 1);
           <div class="field">
             <label>Votre lien vitrine web</label>
             <div class="slug-row">
-              <span id="slug-display">Sauvegardez pour generer votre lien</span>
+              <span id="slug-display">Sauvegardez pour g&eacute;n&eacute;rer votre lien</span>
               <button type="button" id="copy-slug-btn" style="display:none">Copier</button>
             </div>
           </div>
           <div class="field"><label>Description</label><textarea id="f-description"></textarea></div>
-          <div class="field"><label>Slogan (50 caracteres max)</label><input type="text" id="f-slogan" maxlength="50"></div>
+          <div class="field"><label>Slogan (50 caract&egrave;res max)</label><input type="text" id="f-slogan" maxlength="50"></div>
           <div class="row2">
-            <div class="field"><label>Telephone</label><input type="tel" id="f-phone"></div>
+            <div class="field"><label>T&eacute;l&eacute;phone</label><input type="tel" id="f-phone"></div>
             <div class="field"><label>Email</label><input type="email" id="f-email"></div>
           </div>
           <div class="field"><label>Site web (optionnel)</label><input type="text" id="f-website"></div>
@@ -157,13 +157,13 @@ ini_set('log_errors', 1);
             <input type="checkbox" id="f-closure-enabled">
           </div>
           <div class="field" id="closure-msg-field" style="display:none; margin-top:10px">
-            <input type="text" id="f-closure-message" placeholder="Ex: Ferme pour conges du 1er au 15 aout">
+            <input type="text" id="f-closure-message" placeholder="Ex: Ferm&eacute; pour cong&eacute;s du 1er au 15 ao&ucirc;t">
           </div>
         </div>
 
         <div class="card" id="capacity-card" style="display:none">
-          <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Capacite simultanee</h3>
-          <p style="font-size:11px; color:var(--text-medium); margin-bottom:14px">Sieges, cabines ou tables disponibles en meme temps</p>
+          <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Capacit&eacute; simultan&eacute;e</h3>
+          <p style="font-size:11px; color:var(--text-medium); margin-bottom:14px">Si&egrave;ges, cabines ou tables disponibles en m&ecirc;me temps</p>
           <div class="capacity-picker" id="capacity-picker"></div>
           <div class="capacity-label" id="capacity-label"></div>
         </div>
@@ -171,9 +171,9 @@ ini_set('log_errors', 1);
         <div class="card" id="order-capacity-card" style="display:none">
           <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Commandes &amp; file d'attente</h3>
           <p style="font-size:11px; color:var(--text-medium); margin-bottom:14px">Parametres pour les commandes food truck / restaurant</p>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:8px">Temps moyen de preparation</label>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:8px">Temps moyen de pr&eacute;paration</label>
           <div class="prep-time-picker" id="prep-time-picker"></div>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin:16px 0 8px">Commandes simultanees en preparation</label>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin:16px 0 8px">Commandes simultan&eacute;es en pr&eacute;paration</label>
           <div class="capacity-picker" id="order-capacity-picker"></div>
           <div class="capacity-label" id="order-capacity-label"></div>
         </div>
@@ -181,17 +181,17 @@ ini_set('log_errors', 1);
         <div class="card">
           <h3 style="font-size:14px; font-weight:800; margin-bottom:4px">Options</h3>
           <div class="toggle-row"><label>WhatsApp active</label><input type="checkbox" id="f-whatsapp"></div>
-          <div class="toggle-row"><label>Assujetti a la TVA</label><input type="checkbox" id="f-tva"></div>
+          <div class="toggle-row"><label>Assujetti &agrave; la TVA</label><input type="checkbox" id="f-tva"></div>
           <div class="toggle-row">
-            <div><label>Verifier les conflits d'employes</label><div class="toggle-sub">Alerte si un employe a deja un RDV sur le meme creneau</div></div>
+            <div><label>V&eacute;rifier les conflits d'employ&eacute;s</label><div class="toggle-sub">Alerte si un employ&eacute; a d&eacute;j&agrave; un RDV sur le m&ecirc;me cr&eacute;neau</div></div>
             <input type="checkbox" id="f-conflicts">
           </div>
         </div>
 
         <div class="card" id="legal-card" style="display:none">
-          <h3 style="font-size:14px; font-weight:800; margin-bottom:8px">Informations legales</h3>
+          <h3 style="font-size:14px; font-weight:800; margin-bottom:8px">Informations l&eacute;gales</h3>
           <div class="row2">
-            <div class="field"><label>Numero de TVA</label><input type="text" id="f-numero-tva"></div>
+            <div class="field"><label>Num&eacute;ro de TVA</label><input type="text" id="f-numero-tva"></div>
             <div class="field"><label>SIRET</label><input type="text" id="f-siret"></div>
           </div>
         </div>
@@ -204,7 +204,7 @@ ini_set('log_errors', 1);
         <div class="card">
           <div class="field address-wrap">
             <label>Adresse</label>
-            <input type="text" id="address-input" placeholder="Commencez a taper votre adresse" autocomplete="off">
+            <input type="text" id="address-input" placeholder="Commencez &agrave; taper votre adresse" autocomplete="off">
             <div class="address-suggestions" id="address-suggestions"></div>
             <button type="button" class="locate-btn" id="locate-btn">Me localiser</button>
           </div>
@@ -246,7 +246,7 @@ ini_set('log_errors', 1);
 
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -318,7 +318,7 @@ ini_set('log_errors', 1);
         document.getElementById('cover-img').style.display = 'block';
         document.getElementById('cover-placeholder').style.display = 'none';
         showToast('Banniere mise a jour.');
-      } catch (err) { console.error(err); showToast('Erreur upload banniere.'); }
+      } catch (err) { console.error(err); showToast('Erreur upload banni&egrave;re.'); }
     });
     document.getElementById('logo-input').addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -372,7 +372,7 @@ ini_set('log_errors', 1);
           orderCapacity: orderCapacity,
           prepTime: prepTime,
         });
-        showToast('Informations enregistrees.');
+        showToast('Informations enregistr&eacute;es.');
       } catch (err) {
         console.error(err);
         showToast('Erreur lors de l\'enregistrement.');
@@ -461,9 +461,9 @@ ini_set('log_errors', 1);
         if (place) {
           selectedPlace = place;
           addressInput.value = place.formatted;
-          showToast('Position recuperee.');
+          showToast('Position r&eacute;cup&eacute;r&eacute;e.');
         } else {
-          showToast("Impossible de recuperer l'adresse.");
+          showToast("Impossible de r&eacute;cup&eacute;rer l'adresse.");
         }
       }, () => {
         btn.disabled = false;
@@ -475,7 +475,7 @@ ini_set('log_errors', 1);
       if (!selectedPlace) { showToast('Choisissez une adresse dans la liste ou utilisez la localisation.'); return; }
       try {
         await saveAddress(business.id, selectedPlace);
-        showToast('Adresse enregistree.');
+        showToast('Adresse enregistr&eacute;e.');
       } catch (err) {
         console.error(err);
         showToast('Erreur lors de l\'enregistrement.');
@@ -496,9 +496,9 @@ ini_set('log_errors', 1);
           '<label style="display:flex; align-items:center; gap:6px"><input type="checkbox" class="day-open-cb" data-day="' + day + '" ' + (h.isOpen ? 'checked' : '') + '></label>' +
           (h.isOpen
             ? '<div class="day-times"><input type="time" class="day-start" data-day="' + day + '" value="' + h.start + '"><span>-</span><input type="time" class="day-end" data-day="' + day + '" value="' + h.end + '"></div>'
-            : '<span class="day-closed-label">Ferme</span>') +
+            : '<span class="day-closed-label">Ferm&eacute;</span>') +
           '</div>' +
-          (h.isOpen ? '<button type="button" class="copy-all-btn" data-day="' + day + '">&#128203; Appliquer a tous les jours</button>' : '');
+          (h.isOpen ? '<button type="button" class="copy-all-btn" data-day="' + day + '">&#128203; Appliquer &agrave; tous les jours</button>' : '');
         container.appendChild(row);
       });
 
@@ -523,7 +523,7 @@ ini_set('log_errors', 1);
             hours[d].isOpen = true;
           });
           renderHours();
-          showToast('Horaires ' + source.start + ' - ' + source.end + ' appliques a tous les jours.');
+          showToast('Horaires ' + source.start + ' - ' + source.end + ' appliqu&eacute;s &agrave; tous les jours.');
         });
       });
     }
@@ -543,7 +543,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       const businessBasic = await getBusinessForUser(session.user.id);
       if (!businessBasic) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       business = await loadFullBusiness(businessBasic.id);

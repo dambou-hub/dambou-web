@@ -34,16 +34,24 @@ export async function requireAuth() {
 // Recupere le business associe a l'utilisateur connecte (owner_id = user.id).
 // Retourne null si aucun business trouve.
 export async function getBusinessForUser(userId) {
+    // .maybeSingle() echoue (erreur, pas juste null) si plusieurs lignes
+    // correspondent -- ce qui peut arriver si un compte a fini par posseder
+    // plusieurs business (ex: inscription relancee par erreur avec le meme
+    // compte). On recupere donc en liste et on prend la plus recente plutot
+    // que de planter, tout en loggant clairement le cas pour investigation.
     const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .eq('owner_id', userId)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
     if (error) {
         console.error('Erreur chargement business:', error);
         return null;
     }
-    return data;
+    if (data && data.length > 1) {
+        console.warn('Ce compte possede ' + data.length + ' business (owner_id=' + userId + '). Utilisation du plus recent. IDs :', data.map((b) => b.id));
+    }
+    return (data && data[0]) || null;
 }
 
 // Recupere les modules actifs d'un business.

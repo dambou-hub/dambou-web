@@ -92,7 +92,7 @@ ini_set('log_errors', 1);
 </head>
 <body>
 
-<div id="loading-overlay">Creation de votre espace en cours...</div>
+<div id="loading-overlay">Cr&eacute;ation de votre espace en cours...</div>
 
 <div class="page">
   <div class="progress-head">
@@ -453,9 +453,17 @@ ini_set('log_errors', 1);
     hideError('business-error');
 
     if (!currentUser || !selectedTemplate) {
-      showError('business-error', 'Donnees manquantes. Recommencez.');
+      showError('business-error', fr('Donn&eacute;es manquantes. Recommencez.'));
       return;
     }
+
+    // Verrou explicite contre les soumissions multiples (double-clic, clics
+    // repetes par impatience pendant que la creation prend du temps) --
+    // c'est ce qui a cree plusieurs business en double pour un meme compte.
+    const submitBtn = document.getElementById('business-submit');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = fr('Cr&eacute;ation en cours...');
 
     document.getElementById('loading-overlay').classList.add('visible');
 
@@ -474,7 +482,9 @@ ini_set('log_errors', 1);
     } catch (err) {
       document.getElementById('loading-overlay').classList.remove('visible');
       console.error(err);
-      showError('business-error', "Erreur lors de la creation de votre espace. Reessayez.");
+      showError('business-error', fr("Erreur lors de la cr&eacute;ation de votre espace. R&eacute;essayez."));
+      submitBtn.disabled = false;
+      submitBtn.textContent = fr('Cr&eacute;er mon espace Dambou');
     }
   });
 </script>

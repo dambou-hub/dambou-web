@@ -71,14 +71,14 @@ ini_set('log_errors', 1);
     <div id="modules-content" style="display:none"></div>
 
     <div class="mobile-only-note">
-      &#8505; Le <strong>Terminal de paiement</strong> (lecteur carte Bluetooth) et le <strong>Paiement en ligne</strong> (Stripe) necessitent une configuration qui se fait depuis l'application mobile. Le module <strong>Multi-activite</strong> egalement, car il reorganise votre catalogue.
+      &#8505; Le <strong>Terminal de paiement</strong> (lecteur carte Bluetooth) et le <strong>Paiement en ligne</strong> (Stripe) n&eacute;cessitent une configuration qui se fait depuis l'application mobile. Le module <strong>Multi-activit&eacute;</strong> &eacute;galement, car il r&eacute;organise votre catalogue.
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import { ALL_MODULES, loadModuleStates, toggleModule, toggleOnlineOrders, saveAiContext } from '/pro/js/modules.js';
 
     let business = null;
@@ -91,7 +91,7 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
@@ -138,8 +138,8 @@ ini_set('log_errors', 1);
             aiZone.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px solid var(--card-border)';
             aiZone.innerHTML =
               '<div style="font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:4px">Instructions pour l\'assistant</div>' +
-              '<div style="font-size:11px; color:var(--text-light); margin-bottom:8px; line-height:1.4">Ajoutez des informations specifiques : regles de prise de RDV, promotions, FAQ, conditions particulieres...</div>' +
-              '<textarea id="ai-context-input" rows="5" placeholder="Ex: Le stationnement est gratuit. Prevoir 10 min supplementaires pour la 1ere consultation..." ' +
+              '<div style="font-size:11px; color:var(--text-light); margin-bottom:8px; line-height:1.4">Ajoutez des informations sp&eacute;cifiques : r&egrave;gles de prise de RDV, promotions, FAQ, conditions particuli&egrave;res...</div>' +
+              '<textarea id="ai-context-input" rows="5" placeholder="Ex: Le stationnement est gratuit. Pr&eacute;voir 10 min suppl&eacute;mentaires pour la 1&egrave;re consultation..." ' +
               'style="width:100%; padding:10px; border:none; background:var(--background); border-radius:10px; font-size:12px; font-family:inherit; resize:vertical; margin-bottom:8px">' + escapeHtml(business.ai_context || '') + '</textarea>' +
               '<button type="button" id="ai-context-save-btn" style="width:100%; padding:10px; border:none; border-radius:10px; background:var(--primary); color:white; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer">Sauvegarder</button>';
             card.appendChild(aiZone);
@@ -158,11 +158,11 @@ ini_set('log_errors', 1);
             await toggleModule(business.id, type, enabled);
             if (!moduleStates[type]) moduleStates[type] = { module_type: type };
             moduleStates[type].is_enabled = enabled;
-            showToast(enabled ? 'Module active.' : 'Module desactive.');
+            showToast(enabled ? 'Module activ&eacute;.' : 'Module d&eacute;sactiv&eacute;.');
             render();
           } catch (err) {
             console.error(err);
-            showToast('Erreur lors de la mise a jour.');
+            showToast('Erreur lors de la mise &agrave; jour.');
             cb.checked = !enabled;
           } finally {
             cb.disabled = false;
@@ -178,10 +178,10 @@ ini_set('log_errors', 1);
           try {
             await toggleOnlineOrders(business.id, enabled);
             moduleStates.orders.online_enabled = enabled;
-            showToast(enabled ? 'Commandes en ligne activees.' : 'Commandes en ligne desactivees.');
+            showToast(enabled ? 'Commandes en ligne activ&eacute;es.' : 'Commandes en ligne d&eacute;sactiv&eacute;es.');
           } catch (err) {
             console.error(err);
-            showToast('Erreur lors de la mise a jour.');
+            showToast('Erreur lors de la mise &agrave; jour.');
             onlineCb.checked = !enabled;
           } finally {
             onlineCb.disabled = false;
@@ -215,7 +215,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       moduleStates = await loadModuleStates(business.id);

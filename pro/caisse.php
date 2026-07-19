@@ -36,12 +36,13 @@ ini_set('log_errors', 1);
   .top-links a:hover { color: var(--primary); }
 
   .layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; max-width: 1300px; margin: 0 auto; padding: 20px 24px 40px; align-items: start; }
+  .layout > div:first-child { min-width: 0; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
   .search-bar { margin-bottom: 14px; }
   .search-bar input { width: 100%; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 14px; font-family: inherit; }
 
-  .category-chips { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .category-chips { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; min-width: 0; }
   .cat-chip { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--card-border); background: white; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text-medium); cursor: pointer; white-space: nowrap; }
   .cat-chip.active { background: var(--primary); border-color: var(--primary); color: white; }
 

@@ -37,19 +37,21 @@ export async function getBusinessForUser(userId) {
     // .maybeSingle() echoue (erreur, pas juste null) si plusieurs lignes
     // correspondent -- ce qui peut arriver si un compte a fini par posseder
     // plusieurs business (ex: inscription relancee par erreur avec le meme
-    // compte). On recupere donc en liste et on prend la plus recente plutot
-    // que de planter, tout en loggant clairement le cas pour investigation.
+    // compte, cf. fix sur inscription.php). On recupere donc en liste et on
+    // prend le PLUS ANCIEN (le doublon accidentel est toujours cree apres le
+    // vrai business, qui contient les vraies donnees -- catalogue, employes,
+    // historique). On log clairement le cas pour investigation/nettoyage.
     const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .eq('owner_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
     if (error) {
         console.error('Erreur chargement business:', error);
         return null;
     }
     if (data && data.length > 1) {
-        console.warn('Ce compte possede ' + data.length + ' business (owner_id=' + userId + '). Utilisation du plus recent. IDs :', data.map((b) => b.id));
+        console.warn('Ce compte possede ' + data.length + ' business (owner_id=' + userId + '). Utilisation du plus ancien. IDs :', data.map((b) => b.id));
     }
     return (data && data[0]) || null;
 }

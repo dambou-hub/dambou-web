@@ -78,7 +78,7 @@ ini_set('log_errors', 1);
       <div class="tabs">
         <button class="tab-btn active" data-tab="active">En cours</button>
         <button class="tab-btn" data-tab="history">Historique</button>
-        <button class="tab-btn" data-tab="loyalty">&#11088; Fidelite</button>
+        <button class="tab-btn" data-tab="loyalty">&#11088; Fid&eacute;lit&eacute;</button>
       </div>
 
       <div class="tab-panel active" id="tab-active"></div>
@@ -91,7 +91,7 @@ ini_set('log_errors', 1);
   <div class="overlay" id="notes-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.35); display:none; align-items:center; justify-content:center; z-index:50; padding:20px">
     <div style="background:white; border-radius:18px; width:100%; max-width:440px; padding:20px; max-height:85vh; overflow-y:auto">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
-        <h2 style="font-size:16px; font-weight:800">Notes de seance</h2>
+        <h2 style="font-size:16px; font-weight:800">Notes de s&eacute;ance</h2>
         <button id="notes-close" style="border:none; background:none; font-size:20px; color:var(--text-light); cursor:pointer">&times;</button>
       </div>
       <div id="notes-list"></div>
@@ -110,7 +110,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--text-dark); color:white; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; z-index:60; display:none"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import {
       loadDambouClientDetail, isModuleEnabled, loadSessionNotes, saveSessionNote, deleteSessionNote, useSubscriptionSession,
     } from '/pro/js/clients.js';
@@ -122,7 +122,7 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.style.display = 'block';
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
@@ -131,8 +131,8 @@ ini_set('log_errors', 1);
     }
 
     const STATUS_LABELS = {
-      pending: 'En attente', confirmed: 'Confirme', completed: 'Termine',
-      cancelled: 'Annule', no_show: 'No-show', preparing: 'En preparation', ready: 'Pret',
+      pending: 'En attente', confirmed: 'Confirm&eacute;', completed: 'Termin&eacute;',
+      cancelled: 'Annul&eacute;', no_show: 'No-show', preparing: 'En pr&eacute;paration', ready: 'Pr&ecirc;t',
     };
     const STATUS_COLORS = {
       pending: 'var(--warning)', confirmed: 'var(--success)', completed: 'var(--text-medium)',
@@ -149,7 +149,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       const business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
 
@@ -204,21 +204,21 @@ ini_set('log_errors', 1);
             '<div style="height:100%; width:' + progress + '%; background:' + color + '"></div></div>' +
             '<button class="use-session-btn" data-id="' + sub.id + '" ' + (remaining <= 0 ? 'disabled' : '') +
             ' style="width:100%; padding:9px; border:none; border-radius:10px; background:' + (remaining > 0 ? 'var(--primary)' : 'var(--card-border)') + '; color:white; font-size:12px; font-weight:700; font-family:inherit; cursor:' + (remaining > 0 ? 'pointer' : 'not-allowed') + '">' +
-            (remaining > 0 ? 'Utiliser une seance' : 'Forfait epuise') + '</button></div>';
+            (remaining > 0 ? 'Utiliser une s&eacute;ance' : 'Forfait &eacute;puis&eacute;') + '</button></div>';
         }).join('');
         document.getElementById('tab-active').innerHTML = forfaitsHtml + document.getElementById('tab-active').innerHTML;
 
         document.querySelectorAll('.use-session-btn').forEach((btn) => {
           btn.addEventListener('click', async () => {
             const sub = detail.activeForfaits.find((s) => s.id === btn.dataset.id);
-            if (!sub || !confirm('Confirmer l\'utilisation d\'une seance pour ce forfait ?')) return;
+            if (!sub || !confirm(fr('Confirmer l\'utilisation d\'une s&eacute;ance pour ce forfait ?'))) return;
             try {
               const remaining = await useSubscriptionSession(sub);
-              showToast(remaining <= 0 ? 'Derniere seance utilisee, forfait epuise.' : 'Seance utilisee, reste ' + remaining + '.');
+              showToast(remaining <= 0 ? 'Derni&egrave;re s&eacute;ance utilis&eacute;e, forfait &eacute;puis&eacute;.' : 'S&eacute;ance utilis&eacute;e, reste ' + remaining + '.');
               window.location.reload();
             } catch (err) {
               console.error(err);
-              showToast('Erreur lors de la mise a jour du forfait.');
+              showToast('Erreur lors de la mise &agrave; jour du forfait.');
             }
           });
         });
@@ -228,7 +228,7 @@ ini_set('log_errors', 1);
       const historyItems = detail.history.map((h) => {
         if (h._type === 'booking') {
           const svc = h.services;
-          const paid = h.is_paid ? '<span class="badge" style="background:rgba(56,161,105,0.1); color:var(--success)">Paye</span>' : '';
+          const paid = h.is_paid ? '<span class="badge" style="background:rgba(56,161,105,0.1); color:var(--success)">Pay&eacute;</span>' : '';
           return '<div class="item-card"><div class="item-row"><div><div class="item-title">' + escapeHtml(svc ? svc.name : 'Rendez-vous') + '</div>' +
             '<div class="item-sub">' + escapeHtml(h.booking_date) + '</div></div><div style="display:flex; gap:6px">' + statusBadge(h.status) + paid + '</div></div></div>';
         }
@@ -256,10 +256,10 @@ ini_set('log_errors', 1);
               '<span class="pts ' + (isEarn ? 'earn' : 'redeem') + '">' + (isEarn ? '+' : '') + tx.points + ' pts</span></div>';
           }).join('');
         } else {
-          loyaltyHtml += '<div id="empty-history">Aucun mouvement fidelite.</div>';
+          loyaltyHtml += '<div id="empty-history">Aucun mouvement fid&eacute;lit&eacute;.</div>';
         }
       } else {
-        loyaltyHtml = '<div id="empty-history">Ce client n\'a pas encore de carte fidelite chez vous.</div>';
+        loyaltyHtml = '<div id="empty-history">Ce client n\'a pas encore de carte fid&eacute;lit&eacute; chez vous.</div>';
       }
       document.getElementById('tab-loyalty').innerHTML = loyaltyHtml;
 
@@ -349,7 +349,7 @@ ini_set('log_errors', 1);
             noteId: editingNoteId, title: title, content: document.getElementById('note-content').value.trim(),
           });
           document.getElementById('note-form').style.display = 'none';
-          showToast('Note enregistree.');
+          showToast('Note enregistr&eacute;e.');
           await refreshNotes();
         } catch (err) {
           console.error(err);

@@ -9,7 +9,7 @@ ini_set('log_errors', 1);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employes - Dambou Pro</title>
+<title>Employ&eacute;s - Dambou Pro</title>
 <meta name="theme-color" content="#00BFA5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -104,7 +104,7 @@ ini_set('log_errors', 1);
 
   <div class="container">
     <div class="page-head">
-      <h1>Employes</h1>
+      <h1>Employ&eacute;s</h1>
       <button class="btn btn-primary" id="add-employee-btn">+ Ajouter</button>
     </div>
 
@@ -116,22 +116,22 @@ ini_set('log_errors', 1);
   <div class="overlay" id="employee-overlay">
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title" id="employee-modal-title">Nouvel employe</span>
+        <span class="panel-title" id="employee-modal-title">Nouvel employ&eacute;</span>
         <button class="nav-btn" id="employee-close">&times;</button>
       </div>
 
       <div class="error-msg" id="employee-error"></div>
 
       <div class="row2">
-        <div class="field"><label>Prenom *</label><input type="text" id="f-first-name"></div>
+        <div class="field"><label>Pr&eacute;nom *</label><input type="text" id="f-first-name"></div>
         <div class="field"><label>Nom</label><input type="text" id="f-last-name"></div>
       </div>
-      <div class="field"><label>Telephone</label><input type="tel" id="f-phone"></div>
+      <div class="field"><label>T&eacute;l&eacute;phone</label><input type="tel" id="f-phone"></div>
       <div class="field"><label>Email</label><input type="email" id="f-email"></div>
 
       <div class="toggle-row">
         <div><div class="toggle-row-label">Voit tout le planning</div>
-          <div class="toggle-row-sub">Si desactive, l'employe ne verra que ses propres rendez-vous une fois son compte lie.</div></div>
+          <div class="toggle-row-sub">Si d&eacute;sactiv&eacute;, l'employ&eacute; ne verra que ses propres rendez-vous une fois son compte li&eacute;.</div></div>
         <label class="toggle"><input type="checkbox" id="f-see-all"><span class="toggle-slider"></span></label>
       </div>
 
@@ -140,7 +140,7 @@ ini_set('log_errors', 1);
         <div id="invite-status-accepted" class="invite-box accepted" style="display:none">
           <span>&#9989;</span>
           <div style="flex:1">
-            <div class="invite-box-title" style="color:var(--success)">Compte Dambou lie</div>
+            <div class="invite-box-title" style="color:var(--success)">Compte Dambou li&eacute;</div>
             <div class="invite-box-email" id="invite-email-accepted"></div>
           </div>
           <button type="button" id="invite-reset-accepted">Modifier</button>
@@ -148,13 +148,13 @@ ini_set('log_errors', 1);
         <div id="invite-status-pending" class="invite-box pending" style="display:none">
           <span>&#9203;</span>
           <div style="flex:1">
-            <div class="invite-box-title" style="color:var(--warning)">Invitation envoyee</div>
+            <div class="invite-box-title" style="color:var(--warning)">Invitation envoy&eacute;e</div>
             <div class="invite-box-email" id="invite-email-pending"></div>
           </div>
           <button type="button" id="invite-reset-pending">Modifier</button>
         </div>
         <div class="invite-row" id="invite-row">
-          <input type="email" id="invite-email-input" placeholder="Email Dambou de l'employe(e)">
+          <input type="email" id="invite-email-input" placeholder="Email Dambou de l'employ&eacute;(e)">
           <button type="button" id="invite-send-btn">Inviter</button>
         </div>
       </div>
@@ -193,7 +193,7 @@ ini_set('log_errors', 1);
     function renderList() {
       const container = document.getElementById('list-container');
       if (employees.length === 0) {
-        container.innerHTML = '<div id="empty-state">Aucun employe pour le moment.</div>';
+        container.innerHTML = '<div id="empty-state">Aucun employ&eacute; pour le moment.</div>';
         return;
       }
       container.innerHTML = '';
@@ -219,7 +219,7 @@ ini_set('log_errors', 1);
           '<button class="emp-menu-btn" data-menu-toggle="' + emp.id + '">&#8942;</button>' +
           '<div class="emp-dropdown" id="menu-' + emp.id + '">' +
           '<button data-action="edit" data-id="' + emp.id + '">&#9998; Modifier</button>' +
-          '<button data-action="toggle" data-id="' + emp.id + '">' + (isActive ? '&#9208; Desactiver' : '&#9654; Activer') + '</button>' +
+          '<button data-action="toggle" data-id="' + emp.id + '">' + (isActive ? '&#9208; D&eacute;sactiver' : '&#9654; Activer') + '</button>' +
           '<button class="danger" data-action="delete" data-id="' + emp.id + '">&#128465; Supprimer</button>' +
           '</div></div>';
         container.appendChild(card);
@@ -246,15 +246,15 @@ ini_set('log_errors', 1);
           } else if (btn.dataset.action === 'toggle') {
             try {
               await toggleEmployeeActive(id, emp.is_active !== false);
-              showToast(emp.is_active !== false ? 'Employe desactive.' : 'Employe active.');
+              showToast(emp.is_active !== false ? 'Employ&eacute; d&eacute;sactiv&eacute;.' : 'Employ&eacute; activ&eacute;.');
               await refresh();
             } catch (err) { console.error(err); showToast('Erreur.'); }
           } else if (btn.dataset.action === 'delete') {
             const name = ((emp.first_name || '') + ' ' + (emp.last_name || '')).trim();
-            if (!confirm(fr('Supprimer ' + name + ' ? Cette action est irreversible.'))) return;
+            if (!confirm(fr('Supprimer ' + name + ' ? Cette action est irr&eacute;versible.'))) return;
             try {
               await deleteEmployee(id);
-              showToast('Employe supprime.');
+              showToast('Employ&eacute; supprim&eacute;.');
               await refresh();
             } catch (err) { console.error(err); showToast('Erreur lors de la suppression.'); }
           }
@@ -288,7 +288,7 @@ ini_set('log_errors', 1);
     function openEmployeeModal(emp) {
       editingEmployeeId = emp ? emp.id : null;
       document.getElementById('employee-error').classList.remove('visible');
-      document.getElementById('employee-modal-title').textContent = emp ? 'Modifier l\'employe' : 'Nouvel employe';
+      document.getElementById('employee-modal-title').textContent = fr(emp ? "Modifier l'employ&eacute;" : 'Nouvel employ&eacute;');
       document.getElementById('f-first-name').value = emp ? (emp.first_name || '') : '';
       document.getElementById('f-last-name').value = emp ? (emp.last_name || '') : '';
       document.getElementById('f-phone').value = emp ? (emp.phone || '') : '';
@@ -329,7 +329,7 @@ ini_set('log_errors', 1);
         document.getElementById('invite-email-accepted').textContent = email;
         document.getElementById('invite-email-pending').textContent = email;
         renderInviteStatus();
-        showToast(status === 'linked' ? 'Compte Dambou trouve et lie !' : 'Invitation envoyee par email !');
+        showToast(status === 'linked' ? 'Compte Dambou trouv&eacute; et li&eacute; !' : 'Invitation envoy&eacute;e par email !');
         await refresh();
       } catch (err) {
         console.error(err);
@@ -360,7 +360,7 @@ ini_set('log_errors', 1);
           color: selectedColor,
           canSeeAllPlanning: document.getElementById('f-see-all').checked,
         });
-        showToast(editingEmployeeId ? 'Employe modifie !' : 'Employe ajoute !');
+        showToast(editingEmployeeId ? 'Employ&eacute; modifi&eacute; !' : 'Employ&eacute; ajout&eacute; !');
         closeEmployeeModal();
         await refresh();
       } catch (err) {

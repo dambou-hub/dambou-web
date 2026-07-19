@@ -66,10 +66,10 @@ ini_set('log_errors', 1);
           <button id="notes-btn" style="display:none; align-items:center; gap:6px; background:rgba(0,191,165,0.1); color:var(--primary-dark); border:none; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer">&#128221; Notes</button>
         </div>
         <div class="row2">
-          <div class="field"><label>Prenom</label><input type="text" id="f-first-name"></div>
+          <div class="field"><label>Pr&eacute;nom</label><input type="text" id="f-first-name"></div>
           <div class="field"><label>Nom</label><input type="text" id="f-last-name"></div>
         </div>
-        <div class="field"><label>Telephone</label><input type="tel" id="f-phone"></div>
+        <div class="field"><label>T&eacute;l&eacute;phone</label><input type="tel" id="f-phone"></div>
         <div class="field"><label>Email</label><input type="email" id="f-email"></div>
         <div class="actions-row">
           <button class="btn btn-primary" id="save-btn" style="flex:1">Enregistrer</button>
@@ -86,7 +86,7 @@ ini_set('log_errors', 1);
   <div class="overlay" id="notes-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.35); display:none; align-items:center; justify-content:center; z-index:50; padding:20px">
     <div style="background:white; border-radius:18px; width:100%; max-width:440px; padding:20px; max-height:85vh; overflow-y:auto">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
-        <h2 style="font-size:16px; font-weight:800">Notes de seance</h2>
+        <h2 style="font-size:16px; font-weight:800">Notes de s&eacute;ance</h2>
         <button id="notes-close" style="border:none; background:none; font-size:20px; color:var(--text-light); cursor:pointer">&times;</button>
       </div>
       <div id="notes-list"></div>
@@ -105,7 +105,7 @@ ini_set('log_errors', 1);
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import { loadManualClientDetail, updateManualClient, deleteManualClient, isModuleEnabled, loadSessionNotes, saveSessionNote, deleteSessionNote } from '/pro/js/clients.js';
 
     function escapeHtml(str) {
@@ -115,12 +115,12 @@ ini_set('log_errors', 1);
     }
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg;
+      t.textContent = fr(msg);
       t.classList.add('visible');
       setTimeout(() => t.classList.remove('visible'), 3000);
     }
 
-    const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirme', completed: 'Termine', cancelled: 'Annule', no_show: 'No-show' };
+    const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirm&eacute;', completed: 'Termin&eacute;', cancelled: 'Annul&eacute;', no_show: 'No-show' };
     const STATUS_COLORS = { pending: 'var(--text-medium)', confirmed: '#38A169', completed: 'var(--text-medium)', cancelled: '#E53E3E', no_show: 'var(--text-light)' };
 
     let clientId = null;
@@ -130,7 +130,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       const business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
 
@@ -154,7 +154,7 @@ ini_set('log_errors', 1);
 
       const bookingsList = document.getElementById('bookings-list');
       if (detail.bookings.length === 0) {
-        bookingsList.innerHTML = '<div id="empty-bookings">Aucun rendez-vous enregistre pour ce client.</div>';
+        bookingsList.innerHTML = '<div id="empty-bookings">Aucun rendez-vous enregistr&eacute; pour ce client.</div>';
       } else {
         bookingsList.innerHTML = detail.bookings.map((b) => {
           const svc = b.services;
@@ -243,7 +243,7 @@ ini_set('log_errors', 1);
             noteId: editingNoteId, title: title, content: document.getElementById('note-content').value.trim(),
           });
           document.getElementById('note-form').style.display = 'none';
-          showToast('Note enregistree.');
+          showToast('Note enregistr&eacute;e.');
           await refreshNotes();
         } catch (err) {
           console.error(err);
@@ -254,7 +254,7 @@ ini_set('log_errors', 1);
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const firstName = document.getElementById('f-first-name').value.trim();
-      if (!firstName) { showToast('Le prenom est requis.'); return; }
+      if (!firstName) { showToast('Le pr&eacute;nom est requis.'); return; }
       const btn = document.getElementById('save-btn');
       btn.disabled = true;
       btn.textContent = 'Enregistrement...';
@@ -265,7 +265,7 @@ ini_set('log_errors', 1);
           phone: document.getElementById('f-phone').value.trim(),
           email: document.getElementById('f-email').value.trim(),
         });
-        showToast('Fiche enregistree.');
+        showToast('Fiche enregistr&eacute;e.');
       } catch (err) {
         console.error(err);
         showToast('Erreur lors de l\'enregistrement.');
@@ -276,7 +276,7 @@ ini_set('log_errors', 1);
     });
 
     document.getElementById('delete-btn').addEventListener('click', async () => {
-      if (!confirm('Supprimer ce client ? Toutes les notes associees seront supprimees.')) return;
+      if (!confirm(fr('Supprimer ce client ? Toutes les notes associ&eacute;es seront supprim&eacute;es.'))) return;
       try {
         await deleteManualClient(clientId);
         window.location.href = '/pro/clients';

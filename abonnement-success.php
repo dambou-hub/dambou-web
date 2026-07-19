@@ -95,7 +95,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <!-- Confirmation -->
   <div class="card">
     <div class="success-icon">&#10003;</div>
-    <div class="success-title">Abonnement active !</div>
+    <div class="success-title">Abonnement activé !</div>
     <div class="success-sub">
       Bienvenue sur Dambou Pro. Retournez sur l'application pour commencer.
     </div>
@@ -103,7 +103,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <!-- Etapes suivantes -->
   <div class="card">
-    <div class="section-title">Vos prochaines etapes</div>
+    <div class="section-title">Vos prochaines étapes</div>
 
     <div class="step">
       <div class="step-num">1</div>
@@ -120,7 +120,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="step-title">Connectez votre compte Stripe</div>
         <div class="step-desc">
           Indispensable pour recevoir les paiements de vos clients.
-          La procedure prend environ 5 minutes (piece d'identite + RIB).
+          La procédure prend environ 5 minutes (pièce d'identité + RIB).
         </div>
       </div>
     </div>
@@ -131,7 +131,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="step-num"><?php echo $step; ?></div>
       <div>
         <div class="step-title">Commandez votre lecteur WisePad 3</div>
-        <div class="step-desc">59 EUR, livre directement par Stripe. Bluetooth, sans contact, Apple Pay.</div>
+        <div class="step-desc">59 EUR, livré directement par Stripe. Bluetooth, sans contact, Apple Pay.</div>
       </div>
     </div>
     <?php endif; ?>
@@ -144,7 +144,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="section-title">Connecter votre compte Stripe</div>
     <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6">
       Pour recevoir les paiements de vos clients (en ligne ou par terminal), 
-      vous devez connecter votre compte Stripe. C'est rapide et securise.
+      vous devez connecter votre compte Stripe. C'est rapide et sécurisé.
     </p>
     <?php if (!empty($stripe_onboarding_url)): ?>
     <a href="<?php echo htmlspecialchars($stripe_onboarding_url); ?>" class="btn btn-stripe">
@@ -165,12 +165,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="section-title">Commander votre lecteur de carte</div>
     <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6">
       Le lecteur WisePad 3 est vendu 59 EUR directement par Stripe.
-      Il accepte les cartes a puce, sans contact, Apple Pay et Google Pay via Bluetooth.
+      Il accepte les cartes à puce, sans contact, Apple Pay et Google Pay via Bluetooth.
     </p>
     <a href="https://dashboard.stripe.com/terminal/shop" target="_blank" class="btn btn-primary">
       Commander sur Stripe (59 EUR)
     </a>
-    <p class="note">Une fois recu, configurez-le depuis Modules &gt; Terminal dans l'app.</p>
+    <p class="note">Une fois reçu, configurez-le depuis Modules &gt; Terminal dans l'app.</p>
   </div>
   <?php endif; ?>
 
@@ -181,7 +181,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <div class="footer">
     Des questions ? <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br><br>
-    <a href="/cgu">CGU</a> &middot; <a href="/privacy">Confidentialite</a>
+    <a href="/cgu">CGU</a> &middot; <a href="/privacy">Confidentialité</a>
   </div>
 
 </div>

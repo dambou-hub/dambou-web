@@ -37,10 +37,10 @@ function toDateKey(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 export const PAY_LABELS = {
-    cash: 'Especes', card: 'Carte bancaire', check: 'Cheque',
+    cash: 'Espèces', card: 'Carte bancaire', check: 'Chèque',
     ticket_restaurant: 'Ticket restaurant', free: 'Offert', transfer: 'Virement',
     stripe_online: 'En ligne', online: 'En ligne', dambou: 'En ligne',
 };

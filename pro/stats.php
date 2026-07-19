@@ -77,7 +77,7 @@ ini_set('log_errors', 1);
       <button class="period-btn active" data-period="0">Auj.</button>
       <button class="period-btn" data-period="1">Sem.</button>
       <button class="period-btn" data-period="2">Mois</button>
-      <button class="period-btn" data-period="3">Annee</button>
+      <button class="period-btn" data-period="3">Ann&eacute;e</button>
     </div>
 
     <div id="loading">Chargement des statistiques...</div>
@@ -85,7 +85,7 @@ ini_set('log_errors', 1);
   </div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
     import { loadStats } from '/pro/js/stats.js';
 
     let business = null;
@@ -133,13 +133,13 @@ ini_set('log_errors', 1);
 
         const totalCard = document.createElement('div');
         totalCard.className = 'total-card';
-        totalCard.innerHTML = '<div class="label">Total encaisse</div><div class="value">' + fmt(stats.totalGlobal) + '</div>';
+        totalCard.innerHTML = '<div class="label">Total encaiss&eacute;</div><div class="value">' + fmt(stats.totalGlobal) + '</div>';
         container.appendChild(totalCard);
 
         if (stats.nbPaidNotDone > 0) {
           const warn = document.createElement('div');
           warn.className = 'warning-banner';
-          warn.textContent = stats.nbPaidNotDone + ' commande(s) payee(s) en ligne (' + fmt(stats.totalPaidNotDone) + ') n\'ont pas encore le statut "terminee". Verifiez qu\'elles ont bien ete preparees.';
+          warn.textContent = fr(stats.nbPaidNotDone + ' commande(s) pay&eacute;e(s) en ligne (' + fmt(stats.totalPaidNotDone) + ') n\'ont pas encore le statut "termin&eacute;e". V&eacute;rifiez qu\'elles ont bien &eacute;t&eacute; pr&eacute;par&eacute;es.');
           container.appendChild(warn);
         }
 
@@ -149,21 +149,21 @@ ini_set('log_errors', 1);
           console.error('Erreur graphiques:', chartErr);
           const chartErrBanner = document.createElement('div');
           chartErrBanner.className = 'warning-banner';
-          chartErrBanner.textContent = 'Les graphiques n\'ont pas pu s\'afficher (voir la console), le reste des statistiques est correct.';
+          chartErrBanner.textContent = fr('Les graphiques n\'ont pas pu s\'afficher (voir la console), le reste des statistiques est correct.');
           container.appendChild(chartErrBanner);
         }
 
         container.appendChild(sourceCard('Caisse sur place', 'var(--c-caisse)', stats.totalCaisse, null, stats.caisseByMode));
         container.appendChild(sourceCard('Commandes Dambou', 'var(--c-commandes)', stats.totalCommandes, stats.nbCommandes + ' commande(s)', null));
-        container.appendChild(sourceCard('Reservations', 'var(--c-rdv)', stats.totalRdv, stats.nbRdv + ' RDV confirme(s)' + (stats.rdvEnLigne > 0 ? ' - dont ' + fmt(stats.rdvEnLigne) + ' payes en ligne' : ''), stats.rdvSurPlaceByMode));
+        container.appendChild(sourceCard(fr('R&eacute;servations'), 'var(--c-rdv)', stats.totalRdv, fr(stats.nbRdv + ' RDV confirm&eacute;(s)' + (stats.rdvEnLigne > 0 ? ' - dont ' + fmt(stats.rdvEnLigne) + ' pay&eacute;s en ligne' : '')), stats.rdvSurPlaceByMode));
 
         const secTitle = document.createElement('div');
         secTitle.className = 'section-title';
-        secTitle.textContent = 'Articles les plus vendus';
+        secTitle.textContent = fr('Articles les plus vendus');
         container.appendChild(secTitle);
 
         if (stats.topProducts.length === 0) {
-          container.innerHTML += '<div id="empty-products">Aucune vente sur cette periode.</div>';
+          container.innerHTML += '<div id="empty-products">Aucune vente sur cette p&eacute;riode.</div>';
         } else {
           stats.topProducts.slice(0, 10).forEach((p, i) => {
             const row = document.createElement('div');
@@ -217,13 +217,13 @@ ini_set('log_errors', 1);
       if (hasTrend) {
         const card = document.createElement('div');
         card.className = 'chart-card';
-        card.innerHTML = '<h3>Evolution du chiffre d\'affaires</h3><div class="chart-canvas-wrap"><canvas id="trend-chart"></canvas></div>';
+        card.innerHTML = '<h3>&Eacute;volution du chiffre d\'affaires</h3><div class="chart-canvas-wrap"><canvas id="trend-chart"></canvas></div>';
         row.appendChild(card);
       }
       if (hasBreakdown) {
         const card = document.createElement('div');
         card.className = 'chart-card';
-        card.innerHTML = '<h3>Repartition par source</h3><div class="chart-canvas-wrap donut"><canvas id="donut-chart"></canvas></div>';
+        card.innerHTML = '<h3>R&eacute;partition par source</h3><div class="chart-canvas-wrap donut"><canvas id="donut-chart"></canvas></div>';
         row.appendChild(card);
       }
       container.appendChild(row);
@@ -260,7 +260,7 @@ ini_set('log_errors', 1);
         donutChartInstance = new Chart(ctx2, {
           type: 'doughnut',
           data: {
-            labels: ['Caisse sur place', 'Commandes Dambou', 'Reservations'],
+            labels: ['Caisse sur place', 'Commandes Dambou', fr('R&eacute;servations')],
             datasets: [{
               data: [stats.totalCaisse, stats.totalCommandes, stats.totalRdv],
               backgroundColor: ['#52B788', '#F4A261', '#3182CE'],
@@ -284,7 +284,7 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('loading').textContent = 'Aucun etablissement associe a ce compte.';
+        document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
       }
       await loadAndRender();

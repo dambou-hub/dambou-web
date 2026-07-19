@@ -184,6 +184,11 @@ ini_set('log_errors', 1);
           <h3>Statistiques</h3>
           <p>Chiffre d'affaires et articles vendus</p>
         </a>
+        <a class="nav-card" href="/pro/employees" id="card-employees">
+          <div class="icon" style="background:rgba(56,161,105,0.1)">&#128101;</div>
+          <h3>Employes</h3>
+          <p>Equipe, planning et liaison de compte</p>
+        </a>
         <a class="nav-card" href="/pro/modules">
           <div class="icon" style="background:rgba(94,53,177,0.1)">&#9881;&#65039;</div>
           <h3>Modules</h3>
@@ -318,6 +323,10 @@ ini_set('log_errors', 1);
       const hasStats = activeModules.some((m) => m.module_type === 'stats');
       if (!hasStats) {
         document.getElementById('card-stats').remove();
+      }
+      const hasEmployees = activeModules.some((m) => m.module_type === 'employees');
+      if (!hasEmployees) {
+        document.getElementById('card-employees').remove();
       }
 
       loadingEl.style.display = 'none';

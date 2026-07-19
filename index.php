@@ -33,6 +33,7 @@ $reservedPages = [
     'pro/modules'         => 'pro/modules.php',
     'pro/stats'           => 'pro/stats.php',
     'pro/reservations'    => 'pro/reservations.php',
+    'pro/employees'       => 'pro/employees.php',
     'pro/catalogue'       => 'pro/catalogue.php',
     'pro/stock'           => 'pro/stock.php',
     'pro/clients'         => 'pro/clients.php',

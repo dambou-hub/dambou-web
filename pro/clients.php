@@ -51,8 +51,8 @@ ini_set('log_errors', 1);
 
   <div class="container">
     <h1>Clients</h1>
-    <input type="text" class="search-input" id="search-input" placeholder="Nom, telephone...">
-    <div class="hint">Recherche parmi les clients ayant deja une commande, reservation ou achat chez vous.</div>
+    <input type="text" class="search-input" id="search-input" placeholder="Nom, t&eacute;l&eacute;phone...">
+    <div class="hint">Recherche parmi les clients ayant d&eacute;j&agrave; une commande, r&eacute;servation ou achat chez vous.</div>
     <div id="results"></div>
   </div>
 
@@ -91,7 +91,7 @@ ini_set('log_errors', 1);
     async function runSearch(query) {
       const container = document.getElementById('results');
       if (query.trim().length < 2) {
-        container.innerHTML = '<div id="empty-state">Tapez au moins 2 caracteres pour rechercher.</div>';
+        container.innerHTML = '<div id="empty-state">Tapez au moins 2 caract&egrave;res pour rechercher.</div>';
         return;
       }
       container.innerHTML = '<div id="empty-state">Recherche...</div>';
@@ -99,7 +99,7 @@ ini_set('log_errors', 1);
       container.innerHTML = '';
 
       if (!results.dambou.length && !results.manual.length) {
-        container.innerHTML = '<div id="empty-state">Aucun client trouve.</div>';
+        container.innerHTML = '<div id="empty-state">Aucun client trouv&eacute;.</div>';
         return;
       }
 
@@ -130,10 +130,10 @@ ini_set('log_errors', 1);
       if (!session) return;
       business = await getBusinessForUser(session.user.id);
       if (!business) {
-        document.getElementById('results').innerHTML = '<div id="empty-state">Aucun etablissement associe a ce compte.</div>';
+        document.getElementById('results').innerHTML = '<div id="empty-state">Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.</div>';
         return;
       }
-      document.getElementById('results').innerHTML = '<div id="empty-state">Tapez au moins 2 caracteres pour rechercher.</div>';
+      document.getElementById('results').innerHTML = '<div id="empty-state">Tapez au moins 2 caract&egrave;res pour rechercher.</div>';
     })();
   </script>
 </body>

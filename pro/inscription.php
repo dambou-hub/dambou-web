@@ -242,12 +242,19 @@ ini_set('log_errors', 1);
   }
 
   // -----------------------------
-  // Si deja connecte, on saute direct a l'activite
+  // Si deja connecte : ne sauter a l'activite QUE si ce compte n'a pas deja
+  // un business (sinon on redirige vers le dashboard -- evite de creer un
+  // deuxieme business pour le meme compte en revisitant cette page).
   // -----------------------------
   (async () => {
     const { data } = await supabase.auth.getSession();
     if (data && data.session) {
       currentUser = data.session.user;
+      const { data: existing } = await supabase.from('businesses').select('id').eq('owner_id', currentUser.id).limit(1);
+      if (existing && existing.length > 0) {
+        window.location.href = '/pro';
+        return;
+      }
       goToStep(1);
       initActivityStep();
     }
@@ -290,6 +297,19 @@ ini_set('log_errors', 1);
         password: password,
       });
       currentUser = user;
+
+      // Garde-fou : supabase.auth.signUp() peut reussir "silencieusement" sur
+      // un email deja utilise (reutilise le compte existant sans erreur, pour
+      // eviter l'enumeration de comptes). Sans cette verification, on créerait
+      // un deuxieme business pour un compte qui en a deja un.
+      const { data: existingBiz } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+      if (existingBiz && existingBiz.length > 0) {
+        showError('account-error', fr('Ce compte est d&eacute;j&agrave; associ&eacute; &agrave; un &eacute;tablissement. Connectez-vous plut&ocirc;t.'));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Creer mon compte et continuer';
+        return;
+      }
+
       goToStep(1);
       initActivityStep();
     } catch (err) {

@@ -39,6 +39,215 @@ function toDateKey(d) {
 
 const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
+// ------------------------------------------------------------
+// EXPORT CSV COMPTABLE (reproduit csv_export_service.dart, version
+// avec colonnes Nature/Famille et TVA ponderee par article)
+// ------------------------------------------------------------
+const EXPORT_PAY_LABELS = {
+    cash: 'Espèces', card: 'Carte bancaire', check: 'Chèque', free: 'Offert',
+    dambou: 'Dambou (en ligne)', online: 'Dambou (en ligne)',
+    card_terminal: 'CB Terminal', transfer: 'Virement',
+};
+function exportPayLabel(m) {
+    return EXPORT_PAY_LABELS[m] || (m ? m : 'Dambou (en ligne)');
+}
+function exportCustomerName(person) {
+    if (!person) return 'Client';
+    return ((person.first_name || '') + ' ' + (person.last_name || '')).trim() || 'Client';
+}
+function fmtNum(v) {
+    return (v || 0).toFixed(2).replace('.', ',');
+}
+
+export async function loadExportData(businessId, periodIndex) {
+    const range = getRange(periodIndex, new Date());
+    const fromIso = range.start.toISOString();
+    const toIso = range.end.toISOString();
+    const fromDate = toDateKey(range.start);
+    const toDate = toDateKey(range.end);
+
+    const [ordersRes, bookingsRes, txRes] = await Promise.all([
+        supabase.from('orders').select('*, order_items(quantity, unit_price, products(name, tva_rate, category_id, categories(name))), users(first_name, last_name)')
+            .eq('business_id', businessId)
+            .or('status.eq.completed,payment_status.eq.paid')
+            .not('status', 'in', '(cancelled,refunded)')
+            .gte('created_at', fromIso).lt('created_at', toIso),
+        supabase.from('bookings').select('*, services(name, price, tva_rate, category_id, categories(name))')
+            .eq('business_id', businessId).eq('status', 'confirmed')
+            .gte('booking_date', fromDate).lt('booking_date', toDate),
+        supabase.from('transactions').select('*')
+            .eq('business_id', businessId)
+            .gte('created_at', fromIso).lt('created_at', toIso),
+    ]);
+
+    return {
+        orders: ordersRes.data || [],
+        bookings: bookingsRes.data || [],
+        transactions: txRes.data || [],
+        errors: [ordersRes.error, bookingsRes.error, txRes.error].filter(Boolean),
+    };
+}
+
+export function buildCsv({ businessName, orders, bookings, posTransactions, periodLabel, currency, isTvaAssujetti }) {
+    const rows = [];
+    const now = new Date();
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const fmtDate = (d) => pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear();
+    const fmtTime = (d) => pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+
+    const headers = ['N° Facture', 'Date', 'Heure', 'Type opération', 'Produit/Service', 'Famille', 'Description', 'Client', 'Mode paiement', 'Montant TTC (' + currency + ')'];
+    if (isTvaAssujetti) headers.push('Taux TVA (%)', 'Montant TVA (' + currency + ')', 'Montant HT (' + currency + ')');
+    rows.push(headers);
+
+    let invoiceCounter = 1;
+    function nextInvoiceId() {
+        const id = 'F' + now.getFullYear() + '-' + String(invoiceCounter).padStart(4, '0');
+        invoiceCounter++;
+        return id;
+    }
+
+    const allLines = [];
+
+    // ----- Commandes : famille(s) + TVA ponderee par ligne d'article -----
+    orders.forEach((o) => {
+        const date = o.created_at ? new Date(o.created_at) : null;
+        const total = o.total || 0;
+        const items = o.order_items || [];
+        const desc = items.map((i) => (i.quantity || 1) + 'x ' + ((i.products && i.products.name) || '')).join(', ');
+        const familles = [...new Set(items.map((i) => i.products && i.products.categories && i.products.categories.name).filter(Boolean))];
+        let sumTvaWeighted = 0, sumBase = 0;
+        items.forEach((i) => {
+            const qty = i.quantity || 1;
+            const lineTotal = qty * (i.unit_price || 0);
+            const rate = i.products && i.products.tva_rate;
+            if (rate != null) { sumTvaWeighted += rate * lineTotal; sumBase += lineTotal; }
+        });
+        const effTva = sumBase > 0 ? sumTvaWeighted / sumBase : null;
+        allLines.push({ date, type: 'order', total, desc, famille: familles.join(', '), effectiveTva: effTva, data: o });
+    });
+
+    // ----- Reservations : famille + TVA du service -----
+    bookings.forEach((b) => {
+        const dateTimeStr = b.booking_date + (b.start_time ? 'T' + b.start_time : '');
+        const date = new Date(dateTimeStr);
+        const svc = b.services;
+        const price = b.price || (svc && svc.price) || 0;
+        if (isNaN(date.getTime()) || price <= 0) return;
+        const famille = (svc && svc.categories && svc.categories.name) || '';
+        const effTva = svc ? svc.tva_rate : null;
+        allLines.push({ date, type: 'booking', total: price, desc: '', famille, effectiveTva: effTva, data: b });
+    });
+
+    // ----- Caisse directe : famille(s) + TVA ponderee (items enrichis par la caisse) -----
+    posTransactions.forEach((t) => {
+        const date = t.created_at ? new Date(t.created_at) : null;
+        const items = t.items || [];
+        const familles = [...new Set(items.map((i) => i.category).filter(Boolean))];
+        let sumTvaWeighted = 0, sumBase = 0;
+        items.forEach((i) => {
+            const lineTotal = i.total || 0;
+            const rate = i.tva_rate;
+            if (rate != null) { sumTvaWeighted += rate * lineTotal; sumBase += lineTotal; }
+        });
+        const effTva = sumBase > 0 ? (sumTvaWeighted / sumBase) : (t.tva_rate != null ? t.tva_rate : null);
+        allLines.push({ date, type: 'pos', total: t.total || 0, desc: '', famille: familles.join(', '), effectiveTva: effTva, data: t });
+    });
+
+    allLines.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return -1;
+        if (!b.date) return 1;
+        return a.date - b.date;
+    });
+
+    let totalTtc = 0, totalTva = 0, totalHt = 0;
+    const typeCount = {};
+
+    allLines.forEach((line) => {
+        const { date, type, total, famille, data: o } = line;
+        totalTtc += total;
+        let typeLabel, desc, client, payMethod, natureLabel;
+
+        if (type === 'order') {
+            typeLabel = 'Vente en ligne';
+            desc = line.desc;
+            client = exportCustomerName(o.users);
+            payMethod = exportPayLabel(o.payment_method || 'dambou');
+            natureLabel = 'Produit'; // le module commande ne vend que des produits
+        } else if (type === 'booking') {
+            typeLabel = 'Prestation de service';
+            desc = (o.services && o.services.name) || 'Prestation';
+            client = o.customer_id ? exportCustomerName(null) : exportCustomerName(o.manual_customer_name ? { first_name: o.manual_customer_name, last_name: '' } : null);
+            payMethod = exportPayLabel(o.payment_method || 'dambou');
+            natureLabel = 'Service';
+        } else {
+            typeLabel = 'Vente caisse directe';
+            const items = o.items || [];
+            desc = items.map((i) => (i.qty || 1) + 'x ' + (i.name || '')).join(', ') || 'Vente directe';
+            client = o.customer_name || 'Client direct';
+            payMethod = exportPayLabel(o.payment_method || '');
+            const hasProduct = items.some((i) => i.is_service !== true);
+            const hasService = items.some((i) => i.is_service === true);
+            natureLabel = (hasProduct && hasService) ? 'Mixte' : hasService ? 'Service' : 'Produit';
+        }
+
+        typeCount[typeLabel] = (typeCount[typeLabel] || 0) + total;
+
+        // Taux effectif : celui calcule depuis les articles (pondere si mixte),
+        // sinon 20% par defaut si aucune donnee de taux n'est disponible.
+        const tvaRate = line.effectiveTva != null ? line.effectiveTva : 20.0;
+        const tvaAmt = isTvaAssujetti ? total - (total / (1 + tvaRate / 100)) : 0;
+        const ht = isTvaAssujetti ? total - tvaAmt : total;
+        totalTva += tvaAmt;
+        totalHt += ht;
+
+        const row = [nextInvoiceId(), date ? fmtDate(date) : '', date ? fmtTime(date) : '', typeLabel, natureLabel, famille, desc, client, payMethod, fmtNum(total)];
+        if (isTvaAssujetti) row.push(fmtNum(tvaRate), fmtNum(tvaAmt), fmtNum(ht));
+        rows.push(row);
+    });
+
+    rows.push([]);
+    rows.push(['=== RÉCAPITULATIF PAR TYPE ===']);
+    rows.push(['Type', 'Montant TTC (' + currency + ')']);
+    Object.keys(typeCount).forEach((k) => rows.push([k, fmtNum(typeCount[k])]));
+
+    rows.push([]);
+    if (isTvaAssujetti) {
+        rows.push(['=== TOTAUX PÉRIODE : ' + periodLabel + ' ===']);
+        rows.push(['', '', '', '', '', '', 'TOTAL HT', '', '', fmtNum(totalHt)]);
+        rows.push(['', '', '', '', '', '', 'TOTAL TVA', '', '', fmtNum(totalTva)]);
+        rows.push(['', '', '', '', '', '', 'TOTAL TTC', '', '', fmtNum(totalTtc)]);
+    } else {
+        rows.push(['=== TOTAL PÉRIODE : ' + periodLabel + ' ===']);
+        rows.push(['', '', '', '', '', '', 'TOTAL', '', '', fmtNum(totalTtc)]);
+    }
+
+    rows.push([]);
+    rows.push(['Export généré par Dambou le ' + fmtDate(now) + ' à ' + fmtTime(now)]);
+    rows.push(['Professionnel : ' + businessName]);
+    rows.push(['Période : ' + periodLabel]);
+    rows.push(['Nombre de transactions : ' + allLines.length]);
+
+    const csv = rows.map((row) => row.map((cell) => '"' + String(cell).replace(/"/g, '""') + '"').join(';')).join('\n');
+    return '\uFEFF' + csv;
+}
+
+export function downloadCsv(csvContent, periodLabel) {
+    const now = new Date();
+    const safePeriod = periodLabel.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
+    const filename = 'dambou_' + safePeriod + '_' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '.csv';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 export const PAY_LABELS = {
     cash: 'Espèces', card: 'Carte bancaire', check: 'Chèque',
     ticket_restaurant: 'Ticket restaurant', free: 'Offert', transfer: 'Virement',

@@ -31,7 +31,11 @@ ini_set('log_errors', 1);
   .container { max-width: 720px; margin: 0 auto; padding: 24px 24px 60px; }
   #loading { text-align: center; padding: 60px 20px; color: var(--text-medium); }
 
-  .period-tabs { display: flex; gap: 4px; background: white; border: 1px solid var(--card-border); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+  .period-tabs { display: flex; gap: 4px; background: white; border: 1px solid var(--card-border); border-radius: 12px; padding: 4px; flex: 1; }
+  .period-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .export-btn { display: flex; align-items: center; gap: 6px; padding: 11px 16px; border-radius: 12px; border: 1px solid var(--card-border); background: white; color: var(--text-dark); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .export-btn:hover { border-color: var(--primary); color: var(--primary-dark); }
+  .export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .period-btn { flex: 1; padding: 10px; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text-medium); border-radius: 8px; cursor: pointer; }
   .period-btn.active { background: var(--primary); color: white; }
 
@@ -73,11 +77,14 @@ ini_set('log_errors', 1);
   </div>
 
   <div class="container">
-    <div class="period-tabs">
-      <button class="period-btn active" data-period="0">Auj.</button>
-      <button class="period-btn" data-period="1">Sem.</button>
-      <button class="period-btn" data-period="2">Mois</button>
-      <button class="period-btn" data-period="3">Ann&eacute;e</button>
+    <div class="period-row">
+      <div class="period-tabs">
+        <button class="period-btn active" data-period="0">Auj.</button>
+        <button class="period-btn" data-period="1">Sem.</button>
+        <button class="period-btn" data-period="2">Mois</button>
+        <button class="period-btn" data-period="3">Ann&eacute;e</button>
+      </div>
+      <button class="export-btn" id="export-csv-btn">&#128190; Exporter CSV</button>
     </div>
 
     <div id="loading">Chargement des statistiques...</div>
@@ -86,7 +93,7 @@ ini_set('log_errors', 1);
 
   <script type="module">
     import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
-    import { loadStats } from '/pro/js/stats.js';
+    import { loadStats, loadExportData, buildCsv, downloadCsv } from '/pro/js/stats.js';
 
     let business = null;
     let periodIndex = 0;
@@ -100,6 +107,52 @@ ini_set('log_errors', 1);
       return { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[(business && business.currency_code) || 'EUR'] || '\u20ac';
     }
     function fmt(n) { return Math.round(n || 0) + ' ' + currencySymbol(); }
+
+    // Reproduit _periodLabel de stats_screen.dart (cas 0 a 3, pas de periode
+    // personnalisee sur le web pour l'instant)
+    const MONTH_NAMES_FULL = ['janvier', 'f&eacute;vrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'ao&ucirc;t', 'septembre', 'octobre', 'novembre', 'd&eacute;cembre'];
+    function periodLabelFor(idx) {
+      const now = new Date();
+      if (idx === 0) return fr("Aujourd'hui");
+      if (idx === 1) {
+        const day = now.getDay() === 0 ? 7 : now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - (day - 1));
+        return fr('Semaine du ' + String(monday.getDate()).padStart(2, '0') + '/' + String(monday.getMonth() + 1).padStart(2, '0'));
+      }
+      if (idx === 2) return fr(MONTH_NAMES_FULL[now.getMonth()] + ' ' + now.getFullYear());
+      return String(now.getFullYear());
+    }
+
+    document.getElementById('export-csv-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('export-csv-btn');
+      btn.disabled = true;
+      const originalLabel = btn.innerHTML;
+      btn.innerHTML = 'Export en cours...';
+      try {
+        const data = await loadExportData(business.id, periodIndex);
+        if (data.errors && data.errors.length) {
+          console.error('Erreurs export:', data.errors);
+        }
+        const periodLabel = periodLabelFor(periodIndex);
+        const csv = buildCsv({
+          businessName: business.name || 'Dambou',
+          orders: data.orders,
+          bookings: data.bookings,
+          posTransactions: data.transactions,
+          periodLabel: periodLabel,
+          currency: currencySymbol(),
+          isTvaAssujetti: !!business.is_tva_assujetti,
+        });
+        downloadCsv(csv, periodLabel);
+      } catch (err) {
+        console.error(err);
+        alert(fr("Erreur lors de l'export CSV. Voir la console pour le d&eacute;tail."));
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalLabel;
+      }
+    });
 
     document.querySelectorAll('.period-btn').forEach((btn) => {
       btn.addEventListener('click', () => {

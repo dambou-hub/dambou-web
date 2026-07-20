@@ -308,7 +308,7 @@ ini_set('log_errors', 1);
     function addToCart(item) {
       const existing = cart.find((c) => c.id === item.id);
       if (existing) existing.qty += 1;
-      else cart.push({ id: item.id, name: item.name, unitPrice: item.price || 0, qty: 1, isProduct: item._isProduct });
+      else cart.push({ id: item.id, name: item.name, unitPrice: item.price || 0, qty: 1, isProduct: item._isProduct, tvaRate: item.tva_rate != null ? item.tva_rate : null, categoryId: item.category_id || null });
       renderCart();
     }
     function changeQty(id, delta) {
@@ -643,7 +643,7 @@ ini_set('log_errors', 1);
           cart: cart, business: business, client: selectedClient,
           discountAmount: t.discountAmount, discountType: t.discountType,
           loyaltyDiscount: t.loyaltyDiscount, useLoyalty: useLoyalty, loyaltyCard: loyaltyCard,
-          method: method, bookingId: sourceBookingId,
+          method: method, bookingId: sourceBookingId, categories: categories,
         });
         showToast('Vente encaiss&eacute;e (' + (PAYMENT_METHOD_LABELS[method] || method) + ').');
         cart = []; selectedClient = null; loyaltyCard = null; useLoyalty = false; sourceBookingId = null;

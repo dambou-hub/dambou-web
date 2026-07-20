@@ -40,7 +40,24 @@ export async function payCart(params) {
     const total = Math.max(subtotal - (discountAmount || 0) - (loyaltyDiscount || 0), 0);
 
     const ticketNum = 'TKT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Date.now().toString().slice(-6);
-    const items = cart.map((i) => ({ name: i.name, qty: i.qty, unit_price: i.unitPrice, total: i.unitPrice * i.qty }));
+    const items = cart.map((i) => {
+        const catName = (params.categories || []).find((c) => c.id === i.categoryId);
+        return {
+            name: i.name, qty: i.qty, unit_price: i.unitPrice, total: i.unitPrice * i.qty,
+            tva_rate: i.tvaRate != null ? i.tvaRate : null,
+            category: catName ? catName.name : null,
+            is_service: !i.isProduct,
+        };
+    });
+    // TVA moyenne ponderee par montant (fallback si le panier melange plusieurs taux)
+    let weightedTvaSum = 0, weightedTvaBase = 0;
+    cart.forEach((i) => {
+        if (i.tvaRate != null) {
+            weightedTvaSum += i.tvaRate * (i.unitPrice * i.qty);
+            weightedTvaBase += (i.unitPrice * i.qty);
+        }
+    });
+    const avgTvaRate = weightedTvaBase > 0 ? weightedTvaSum / weightedTvaBase : null;
 
     const insertData = {
         business_id: business.id,
@@ -53,6 +70,7 @@ export async function payCart(params) {
         payment_method: method,
         ticket_number: ticketNum,
     };
+    if (avgTvaRate != null) insertData.tva_rate = avgTvaRate;
     const customerId = client && client.type === 'dambou' ? client.id : null;
     const customerName = client ? client.name : '';
     if (customerId) insertData.customer_id = customerId;

@@ -311,7 +311,7 @@ ini_set('log_errors', 1);
         } else if (action === 'refuse' || action === 'cancel') {
           const paidOnline = isPaidOnline(order);
           if (!confirm(fr(paidOnline ? 'Annuler et rembourser ? Le client sera rembours&eacute; automatiquement.' : 'Annuler cette commande ?'))) return;
-          await cancelOrderWithRefund(order);
+          await cancelOrderWithRefund(order, business.stripe_account_id);
           showToast(paidOnline ? 'Commande annul&eacute;e et rembours&eacute;e.' : 'Commande annul&eacute;e.');
         }
         await loadAndRender();

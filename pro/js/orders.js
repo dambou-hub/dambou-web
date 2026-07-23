@@ -4,7 +4,7 @@
 
 import { supabase } from '/pro/js/auth.js';
 
-const ORDER_SELECT = 'id, status, is_paid, payment_status, payment_method, payment_intent_id, stripe_account_id, total, order_number, pickup_time, notes, created_at, customer_id, order_items(id, quantity, unit_price, product_id, customization_note, selected_ingredients, products(name, needs_prep)), users(first_name, last_name, phone)';
+const ORDER_SELECT = 'id, status, is_paid, payment_status, payment_method, payment_intent_id, total, order_number, pickup_time, notes, created_at, customer_id, order_items(id, quantity, unit_price, product_id, customization_note, selected_ingredients, products(name, needs_prep)), users(first_name, last_name, phone)';
 
 // Commandes actives (non terminees), reproduit la requete principale de
 // orders_screen.dart.
@@ -148,7 +148,7 @@ export async function editPickupTime(orderId, newTime) {
 // action 'refund_payment') puis annule la commande. N'echoue pas si le
 // remboursement echoue (comme cote mobile, catch silencieux) -- l'annulation
 // se fait quand meme, le pro devra gerer un remboursement manuel si besoin.
-export async function cancelOrderWithRefund(order) {
+export async function cancelOrderWithRefund(order, stripeAccountId) {
     const isPaidOnline = order.payment_status === 'paid' && order.payment_method === 'stripe_online';
     if (isPaidOnline && order.payment_intent_id) {
         try {
@@ -156,7 +156,7 @@ export async function cancelOrderWithRefund(order) {
                 body: {
                     action: 'refund_payment',
                     payment_intent_id: order.payment_intent_id,
-                    stripe_account_id: order.stripe_account_id || '',
+                    stripe_account_id: stripeAccountId || '',
                 },
             });
         } catch (e) { console.error('Erreur remboursement Stripe:', e); }

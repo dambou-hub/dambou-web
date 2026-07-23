@@ -167,6 +167,23 @@ ini_set('log_errors', 1);
           <div class="field"><label>Stock actuel</label><input type="number" id="item-stock-qty" min="0"></div>
           <div class="field"><label>Seuil d'alerte</label><input type="number" id="item-stock-alert" min="0" value="5"></div>
         </div>
+
+        <div id="ingredients-section" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--card-border)">
+          <div style="background:rgba(0,191,165,0.06); border:1px solid rgba(0,191,165,0.15); border-radius:12px; padding:12px; margin-bottom:12px; font-size:12px; font-weight:600; display:flex; gap:8px; align-items:flex-start">
+            <span style="font-size:18px">&#127869;</span>
+            <span>Le client pourra personnaliser sa commande en ajoutant ou retirant des ingr&eacute;dients.</span>
+          </div>
+          <div id="existing-ingredients-chips" style="display:none; margin-bottom:12px">
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--primary-dark); margin-bottom:6px">&#8635; D&eacute;j&agrave; utilis&eacute;s dans votre catalogue</label>
+            <div id="existing-ingredients-list" style="display:flex; flex-wrap:wrap; gap:6px"></div>
+          </div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:6px">Ingr&eacute;dients de ce produit</label>
+          <div id="product-ingredients-list" style="margin-bottom:8px"></div>
+          <div style="display:flex; gap:6px">
+            <input type="text" id="new-ingredient-input" placeholder="Nom de l'ingr&eacute;dient" style="flex:1; padding:9px 11px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit">
+            <button type="button" id="add-ingredient-btn" style="padding:0 14px; border:none; border-radius:10px; background:var(--primary); color:white; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer">Ajouter</button>
+          </div>
+        </div>
       </div>
 
       <div class="field" id="tva-field" style="margin-top:8px"><label>TVA</label>
@@ -190,10 +207,14 @@ ini_set('log_errors', 1);
     import {
       TVA_RATES, loadCategories, loadProducts, loadServices,
       createCategory, deleteCategory, uploadItemImage, saveItem, deleteItem, updateItemImageUrl,
+      loadIngredientsForProduct, loadAllBusinessIngredientNames, saveIngredients,
     } from '/pro/js/catalogue.js';
 
     let business = null;
     let categories = [];
+    let businessManageIngredients = false;
+    let allBusinessIngredientNames = [];
+    let currentIngredients = []; // [{name, extra_price, is_default, is_removable}]
     let products = [];
     let services = [];
     let editingItem = null; // {isProduct, id} ou null si creation
@@ -381,6 +402,8 @@ ini_set('log_errors', 1);
       document.getElementById('duration-field').style.display = isProduct ? 'none' : 'block';
       document.getElementById('participants-field').style.display = isProduct ? 'none' : 'block';
       document.getElementById('product-fields').style.display = isProduct ? 'block' : 'none';
+      document.getElementById('ingredients-section').style.display = (isProduct && businessManageIngredients) ? 'block' : 'none';
+      document.getElementById('existing-ingredients-chips').style.display = allBusinessIngredientNames.length ? 'block' : 'none';
       // TVA : produits ET services desormais (colonne ajoutee sur services), uniquement
       // si le pro est assujetti a la TVA (businesses.is_tva_assujetti).
       const tvaAssujetti = !!(business && business.is_tva_assujetti);
@@ -412,6 +435,15 @@ ini_set('log_errors', 1);
           imgPreview.style.display = 'none'; imgPlaceholder.style.display = 'block';
         }
         document.getElementById('item-delete-btn').style.display = 'block';
+        if (isProduct && businessManageIngredients) {
+          loadIngredientsForProduct(item.id).then((ings) => {
+            currentIngredients = ings.map((i) => ({ name: i.name, extra_price: i.extra_price || 0, is_default: i.is_default !== false, is_removable: i.is_removable !== false }));
+            renderProductIngredientsList();
+            renderExistingIngredientChips();
+          });
+        } else {
+          currentIngredients = [];
+        }
       } else {
         editingItem = { isProduct: isProduct, id: null };
         document.getElementById('item-modal-title').textContent = 'Nouveau ' + (isProduct ? 'produit' : 'service');
@@ -429,6 +461,9 @@ ini_set('log_errors', 1);
         document.getElementById('stock-fields').style.display = 'none';
         imgPreview.style.display = 'none'; imgPlaceholder.style.display = 'block';
         document.getElementById('item-delete-btn').style.display = 'none';
+        currentIngredients = [];
+        renderProductIngredientsList();
+        renderExistingIngredientChips();
       }
 
       document.getElementById('item-overlay').classList.add('visible');
@@ -437,6 +472,67 @@ ini_set('log_errors', 1);
       document.getElementById('item-overlay').classList.remove('visible');
       editingItem = null;
     }
+
+    function renderProductIngredientsList() {
+      const list = document.getElementById('product-ingredients-list');
+      if (currentIngredients.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:14px; color:var(--text-light); font-size:12px">Aucun ingr&eacute;dient pour ce produit.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      currentIngredients.forEach((ing, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--card-border)';
+        row.innerHTML =
+          '<span style="flex:1; font-size:13px; font-weight:600">' + escapeHtml(ing.name) + '</span>' +
+          '<button type="button" class="remove-ing-btn" data-idx="' + idx + '" style="border:none; background:none; color:var(--error); font-size:16px; cursor:pointer">&times;</button>';
+        list.appendChild(row);
+      });
+      list.querySelectorAll('.remove-ing-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          currentIngredients.splice(parseInt(btn.dataset.idx, 10), 1);
+          renderProductIngredientsList();
+          renderExistingIngredientChips();
+        });
+      });
+    }
+
+    function renderExistingIngredientChips() {
+      const wrap = document.getElementById('existing-ingredients-list');
+      wrap.innerHTML = '';
+      allBusinessIngredientNames.forEach((name) => {
+        const alreadyAdded = currentIngredients.some((i) => i.name === name);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.style.cssText = 'display:flex; align-items:center; gap:4px; padding:6px 11px; border-radius:16px; font-family:inherit; font-size:12px; font-weight:600; cursor:' + (alreadyAdded ? 'default' : 'pointer') + '; border:1px solid ' + (alreadyAdded ? 'var(--success)' : 'rgba(0,191,165,0.35)') + '; background:' + (alreadyAdded ? 'rgba(56,161,105,0.1)' : 'rgba(0,191,165,0.08)') + '; color:' + (alreadyAdded ? 'var(--success)' : 'var(--primary-dark)') + ';';
+        chip.innerHTML = (alreadyAdded ? '&#10003; ' : '+ ') + escapeHtml(name);
+        if (!alreadyAdded) {
+          chip.addEventListener('click', () => {
+            currentIngredients.push({ name: name, extra_price: 0, is_default: true, is_removable: true });
+            renderProductIngredientsList();
+            renderExistingIngredientChips();
+          });
+        }
+        wrap.appendChild(chip);
+      });
+    }
+
+    document.getElementById('add-ingredient-btn').addEventListener('click', () => {
+      const input = document.getElementById('new-ingredient-input');
+      const name = input.value.trim();
+      if (!name) return;
+      if (currentIngredients.some((i) => i.name.toLowerCase() === name.toLowerCase())) {
+        showToast('Cet ingr&eacute;dient est d&eacute;j&agrave; dans la liste.');
+        return;
+      }
+      currentIngredients.push({ name: name, extra_price: 0, is_default: true, is_removable: true });
+      input.value = '';
+      renderProductIngredientsList();
+      renderExistingIngredientChips();
+    });
+    document.getElementById('new-ingredient-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-ingredient-btn').click(); }
+    });
 
     document.getElementById('item-cancel-btn').addEventListener('click', closeItemModal);
     document.getElementById('item-overlay').addEventListener('click', (e) => {
@@ -515,6 +611,16 @@ ini_set('log_errors', 1);
           await updateItemImageUrl(isProduct, itemId, url);
         }
 
+        if (isProduct && businessManageIngredients) {
+          await saveIngredients(itemId, currentIngredients);
+          if (currentIngredients.length) {
+            currentIngredients.forEach((ing) => {
+              if (!allBusinessIngredientNames.includes(ing.name)) allBusinessIngredientNames.push(ing.name);
+            });
+            allBusinessIngredientNames.sort();
+          }
+        }
+
         showToast('Enregistr&eacute;.');
         closeItemModal();
         await loadAll();
@@ -538,6 +644,13 @@ ini_set('log_errors', 1);
       if (!business) {
         document.getElementById('loading').textContent = fr('Aucun &eacute;tablissement associ&eacute; &agrave; ce compte.');
         return;
+      }
+      const foodKeywords = ['restaurant', 'food', 'boulangerie', 'pizza', 'snack', 'traiteur', 'burger'];
+      const catNorm = (business.category || '').toLowerCase();
+      const guessedManageIng = foodKeywords.some((k) => catNorm.includes(k));
+      businessManageIngredients = business.manage_ingredients != null ? !!business.manage_ingredients : guessedManageIng;
+      if (businessManageIngredients) {
+        allBusinessIngredientNames = await loadAllBusinessIngredientNames(business.id);
       }
       await loadAll();
     })();

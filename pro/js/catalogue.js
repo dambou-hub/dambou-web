@@ -186,6 +186,45 @@ export async function updateStockQty(productId, newQty) {
     if (error) throw error;
 }
 
+// ------------------------------------------------------------
+// INGREDIENTS (produits uniquement), reproduit catalogue_screen.dart
+// ------------------------------------------------------------
+export async function loadIngredientsForProduct(productId) {
+    const { data, error } = await supabase.from('ingredients').select('*')
+        .eq('product_id', productId).order('sort_order');
+    if (error) { console.error('Erreur chargement ingredients:', error); return []; }
+    return data || [];
+}
+
+// Tous les noms d'ingredients deja utilises quelque part dans le catalogue du
+// business (pour proposer une reutilisation rapide en un clic).
+export async function loadAllBusinessIngredientNames(businessId) {
+    const { data: products } = await supabase.from('products').select('id').eq('business_id', businessId);
+    const ids = (products || []).map((p) => p.id);
+    if (ids.length === 0) return [];
+    const { data } = await supabase.from('ingredients').select('name').in('product_id', ids);
+    const names = new Set();
+    (data || []).forEach((i) => { if (i.name) names.add(i.name); });
+    return Array.from(names).sort();
+}
+
+// Remplace entierement les ingredients d'un produit (supprime puis reinsere,
+// comme _saveIngredients() cote mobile).
+export async function saveIngredients(productId, ingredients) {
+    await supabase.from('ingredients').delete().eq('product_id', productId);
+    if (ingredients.length === 0) return;
+    const rows = ingredients.map((ing, i) => ({
+        product_id: productId,
+        name: ing.name,
+        extra_price: ing.extra_price || 0,
+        is_default: ing.is_default !== false,
+        is_removable: ing.is_removable !== false,
+        sort_order: i,
+    }));
+    const { error } = await supabase.from('ingredients').insert(rows);
+    if (error) throw error;
+}
+
 export async function toggleTrackStock(productId, current) {
     const { error } = await supabase.from('products').update({ track_stock: !current }).eq('id', productId);
     if (error) throw error;

@@ -176,6 +176,19 @@ ini_set('log_errors', 1);
           <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin:16px 0 8px">Commandes simultan&eacute;es en pr&eacute;paration</label>
           <div class="capacity-picker" id="order-capacity-picker"></div>
           <div class="capacity-label" id="order-capacity-label"></div>
+
+          <div class="toggle-row" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--card-border)">
+            <div><label>G&eacute;rer les ingr&eacute;dients</label><div class="toggle-sub">Affiche un onglet ingr&eacute;dients sur vos produits (ex: pizza avec base + suppl&eacute;ments)</div></div>
+            <input type="checkbox" id="f-manage-ingredients">
+          </div>
+          <div class="toggle-row">
+            <div><label>Client peut personnaliser</label><div class="toggle-sub">Le client peut retirer/ajouter des ingr&eacute;dients &agrave; sa commande depuis l'app</div></div>
+            <input type="checkbox" id="f-allow-customer-ingredients">
+          </div>
+          <div class="field" id="extra-ing-price-field" style="margin-top:10px">
+            <label>Prix par ingr&eacute;dient suppl&eacute;mentaire ajout&eacute; (en plus des ingr&eacute;dients de base)</label>
+            <input type="number" id="f-extra-ing-price" step="0.01" min="0" value="0.5">
+          </div>
         </div>
 
         <div class="card">
@@ -371,6 +384,9 @@ ini_set('log_errors', 1);
           capacity: capacity,
           orderCapacity: orderCapacity,
           prepTime: prepTime,
+          manageIngredients: document.getElementById('f-manage-ingredients').checked,
+          allowCustomerIngredients: document.getElementById('f-allow-customer-ingredients').checked,
+          extraPricePerIngredient: parseFloat(document.getElementById('f-extra-ing-price').value) || 0.5,
         });
         showToast('Informations enregistr&eacute;es.');
       } catch (err) {
@@ -602,6 +618,16 @@ ini_set('log_errors', 1);
       renderCapacityPicker();
       renderOrderCapacityPicker();
       renderPrepTimePicker();
+
+      // manage_ingredients : si jamais defini explicitement, deviner selon le
+      // secteur (comme catalogue_screen.dart : active par defaut pour les
+      // activites alimentaires).
+      const foodKeywords = ['restaurant', 'food', 'boulangerie', 'pizza', 'snack', 'traiteur', 'burger'];
+      const catNorm = (business.category || '').toLowerCase();
+      const guessedManageIng = foodKeywords.some((k) => catNorm.includes(k));
+      document.getElementById('f-manage-ingredients').checked = business.manage_ingredients != null ? !!business.manage_ingredients : guessedManageIng;
+      document.getElementById('f-allow-customer-ingredients').checked = !!business.allow_customer_ingredients;
+      document.getElementById('f-extra-ing-price').value = business.extra_price_per_ingredient != null ? business.extra_price_per_ingredient : 0.5;
 
       const activeModules = await getActiveModules(business.id);
       if (activeModules.some((m) => m.module_type === 'booking')) {

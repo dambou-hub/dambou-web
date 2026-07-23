@@ -53,6 +53,9 @@ export async function saveBusinessInfo(businessId, params) {
         capacity: params.capacity || 1,
         order_capacity: params.orderCapacity || 1,
         prep_time: params.prepTime || 15,
+        manage_ingredients: !!params.manageIngredients,
+        allow_customer_ingredients: !!params.allowCustomerIngredients,
+        extra_price_per_ingredient: params.extraPricePerIngredient != null ? params.extraPricePerIngredient : 0.5,
         updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('businesses').update(updateData).eq('id', businessId);

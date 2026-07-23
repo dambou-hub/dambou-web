@@ -189,6 +189,11 @@ ini_set('log_errors', 1);
           <h3>Employes</h3>
           <p>Equipe, planning et liaison de compte</p>
         </a>
+        <a class="nav-card" href="/pro/commandes" id="card-orders">
+          <div class="icon" style="background:rgba(244,162,97,0.1)">&#128722;</div>
+          <h3>Commandes</h3>
+          <p>Suivi en temps reel et vue cuisine</p>
+        </a>
         <a class="nav-card" href="/pro/modules">
           <div class="icon" style="background:rgba(94,53,177,0.1)">&#9881;&#65039;</div>
           <h3>Modules</h3>
@@ -327,6 +332,10 @@ ini_set('log_errors', 1);
       const hasEmployees = activeModules.some((m) => m.module_type === 'employees');
       if (!hasEmployees) {
         document.getElementById('card-employees').remove();
+      }
+      const hasOrders = activeModules.some((m) => m.module_type === 'orders');
+      if (!hasOrders) {
+        document.getElementById('card-orders').remove();
       }
 
       loadingEl.style.display = 'none';

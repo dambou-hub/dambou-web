@@ -171,17 +171,12 @@ button {
     color: var(--color-text-primary);
 }
 
-.logo-icon {
+.logo-image {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: white;
     border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: var(--font-weight-bold);
-    font-size: 1.25rem;
+    object-fit: contain;
+
 }
 
 .nav-center {

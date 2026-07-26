@@ -121,9 +121,8 @@ if (!empty($slug) && count($parts) === 1) {
     <nav class="nav" id="navbar">
         <div class="nav-container">
             <div class="nav-left">
-                <a href="/" class="nav-logo">
-                    <div class="logo-icon">D</div>
-                    <span class="logo-text">DAMBOU</span>
+                <a href="#" class="nav-logo">
+                    <img src="assets/logos/logo.png" alt="Dambou" class="logo-image">
                 </a>
             </div>
             

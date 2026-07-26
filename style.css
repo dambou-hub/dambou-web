@@ -173,8 +173,8 @@ button {
 
 .logo-image {
     width: 64px;
-    height: 64px;
-    border-radius: var(--radius-md);
+    height: auto;
+    border-radius: 0;
     object-fit: contain;
 
 }

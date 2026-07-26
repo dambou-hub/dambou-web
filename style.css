@@ -99,7 +99,7 @@ button {
    UTILITIES
    ============================================ */
 .container {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 var(--spacing-lg);
 }
@@ -148,7 +148,7 @@ button {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: var(--spacing-md) var(--spacing-lg);
     display: flex;
@@ -308,8 +308,8 @@ button {
 
 .hero-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-3xl);
+    grid-template-columns: 1fr 1.3fr; /* Image plus grande que le texte */
+    gap: var(--spacing-2xl);
     align-items: center;
 }
 
@@ -504,28 +504,32 @@ button {
     font-size: 0.9rem;
 }
 
+/* === HERO IMAGE - MODIFIÉ POUR AGRANDIR === */
 .hero-image {
     position: relative;
     display: flex;
     justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
 .phone-mockup {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 900px; /* AGRANDI : de 400px à 900px */
+    animation: float 6s ease-in-out infinite;
 }
 
 .phone-image {
     width: 100%;
+    height: auto;
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-xl);
-    animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
+    50% { transform: translateY(-10px); }
 }
 
 /* ============================================
@@ -1090,15 +1094,23 @@ button {
         display: flex;
     }
     
-    .hero-grid,
-    .why-grid,
-    .ai-grid {
+    .hero-grid {
         grid-template-columns: 1fr;
         gap: var(--spacing-2xl);
     }
     
     .hero-image {
         order: -1;
+    }
+    
+    .phone-mockup {
+        max-width: 700px; /* Agrandi pour tablette */
+    }
+    
+    .why-grid,
+    .ai-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-2xl);
     }
     
     .stats-grid {
@@ -1156,6 +1168,10 @@ button {
         align-items: flex-start;
     }
     
+    .phone-mockup {
+        max-width: 500px; /* Agrandi pour mobile */
+    }
+    
     .stats-grid,
     .metiers-grid,
     .features-grid,
@@ -1204,6 +1220,10 @@ button {
     
     .nav-btn-primary {
         display: none;
+    }
+    
+    .phone-mockup {
+        max-width: 100%; /* Pleine largeur sur petit mobile */
     }
     
     .stat-card,

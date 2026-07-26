@@ -122,7 +122,7 @@ if (!empty($slug) && count($parts) === 1) {
         <div class="nav-container">
             <div class="nav-left">
                 <a href="#" class="nav-logo">
-                    <img src="assets/logos/logo.png" alt="Dambou" class="logo-image">
+                    <img src="assets/logos/logoD.png" alt="Dambou" class="logo-image">
                 </a>
             </div>
             

@@ -445,6 +445,10 @@ ini_set('log_errors', 1);
       const endMin = hours.isOpen === false ? 20 * 60 : timeToMinutes(hours.end || '20:00');
       const grid = document.getElementById('time-picker-grid');
       grid.innerHTML = '';
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let nearestBtn = null;
+      let nearestDiff = Infinity;
       for (let m = startMin; m <= endMin; m += 15) {
         const h = String(Math.floor(m / 60)).padStart(2, '0');
         const mm = String(m % 60).padStart(2, '0');
@@ -459,12 +463,27 @@ ini_set('log_errors', 1);
           onSelect(label);
         });
         grid.appendChild(btn);
+
+        // Reperer le creneau a centrer a l'ouverture : celui deja selectionne
+        // si on modifie une heure existante, sinon le plus proche de maintenant
+        // (c'est la ou on cherche un creneau la plupart du temps, pas au debut
+        // de la plage d'ouverture -- utile des que la plage devient longue,
+        // ex: un business ouvert 24h/24 propose 96 creneaux).
+        if (currentTime) {
+          if (isSelected) nearestBtn = btn;
+        } else {
+          const diff = Math.abs(m - nowMin);
+          if (diff < nearestDiff) { nearestDiff = diff; nearestBtn = btn; }
+        }
       }
       document.getElementById('time-picker-asap').onclick = () => {
         document.getElementById('time-picker-overlay').classList.remove('visible');
         onSelect(null);
       };
       document.getElementById('time-picker-overlay').classList.add('visible');
+      if (nearestBtn) {
+        setTimeout(() => nearestBtn.scrollIntoView({ block: 'center', behavior: 'instant' }), 0);
+      }
     }
     document.getElementById('time-picker-close').addEventListener('click', () => {
       document.getElementById('time-picker-overlay').classList.remove('visible');

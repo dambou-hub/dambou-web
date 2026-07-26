@@ -110,11 +110,20 @@ ini_set('log_errors', 1);
       </div>
 
       <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Client (optionnel)</label>
-      <input type="text" id="no-client-search" placeholder="Nom, t&eacute;l&eacute;phone..." autocomplete="off"
-        style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:6px">
-      <div id="no-client-results" style="margin-bottom:8px"></div>
-      <input type="text" id="no-client-name" placeholder="Nom du client" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
-      <input type="tel" id="no-client-phone" placeholder="T&eacute;l&eacute;phone (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:14px">
+      <div id="no-client-selector-box" style="display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid var(--card-border); border-radius:12px; cursor:pointer; margin-bottom:14px">
+        <span id="no-client-placeholder" style="color:var(--text-light); font-size:14px; flex:1">Client de passage (sans fiche)</span>
+        <div id="no-client-selected" style="display:none; align-items:center; gap:10px; flex:1; min-width:0">
+          <div id="no-csb-avatar" style="width:30px; height:30px; border-radius:50%; background:rgba(0,191,165,0.15); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0"></div>
+          <div style="flex:1; min-width:0">
+            <div style="display:flex; align-items:center; gap:6px">
+              <span id="no-csb-name" style="font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"></span>
+              <span id="no-csb-badge" style="display:none; font-size:9px; font-weight:800; color:var(--primary-dark); background:rgba(0,191,165,0.1); padding:2px 5px; border-radius:4px">Dambou</span>
+            </div>
+            <div id="no-csb-phone" style="font-size:11px; color:var(--text-medium)"></div>
+          </div>
+          <button type="button" id="no-csb-clear" style="border:none; background:none; font-size:18px; color:var(--text-light); cursor:pointer; padding:0 4px">&times;</button>
+        </div>
+      </div>
 
       <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Heure de retrait (optionnel)</label>
       <input type="time" id="no-pickup-time" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:14px">
@@ -133,6 +142,34 @@ ini_set('log_errors', 1);
 
       <div id="no-error" style="display:none; background:rgba(229,62,62,0.08); color:var(--error); font-size:12px; padding:9px 11px; border-radius:8px; margin-bottom:10px"></div>
       <button id="no-submit-btn" style="width:100%; padding:13px; background:var(--primary); color:white; border:none; border-radius:14px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer">Cr&eacute;er la commande</button>
+    </div>
+  </div>
+
+  <!-- Selection client (identique a la caisse) -->
+  <div class="overlay" id="client-search-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.4); display:none; align-items:center; justify-content:center; z-index:58; padding:16px">
+    <div class="panel" style="background:white; border-radius:18px; width:100%; max-width:420px; max-height:85vh; display:flex; flex-direction:column; padding:20px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <span style="font-size:15px; font-weight:800">Choisir un client</span>
+        <button id="client-search-close" style="border:none; background:none; font-size:22px; color:var(--text-light); cursor:pointer">&times;</button>
+      </div>
+      <input type="text" id="client-search-input" placeholder="Nom, t&eacute;l&eacute;phone, ou scannez un QR client..." autocomplete="off"
+        style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:12px; font-size:14px; font-family:inherit; margin-bottom:6px">
+      <div style="font-size:11px; color:var(--text-light); margin-bottom:10px">Une douchette USB/Bluetooth scanne directement dans ce champ.</div>
+      <div id="client-results" style="overflow-y:auto; max-height:280px; min-height:60px"></div>
+      <button type="button" id="client-create-toggle" style="display:flex; align-items:center; gap:12px; padding:13px 4px; cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:inherit; font-size:14px; font-weight:700; color:var(--text-dark)"><span>+</span><span>Cr&eacute;er une fiche client</span></button>
+      <div id="client-create-form" style="display:none">
+        <input type="text" id="cc-first-name" placeholder="Pr&eacute;nom" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin:8px 0">
+        <input type="text" id="cc-last-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="tel" id="cc-phone" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:8px">
+        <input type="email" id="cc-email" placeholder="Email (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
+        <button type="button" id="cc-save-btn" style="width:100%; padding:11px; background:var(--primary); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Cr&eacute;er et s&eacute;lectionner</button>
+      </div>
+      <button type="button" id="guest-client-toggle" style="display:flex; align-items:center; gap:12px; padding:13px 4px; cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:inherit; font-size:14px; font-weight:700; color:var(--text-medium)"><span>&#128100;</span><span>Client de passage (sans fiche)</span></button>
+      <div id="guest-form" style="display:none">
+        <input type="text" id="guest-name" placeholder="Nom (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin:8px 0">
+        <input type="tel" id="guest-phone" placeholder="T&eacute;l&eacute;phone (optionnel)" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:10px">
+        <button type="button" id="guest-save-btn" style="width:100%; padding:11px; background:var(--text-dark); color:white; border:none; border-radius:12px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer">Valider</button>
+      </div>
     </div>
   </div>
 
@@ -178,7 +215,11 @@ ini_set('log_errors', 1);
     function currencySymbol() {
       return { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[(business && business.currency_code) || 'EUR'] || '\u20ac';
     }
-    function fmt(n) { return Math.round(n || 0) + ' ' + currencySymbol(); }
+    function fmt(n) {
+      const v = Math.round((n || 0) * 100) / 100;
+      const display = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
+      return display + ' ' + currencySymbol();
+    }
     function timeAgo(iso) {
       if (!iso) return '';
       const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -450,10 +491,7 @@ ini_set('log_errors', 1);
       }
       noCartLines = [];
       noSelectedClient = null;
-      document.getElementById('no-client-search').value = '';
-      document.getElementById('no-client-name').value = '';
-      document.getElementById('no-client-phone').value = '';
-      document.getElementById('no-client-results').innerHTML = '';
+      updateNoClientBox();
       document.getElementById('no-pickup-time').value = '';
       document.getElementById('no-error').style.display = 'none';
       renderProductGrid();
@@ -499,7 +537,7 @@ ini_set('log_errors', 1);
       noCartLines.forEach((line) => {
         const price = lineUnitPrice(line);
         total += price;
-        const hasIngredients = (noIngByProduct[line.productId] || []).length > 0 || noAllIngredients.length > 0;
+        const hasIngredients = (noIngByProduct[line.productId] || []).length > 0;
         const note = lineNote(line);
         const row = document.createElement('div');
         row.className = 'no-cart-line';
@@ -588,31 +626,156 @@ ini_set('log_errors', 1);
     });
 
     let noSearchDebounce = null;
-    document.getElementById('no-client-search').addEventListener('input', (e) => {
-      clearTimeout(noSearchDebounce);
-      const q = e.target.value.trim();
-      const resultsBox = document.getElementById('no-client-results');
-      if (q.length < 2) { resultsBox.innerHTML = ''; return; }
-      noSearchDebounce = setTimeout(async () => {
-        const { dambou, manual } = await searchClients(business.id, q);
-        resultsBox.innerHTML = '';
-        [...dambou.map((u) => ({ ...u, _type: 'dambou' })), ...manual.map((c) => ({ ...c, _type: 'manual' }))].slice(0, 6).forEach((c) => {
-          const name = ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || 'Client';
-          const tile = document.createElement('div');
-          tile.style.cssText = 'padding:8px 10px; border:1px solid var(--card-border); border-radius:8px; margin-bottom:4px; cursor:pointer; font-size:12px; font-weight:600';
-          tile.textContent = name + (c.phone ? ' \u2014 ' + c.phone : '');
-          tile.addEventListener('click', () => {
-            noSelectedClient = { id: c.id, type: c._type };
-            document.getElementById('no-client-name').value = name;
-            document.getElementById('no-client-phone').value = c.phone || '';
-            resultsBox.innerHTML = '';
-            document.getElementById('no-client-search').value = '';
-          });
-          resultsBox.appendChild(tile);
-        });
-      }, 300);
+
+    function updateNoClientBox() {
+      const placeholder = document.getElementById('no-client-placeholder');
+      const sel = document.getElementById('no-client-selected');
+      if (!noSelectedClient) {
+        placeholder.style.display = 'block';
+        sel.style.display = 'none';
+        return;
+      }
+      placeholder.style.display = 'none';
+      sel.style.display = 'flex';
+      document.getElementById('no-csb-avatar').textContent = (noSelectedClient.name || '?').charAt(0).toUpperCase();
+      document.getElementById('no-csb-name').textContent = noSelectedClient.name || 'Client';
+      document.getElementById('no-csb-phone').textContent = noSelectedClient.phone || '';
+      document.getElementById('no-csb-badge').style.display = noSelectedClient.type === 'dambou' ? 'inline-block' : 'none';
+    }
+    document.getElementById('no-client-selector-box').addEventListener('click', openClientSearch);
+    document.getElementById('no-csb-clear').addEventListener('click', (e) => {
+      e.stopPropagation();
+      noSelectedClient = null;
+      updateNoClientBox();
     });
-    document.getElementById('no-client-name').addEventListener('input', () => { noSelectedClient = null; });
+
+    document.getElementById('client-search-close').addEventListener('click', closeClientSearch);
+    document.getElementById('client-search-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'client-search-overlay') closeClientSearch();
+    });
+
+    function openClientSearch() {
+      document.getElementById('client-search-input').value = '';
+      document.getElementById('client-results').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un t&eacute;l&eacute;phone, ou scannez</div>';
+      document.getElementById('client-create-form').style.display = 'none';
+      document.getElementById('guest-form').style.display = 'none';
+      document.getElementById('client-search-overlay').classList.add('visible');
+      document.getElementById('client-search-input').focus();
+    }
+    function closeClientSearch() {
+      document.getElementById('client-search-overlay').classList.remove('visible');
+    }
+
+    function clientTile(name, phone, badge, onClick) {
+      const tile = document.createElement('div');
+      tile.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 6px; cursor:pointer; border-bottom:1px solid var(--card-border)';
+      tile.innerHTML =
+        '<div style="width:30px;height:30px;border-radius:50%;background:rgba(0,191,165,0.12);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">' +
+        escapeHtml((name || '?').charAt(0).toUpperCase()) + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:700">' + escapeHtml(name) + '</span>' +
+        (badge ? '<span style="font-size:9px;font-weight:800;color:var(--primary-dark);background:rgba(0,191,165,0.1);padding:2px 5px;border-radius:4px">Dambou</span>' : '') + '</div>' +
+        (phone ? '<div style="font-size:11px;color:var(--text-medium)">' + escapeHtml(phone) + '</div>' : '') + '</div>';
+      tile.addEventListener('click', onClick);
+      return tile;
+    }
+
+    async function selectDambouClient(id, name, phone) {
+      noSelectedClient = { type: 'dambou', id: id, name: name, phone: phone || '' };
+      updateNoClientBox();
+      closeClientSearch();
+    }
+
+    const noClientSearchInput = document.getElementById('client-search-input');
+    let noLastKeyTime = 0;
+    let noTypedFast = true;
+    noClientSearchInput.addEventListener('keydown', (e) => {
+      const now = Date.now();
+      if (now - noLastKeyTime > 60) noTypedFast = false;
+      noLastKeyTime = now;
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleNoClientSubmit(noClientSearchInput.value.trim(), noTypedFast);
+        noTypedFast = true;
+      }
+    });
+    async function handleNoClientSubmit(value, wasFastInput) {
+      if (!value) return;
+      const { data: exactUser } = await supabase.from('users').select('id, first_name, last_name, phone').eq('id', value).maybeSingle();
+      if (exactUser) {
+        const name = ((exactUser.first_name || '') + ' ' + (exactUser.last_name || '')).trim() || 'Client';
+        await selectDambouClient(exactUser.id, name, exactUser.phone || '');
+        showToast((wasFastInput ? 'Scan' : 'Client') + ' : ' + name);
+        return;
+      }
+      triggerNoSearch(value);
+    }
+    noClientSearchInput.addEventListener('input', () => {
+      clearTimeout(noSearchDebounce);
+      const query = noClientSearchInput.value;
+      noSearchDebounce = setTimeout(() => triggerNoSearch(query), 350);
+    });
+    async function triggerNoSearch(query) {
+      const resultsBox = document.getElementById('client-results');
+      if (query.trim().length < 2) {
+        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Tapez un nom, un t&eacute;l&eacute;phone, ou scannez</div>';
+        return;
+      }
+      resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Recherche...</div>';
+      const results = await searchClients(business.id, query);
+      resultsBox.innerHTML = '';
+      if (!results.dambou.length && !results.manual.length) {
+        resultsBox.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:13px">Aucun r&eacute;sultat</div>';
+        return;
+      }
+      results.dambou.forEach((u) => {
+        const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || 'Client Dambou';
+        resultsBox.appendChild(clientTile(name, u.phone || '', true, () => selectDambouClient(u.id, name, u.phone || '')));
+      });
+      results.manual.forEach((cl) => {
+        const name = ((cl.first_name || '') + ' ' + (cl.last_name || '')).trim() || 'Client';
+        resultsBox.appendChild(clientTile(name, cl.phone || '', false, () => {
+          noSelectedClient = { type: 'manual', id: cl.id, name: name, phone: cl.phone || '' };
+          updateNoClientBox();
+          closeClientSearch();
+        }));
+      });
+    }
+
+    document.getElementById('client-create-toggle').addEventListener('click', () => {
+      const form = document.getElementById('client-create-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      document.getElementById('guest-form').style.display = 'none';
+    });
+    document.getElementById('cc-save-btn').addEventListener('click', async () => {
+      const firstName = document.getElementById('cc-first-name').value.trim();
+      if (!firstName) return;
+      const lastName = document.getElementById('cc-last-name').value.trim();
+      const phone = document.getElementById('cc-phone').value.trim();
+      const email = document.getElementById('cc-email').value.trim();
+      try {
+        const created = await createManualClient(business.id, { firstName, lastName, phone, email });
+        const name = ((created.first_name || '') + ' ' + (created.last_name || '')).trim();
+        noSelectedClient = { type: 'manual', id: created.id, name: name, phone: created.phone || '' };
+        showToast('Fiche client cr&eacute;&eacute;e.');
+        updateNoClientBox();
+        closeClientSearch();
+      } catch (err) {
+        console.error(err);
+        showToast('Erreur lors de la cr&eacute;ation.');
+      }
+    });
+    document.getElementById('guest-client-toggle').addEventListener('click', () => {
+      const form = document.getElementById('guest-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      document.getElementById('client-create-form').style.display = 'none';
+    });
+    document.getElementById('guest-save-btn').addEventListener('click', () => {
+      const name = document.getElementById('guest-name').value.trim();
+      const phone = document.getElementById('guest-phone').value.trim();
+      noSelectedClient = { type: 'guest', name: name || 'Client de passage', phone: phone };
+      updateNoClientBox();
+      closeClientSearch();
+    });
 
     document.getElementById('new-order-btn').addEventListener('click', openNewOrderModal);
     document.getElementById('new-order-close').addEventListener('click', closeNewOrderModal);
@@ -640,8 +803,8 @@ ini_set('log_errors', 1);
         await createManualOrder({
           businessId: business.id,
           customerId: (noSelectedClient && noSelectedClient.type === 'dambou') ? noSelectedClient.id : null,
-          customerName: document.getElementById('no-client-name').value.trim(),
-          customerPhone: document.getElementById('no-client-phone').value.trim(),
+          customerName: noSelectedClient ? noSelectedClient.name : '',
+          customerPhone: noSelectedClient ? noSelectedClient.phone : '',
           pickupTime: document.getElementById('no-pickup-time').value || null,
           lines: lines, total: total,
         });
@@ -654,7 +817,7 @@ ini_set('log_errors', 1);
         errorEl.style.display = 'block';
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Cr&eacute;er la commande';
+        btn.textContent = fr('Cr&eacute;er la commande');
       }
     });
 

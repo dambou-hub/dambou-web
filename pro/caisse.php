@@ -247,7 +247,11 @@ ini_set('log_errors', 1);
     function currencySymbol() {
       return { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[(business && business.currency_code) || 'EUR'] || '\u20ac';
     }
-    function fmt(n) { return Math.round(n) + ' ' + currencySymbol(); }
+    function fmt(n) {
+      const v = Math.round((n || 0) * 100) / 100;
+      const display = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
+      return display + ' ' + currencySymbol();
+    }
 
     // -----------------------------------------------------
     // CATALOGUE (grille de vente)

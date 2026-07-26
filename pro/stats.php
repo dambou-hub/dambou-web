@@ -106,7 +106,11 @@ ini_set('log_errors', 1);
     function currencySymbol() {
       return { EUR: '\u20ac', MAD: 'DH', CHF: 'CHF', XOF: 'FCFA' }[(business && business.currency_code) || 'EUR'] || '\u20ac';
     }
-    function fmt(n) { return Math.round(n || 0) + ' ' + currencySymbol(); }
+    function fmt(n) {
+      const v = Math.round((n || 0) * 100) / 100;
+      const display = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
+      return display + ' ' + currencySymbol();
+    }
 
     // Reproduit _periodLabel de stats_screen.dart (cas 0 a 3, pas de periode
     // personnalisee sur le web pour l'instant)

@@ -136,7 +136,9 @@ export async function editPickupTime(orderId, newTime) {
         if (order && order.customer_id) {
             await supabase.from('notifications').insert({
                 user_id: order.customer_id, title: 'Heure de retrait modifiee',
-                message: 'Votre commande ' + (order.order_number || '') + ' sera prete a ' + newTime + '.',
+                message: newTime
+                    ? 'Votre commande ' + (order.order_number || '') + ' sera prete a ' + newTime + '.'
+                    : 'Votre commande ' + (order.order_number || '') + ' sera preparee des que possible.',
                 type: 'order', is_read: false, sent_at: new Date().toISOString(),
                 data: { order_id: orderId },
             });

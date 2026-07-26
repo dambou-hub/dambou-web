@@ -126,7 +126,10 @@ ini_set('log_errors', 1);
       </div>
 
       <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:5px">Heure de retrait (optionnel)</label>
-      <input type="time" id="no-pickup-time" style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:14px">
+      <div id="no-pickup-btn" style="width:100%; padding:11px 12px; border:1px solid var(--card-border); border-radius:10px; font-size:13px; font-family:inherit; margin-bottom:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text-light)">
+        <span id="no-pickup-label">D&egrave;s que possible</span>
+        <span>&#128337;</span>
+      </div>
 
       <label style="display:block; font-size:12px; font-weight:700; color:var(--text-medium); margin-bottom:6px">Ajouter un produit</label>
       <div id="no-products-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:8px; max-height:180px; overflow-y:auto; margin-bottom:14px"></div>
@@ -173,7 +176,18 @@ ini_set('log_errors', 1);
     </div>
   </div>
 
-  <!-- Personnalisation ingredients d'une ligne -->
+  <!-- Choix d'un creneau (grille de boutons, comme Planity -- pas de saisie manuelle) -->
+  <div class="overlay" id="time-picker-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.4); display:none; align-items:center; justify-content:center; z-index:60; padding:16px">
+    <div class="panel" style="background:white; border-radius:18px; width:100%; max-width:340px; max-height:70vh; display:flex; flex-direction:column; padding:20px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+        <span style="font-size:15px; font-weight:800">Choisir un cr&eacute;neau</span>
+        <button id="time-picker-close" style="border:none; background:none; font-size:22px; color:var(--text-light); cursor:pointer">&times;</button>
+      </div>
+      <button type="button" id="time-picker-asap" style="width:100%; padding:11px; margin-bottom:12px; border:1.5px solid var(--primary); border-radius:12px; background:rgba(0,191,165,0.06); color:var(--primary-dark); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer">D&egrave;s que possible</button>
+      <div id="time-picker-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; overflow-y:auto"></div>
+    </div>
+  </div>
+
   <div class="overlay" id="ing-overlay" style="position:fixed; inset:0; background:rgba(45,55,72,0.4); display:none; align-items:center; justify-content:center; z-index:55; padding:16px">
     <div class="panel" style="background:white; border-radius:18px; width:100%; max-width:420px; max-height:85vh; overflow-y:auto; padding:20px">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
@@ -190,7 +204,7 @@ ini_set('log_errors', 1);
 
   <script type="module">
     import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
-    import { clientName, bookingPhone, searchClients, createManualClient } from '/pro/js/planning.js';
+    import { clientName, bookingPhone, searchClients, createManualClient, getDayHours, timeToMinutes } from '/pro/js/planning.js';
     import {
       loadOrders, loadCompletedOrders, categorizeOrders, updateOrderStatus, editPickupTime,
       cancelOrderWithRefund, isPaidOnline, orderNeedsPrep, loadProductsForNewOrder, createManualOrder,
@@ -425,18 +439,51 @@ ini_set('log_errors', 1);
       }
     }
 
+    function openTimePicker(currentTime, onSelect) {
+      const hours = getDayHours(business, new Date());
+      const startMin = hours.isOpen === false ? 8 * 60 : timeToMinutes(hours.start || '08:00');
+      const endMin = hours.isOpen === false ? 20 * 60 : timeToMinutes(hours.end || '20:00');
+      const grid = document.getElementById('time-picker-grid');
+      grid.innerHTML = '';
+      for (let m = startMin; m <= endMin; m += 15) {
+        const h = String(Math.floor(m / 60)).padStart(2, '0');
+        const mm = String(m % 60).padStart(2, '0');
+        const label = h + ':' + mm;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isSelected = currentTime === label;
+        btn.style.cssText = 'padding:10px 4px; border-radius:10px; border:1.5px solid ' + (isSelected ? 'var(--primary)' : 'var(--card-border)') + '; background:' + (isSelected ? 'rgba(0,191,165,0.1)' : 'white') + '; color:' + (isSelected ? 'var(--primary-dark)' : 'var(--text-dark)') + '; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer';
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+          document.getElementById('time-picker-overlay').classList.remove('visible');
+          onSelect(label);
+        });
+        grid.appendChild(btn);
+      }
+      document.getElementById('time-picker-asap').onclick = () => {
+        document.getElementById('time-picker-overlay').classList.remove('visible');
+        onSelect(null);
+      };
+      document.getElementById('time-picker-overlay').classList.add('visible');
+    }
+    document.getElementById('time-picker-close').addEventListener('click', () => {
+      document.getElementById('time-picker-overlay').classList.remove('visible');
+    });
+    document.getElementById('time-picker-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'time-picker-overlay') document.getElementById('time-picker-overlay').classList.remove('visible');
+    });
+
     function openEditPickupTime(order) {
-      const current = order.pickup_time ? order.pickup_time.substring(0, 5) : '';
-      const newTime = prompt(fr("Nouvelle heure de retrait (format HH:MM) :"), current);
-      if (!newTime || !/^\d{1,2}:\d{2}$/.test(newTime)) return;
-      const parts = newTime.split(':');
-      const padded = String(parts[0]).padStart(2, '0') + ':' + String(parts[1]).padStart(2, '0');
-      editPickupTime(order.id, padded).then(() => {
-        showToast('Heure de retrait modifi&eacute;e.');
-        loadAndRender();
-      }).catch((err) => {
-        console.error(err);
-        showToast('Erreur lors de la modification.');
+      const current = order.pickup_time ? order.pickup_time.substring(0, 5) : null;
+      openTimePicker(current, (newTime) => {
+        if (newTime === current) return;
+        editPickupTime(order.id, newTime).then(() => {
+          showToast(newTime ? 'Heure de retrait modifi&eacute;e.' : 'Heure de retrait retir&eacute;e.');
+          loadAndRender();
+        }).catch((err) => {
+          console.error(err);
+          showToast('Erreur lors de la modification.');
+        });
       });
     }
 
@@ -462,6 +509,7 @@ ini_set('log_errors', 1);
     let noAllIngredients = [];
     let noCartLines = []; // [{lineId, productId, productName, basePrice, presentIngs:Set, addedFree:Set, addedPaid:Set}]
     let noSelectedClient = null; // {id, type} ou null
+    let noPickupTime = null;
     let noLineCounter = 0;
     let currentIngLineId = null;
     let noDataLoaded = false;
@@ -492,7 +540,8 @@ ini_set('log_errors', 1);
       noCartLines = [];
       noSelectedClient = null;
       updateNoClientBox();
-      document.getElementById('no-pickup-time').value = '';
+      noPickupTime = null;
+      document.getElementById('no-pickup-label').textContent = fr('D&egrave;s que possible');
       document.getElementById('no-error').style.display = 'none';
       renderProductGrid();
       renderCartLines();
@@ -782,6 +831,13 @@ ini_set('log_errors', 1);
     document.getElementById('new-order-overlay').addEventListener('click', (e) => {
       if (e.target.id === 'new-order-overlay') closeNewOrderModal();
     });
+    document.getElementById('no-pickup-btn').addEventListener('click', () => {
+      openTimePicker(noPickupTime, (newTime) => {
+        noPickupTime = newTime;
+        document.getElementById('no-pickup-label').textContent = fr(newTime || 'D&egrave;s que possible');
+        document.getElementById('no-pickup-label').style.color = newTime ? 'var(--text-dark)' : 'var(--text-light)';
+      });
+    });
 
     document.getElementById('no-submit-btn').addEventListener('click', async () => {
       const errorEl = document.getElementById('no-error');
@@ -805,7 +861,7 @@ ini_set('log_errors', 1);
           customerId: (noSelectedClient && noSelectedClient.type === 'dambou') ? noSelectedClient.id : null,
           customerName: noSelectedClient ? noSelectedClient.name : '',
           customerPhone: noSelectedClient ? noSelectedClient.phone : '',
-          pickupTime: document.getElementById('no-pickup-time').value || null,
+          pickupTime: noPickupTime,
           lines: lines, total: total,
         });
         showToast('Commande cr&eacute;&eacute;e.');

@@ -142,6 +142,26 @@ ini_set('log_errors', 1);
       <a class="login-link" href="/pro/login">Deja un compte ? Se connecter</a>
     </div>
 
+    <!-- ETAPE 1bis : VERIFICATION OTP (reproduit otp_verification_screen.dart) -->
+    <div id="step-otp" style="display:none">
+      <div style="width:76px; height:76px; border-radius:50%; background:rgba(0,191,165,0.1); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:34px">&#128231;</div>
+      <div class="step-title" style="text-align:center">V&eacute;rifiez votre email</div>
+      <div class="step-sub" style="text-align:center">On vous a envoy&eacute; un code &agrave; 6 chiffres &agrave;<br><strong id="otp-email-display"></strong></div>
+      <div id="otp-digits" style="display:flex; justify-content:space-between; gap:8px; margin:28px 0 16px">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="0" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="1" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="2" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="3" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="4" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="5" style="width:100%; height:56px; text-align:center; font-size:22px; font-weight:800; border:1.5px solid var(--card-border); border-radius:14px; font-family:inherit">
+      </div>
+      <div class="error-msg" id="otp-error"></div>
+      <button type="button" class="primary" id="otp-verify-btn" disabled>V&eacute;rifier mon email</button>
+      <div style="text-align:center; margin-top:20px; font-size:14px; color:var(--text-medium)">
+        Pas re&ccedil;u ? <span id="otp-resend-link" style="color:var(--text-light); font-weight:700; cursor:default">Renvoyer dans <span id="otp-countdown">60</span>s</span>
+      </div>
+    </div>
+
     <!-- ETAPE 2 : ACTIVITE -->
     <div id="step-activity" style="display:none">
       <div class="step-title">Votre type d'activit&eacute;</div>
@@ -174,7 +194,7 @@ ini_set('log_errors', 1);
 </div>
 
 <script type="module">
-  import { createAccount, loadTemplates, searchAddress, reverseGeocode, createBusinessWithTemplate, COUNTRIES, flagEmoji } from '/pro/js/register.js';
+  import { createAccount, verifyOtpAndCompleteProfile, resendOtp, loadTemplates, searchAddress, reverseGeocode, createBusinessWithTemplate, COUNTRIES, flagEmoji } from '/pro/js/register.js';
   import { supabase, fr } from '/pro/js/auth.js';
 
   // -----------------------------
@@ -288,21 +308,28 @@ ini_set('log_errors', 1);
     submitBtn.textContent = 'Creation...';
 
     try {
-      const user = await createAccount({
+      const profile = {
         firstName: document.getElementById('first-name').value,
         lastName: document.getElementById('last-name').value,
-        email: document.getElementById('email').value,
         phone: document.getElementById('phone').value,
         phonePrefix: selectedCountry.phonePrefix,
+      };
+      const result = await createAccount({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: document.getElementById('email').value,
+        phone: profile.phone,
+        phonePrefix: profile.phonePrefix,
         password: password,
       });
-      currentUser = user;
+      currentUser = result.user;
 
       // Garde-fou : supabase.auth.signUp() peut reussir "silencieusement" sur
       // un email deja utilise (reutilise le compte existant sans erreur, pour
       // eviter l'enumeration de comptes). Sans cette verification, on créerait
       // un deuxieme business pour un compte qui en a deja un.
-      const { data: existingBiz } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+      // (SELECT public sur businesses, fonctionne meme sans session active.)
+      const { data: existingBiz } = await supabase.from('businesses').select('id').eq('owner_id', result.user.id).limit(1);
       if (existingBiz && existingBiz.length > 0) {
         showError('account-error', fr('Ce compte est d&eacute;j&agrave; associ&eacute; &agrave; un &eacute;tablissement. Connectez-vous plut&ocirc;t.'));
         submitBtn.disabled = false;
@@ -310,8 +337,14 @@ ini_set('log_errors', 1);
         return;
       }
 
-      goToStep(1);
-      initActivityStep();
+      if (result.session) {
+        // Edge case : confirmation par code non requise (deja confirme,
+        // ou desactivee cote Supabase) -- on saute directement l'etape OTP.
+        goToStep(1);
+        initActivityStep();
+      } else {
+        openOtpStep(document.getElementById('email').value.trim(), profile);
+      }
     } catch (err) {
       const msg = (err && err.message) || '';
       if (msg.includes('already registered') || msg.includes('already exists')) {
@@ -326,6 +359,105 @@ ini_set('log_errors', 1);
       submitBtn.textContent = 'Creer mon compte et continuer';
     }
   });
+
+  // -----------------------------
+  // ETAPE 1bis : VERIFICATION OTP (reproduit otp_verification_screen.dart)
+  // -----------------------------
+  let otpEmail = '';
+  let otpProfile = null;
+  let otpCountdownTimer = null;
+
+  function openOtpStep(email, profile) {
+    otpEmail = email;
+    otpProfile = profile;
+    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('step-account').style.display = 'none';
+    document.getElementById('step-otp').style.display = 'block';
+    document.querySelectorAll('.otp-digit').forEach((inp) => { inp.value = ''; });
+    document.getElementById('otp-error').classList.remove('visible');
+    startOtpCountdown();
+    document.querySelector('.otp-digit[data-idx="0"]').focus();
+  }
+
+  function otpCode() {
+    return Array.from(document.querySelectorAll('.otp-digit')).map((i) => i.value).join('');
+  }
+
+  document.querySelectorAll('.otp-digit').forEach((input, idx, all) => {
+    input.addEventListener('input', () => {
+      input.value = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+      if (input.value && idx < all.length - 1) all[idx + 1].focus();
+      document.getElementById('otp-verify-btn').disabled = otpCode().length < 6;
+      if (otpCode().length === 6) verifyOtpCode();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && idx > 0) all[idx - 1].focus();
+    });
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const digits = (e.clipboardData.getData('text') || '').replace(/[^0-9]/g, '').slice(0, 6).split('');
+      digits.forEach((d, i) => { if (all[i]) all[i].value = d; });
+      if (digits.length) all[Math.min(digits.length, all.length) - 1].focus();
+      document.getElementById('otp-verify-btn').disabled = otpCode().length < 6;
+      if (otpCode().length === 6) verifyOtpCode();
+    });
+  });
+
+  function startOtpCountdown() {
+    let remaining = 60;
+    const link = document.getElementById('otp-resend-link');
+    link.style.cursor = 'default';
+    link.style.color = 'var(--text-light)';
+    link.innerHTML = 'Renvoyer dans <span id="otp-countdown">60</span>s';
+    clearInterval(otpCountdownTimer);
+    otpCountdownTimer = setInterval(() => {
+      remaining--;
+      const c = document.getElementById('otp-countdown');
+      if (c) c.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(otpCountdownTimer);
+        otpCountdownTimer = null;
+        link.textContent = 'Renvoyer le code';
+        link.style.cursor = 'pointer';
+        link.style.color = 'var(--primary)';
+      }
+    }, 1000);
+  }
+
+  document.getElementById('otp-resend-link').addEventListener('click', async () => {
+    if (otpCountdownTimer) return; // countdown encore actif
+    try {
+      await resendOtp(otpEmail);
+      startOtpCountdown();
+    } catch (err) {
+      console.error(err);
+      showError('otp-error', 'Impossible de renvoyer le code.');
+    }
+  });
+
+  async function verifyOtpCode() {
+    const code = otpCode();
+    if (code.length < 6) return;
+    hideError('otp-error');
+    const btn = document.getElementById('otp-verify-btn');
+    btn.disabled = true;
+    btn.textContent = fr('V&eacute;rification...');
+    try {
+      const user = await verifyOtpAndCompleteProfile(otpEmail, code, otpProfile);
+      currentUser = user;
+      goToStep(1);
+      initActivityStep();
+    } catch (err) {
+      console.error(err);
+      showError('otp-error', fr('Code incorrect. R&eacute;essayez.'));
+      document.querySelectorAll('.otp-digit').forEach((inp) => { inp.value = ''; });
+      document.querySelector('.otp-digit[data-idx="0"]').focus();
+    } finally {
+      btn.disabled = otpCode().length < 6;
+      btn.textContent = fr('V&eacute;rifier mon email');
+    }
+  }
+  document.getElementById('otp-verify-btn').addEventListener('click', verifyOtpCode);
 
   // -----------------------------
   // ETAPE 2 : ACTIVITE

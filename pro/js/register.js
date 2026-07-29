@@ -48,13 +48,33 @@ export async function createAccount({ firstName, lastName, email, phone, phonePr
     if (error) throw error;
     if (!data.user) throw new Error('Compte non cree.');
 
+    // Pas d'upsert vers users ici : avec la confirmation par code (OTP)
+    // activee cote Supabase, signUp() ne renvoie PAS de session active tant
+    // que le code n'est pas verifie -- un insert/upsert a ce stade echouerait
+    // (RLS basee sur auth.uid()). L'upsert se fait desormais dans
+    // completeProfileAfterOtp(), appelee une fois le code verifie.
+    return { user: data.user, session: data.session };
+}
+
+// Verifie le code a 6 chiffres recu par email, puis complete la fiche users
+// (reproduit otp_verification_screen.dart + la partie upsert de l'ancien
+// createAccount()).
+export async function verifyOtpAndCompleteProfile(email, code, profile) {
+    const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: 'signup',
+    });
+    if (error) throw error;
+    if (!data.user) throw new Error('Verification echouee.');
+
     try {
         await supabase.from('users').upsert({
             id: data.user.id,
             email: email.trim(),
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            phone: phonePrefix + phone.trim(),
+            first_name: profile.firstName.trim(),
+            last_name: profile.lastName.trim(),
+            phone: profile.phonePrefix + profile.phone.trim(),
             role: 'business_owner',
             onboarding_step: 1,
         }, { onConflict: 'id' });
@@ -64,6 +84,11 @@ export async function createAccount({ firstName, lastName, email, phone, phonePr
     }
 
     return data.user;
+}
+
+export async function resendOtp(email) {
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+    if (error) throw error;
 }
 
 // ------------------------------------------------------------

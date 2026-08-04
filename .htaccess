@@ -8,6 +8,10 @@ RewriteRule ^privacy$ privacy.php [L,QSA]
 RewriteRule ^cgu$ cgu.php [L,QSA]
 RewriteRule ^admin$ admin.html [L,QSA]
 
+# /pro existe en tant que dossier physique (contient page.php) : sans cette regle,
+# Apache le traiterait comme repertoire et ne passerait jamais par index.php.
+RewriteRule ^pro/?$ index.php [L,QSA]
+
 # Ne pas réécrire les fichiers/dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

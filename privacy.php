@@ -1,5 +1,5 @@
 <?php
-// dambou.fr/privacy — Politique de confidentialité
+// dambou.fr/privacy - Politique de confidentialité
 // Uploader dans public_html/privacy.php sur Hostinger
 // Accessible via https://dambou.fr/privacy
 $last_updated = "2 juin 2026";
@@ -9,7 +9,7 @@ $last_updated = "2 juin 2026";
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Politique de confidentialité — DAMBOU</title>
+  <title>Politique de confidentialité - DAMBOU</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -72,7 +72,7 @@ $last_updated = "2 juin 2026";
 
 <header>
   <a href="https://dambou.fr">
-    <span class="logo">🥟 DAMBOU</span>
+    <span class="logo">&#129951; DAMBOU</span>
   </a>
 </header>
 
@@ -97,7 +97,7 @@ $last_updated = "2 juin 2026";
     <li><strong>Données d'identité :</strong> prénom, nom</li>
     <li><strong>Données de contact :</strong> adresse e-mail, numéro de téléphone</li>
     <li><strong>Données de localisation :</strong> position géographique (uniquement si vous l'autorisez, pour trouver les professionnels proches de vous)</li>
-    <li><strong>Données de paiement :</strong> informations de carte bancaire (traitées exclusivement par Stripe — nous n'y avons pas accès)</li>
+    <li><strong>Données de paiement :</strong> informations de carte bancaire (traitées exclusivement par Stripe - nous n'y avons pas accès)</li>
     <li><strong>Données d'utilisation :</strong> commandes passées, réservations, points de fidélité, transactions</li>
     <li><strong>Token de notification :</strong> identifiant technique (FCM token) permettant l'envoi de notifications push</li>
   </ul>
@@ -126,10 +126,10 @@ $last_updated = "2 juin 2026";
   <h2>5. Prestataires tiers</h2>
   <p>Vos données peuvent être transmises aux prestataires suivants, dans les limites strictement nécessaires à leur mission :</p>
   <ul>
-    <li><strong>Supabase</strong> (Supabase Inc., États-Unis) — hébergement de la base de données et authentification. <a href="https://supabase.com/privacy" target="_blank">Politique de confidentialité Supabase</a></li>
-    <li><strong>Firebase / Google</strong> (Google LLC, États-Unis) — notifications push (FCM). <a href="https://firebase.google.com/support/privacy" target="_blank">Politique de confidentialité Firebase</a></li>
-    <li><strong>Stripe</strong> (Stripe Inc., États-Unis) — traitement des paiements en ligne. Stripe est certifié PCI-DSS. <a href="https://stripe.com/fr/privacy" target="_blank">Politique de confidentialité Stripe</a></li>
-    <li><strong>Resend</strong> — envoi d'e-mails transactionnels (factures, confirmations). <a href="https://resend.com/privacy" target="_blank">Politique de confidentialité Resend</a></li>
+    <li><strong>Supabase</strong> (Supabase Inc., États-Unis) - hébergement de la base de données et authentification. <a href="https://supabase.com/privacy" target="_blank">Politique de confidentialité Supabase</a></li>
+    <li><strong>Firebase / Google</strong> (Google LLC, États-Unis) - notifications push (FCM). <a href="https://firebase.google.com/support/privacy" target="_blank">Politique de confidentialité Firebase</a></li>
+    <li><strong>Stripe</strong> (Stripe Inc., États-Unis) - traitement des paiements en ligne. Stripe est certifié PCI-DSS. <a href="https://stripe.com/fr/privacy" target="_blank">Politique de confidentialité Stripe</a></li>
+    <li><strong>Resend</strong> - envoi d'e-mails transactionnels (factures, confirmations). <a href="https://resend.com/privacy" target="_blank">Politique de confidentialité Resend</a></li>
   </ul>
   <p>Ces prestataires sont contractuellement tenus de protéger vos données et de ne pas les utiliser à d'autres fins.</p>
 
@@ -170,13 +170,13 @@ $last_updated = "2 juin 2026";
 
   <h2>13. Contact</h2>
   <p>Pour toute question relative à cette politique ou au traitement de vos données :<br>
-  📧 <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br>
-  🌐 <a href="https://dambou.fr">https://dambou.fr</a>
+  &#128231; <a href="mailto:contact@dambou.fr">contact@dambou.fr</a><br>
+  &#127760; <a href="https://dambou.fr">https://dambou.fr</a>
   </p>
 </div>
 
 <footer>
-  &copy; <?= date('Y') ?> DAMBOU — <a href="https://dambou.fr/cgu">CGU</a> · <a href="https://dambou.fr/privacy">Confidentialité</a>
+  &copy; <?= date('Y') ?> DAMBOU - <a href="https://dambou.fr/cgu">CGU</a> · <a href="https://dambou.fr/privacy">Confidentialité</a>
 </footer>
 
 </body>

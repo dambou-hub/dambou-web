@@ -382,19 +382,19 @@ body {
   <div class="features">
     <div class="feature">
       <div class="feature-icon">+</div>
-      <div class="feature-text"><strong>Commandes en ligne</strong> - vos clients commandent depuis leur telephone</div>
+      <div class="feature-text"><strong>Commandes en ligne</strong> - vos clients commandent depuis leur téléphone</div>
     </div>
     <div class="feature">
       <div class="feature-icon">+</div>
-      <div class="feature-text"><strong>Reservations</strong> - agenda et gestion des rendez-vous</div>
+      <div class="feature-text"><strong>Réservations</strong> - agenda et gestion des rendez-vous</div>
     </div>
     <div class="feature">
       <div class="feature-icon">+</div>
-      <div class="feature-text"><strong>Caisse (POS)</strong> - encaissement sur place avec recu</div>
+      <div class="feature-text"><strong>Caisse (POS)</strong> - encaissement sur place avec reçu</div>
     </div>
     <div class="feature">
       <div class="feature-icon">+</div>
-      <div class="feature-text"><strong>Fidelite</strong> - programme de points automatique</div>
+      <div class="feature-text"><strong>Fidélité</strong> - programme de points automatique</div>
     </div>
     <div class="feature">
       <div class="feature-icon">+</div>
@@ -415,7 +415,7 @@ body {
       <div class="option-check" id="check-stripe_connect"></div>
       <div>
         <div class="option-title">Paiement en ligne par carte</div>
-        <div class="option-desc">Vos clients paient a la commande - carte bancaire, Apple Pay, Google Pay</div>
+        <div class="option-desc">Vos clients paient à la commande - carte bancaire, Apple Pay, Google Pay</div>
         <div class="option-price">Inclus dans l'abonnement - 1,4% + 0,10 <?php echo htmlspecialchars($price['symbol']); ?> / transaction</div>
       </div>
     </div>
@@ -423,7 +423,7 @@ body {
       <div class="option-check" id="check-terminal"></div>
       <div>
         <div class="option-title">Terminal de paiement (WisePad 3)</div>
-        <div class="option-desc">Encaissez en face a face par carte, sans contact, Apple Pay - lecteur Bluetooth</div>
+        <div class="option-desc">Encaissez en face à face par carte, sans contact, Apple Pay - lecteur Bluetooth</div>
         <div class="option-price">Lecteur : 59 <?php echo htmlspecialchars($price['symbol']); ?> - 1,4% + 0,10 <?php echo htmlspecialchars($price['symbol']); ?> / transaction</div>
       </div>
     </div>
@@ -434,13 +434,13 @@ body {
 
 <p class="trial-note">
   2 mois gratuits, sans carte bancaire requise.<br>
-  Resiliez a tout moment, sans engagement.
+  Résiliez à tout moment, sans engagement.
 </p>
 
 </form>
 
 <div class="footer">
-  <a href="/cgu">CGU</a> &middot; <a href="/privacy">Confidentialite</a>
+  <a href="/cgu">CGU</a> &middot; <a href="/privacy">Confidentialité</a>
 </div>
 
 </div>

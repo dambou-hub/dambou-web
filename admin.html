@@ -742,6 +742,27 @@ input:checked + .toggle-track:before { transform: translateX(16px); }
   </div>
 </div>
 
+<!-- ===== MODAL SUPPRESSION COMPTE ===== -->
+<div class="modal-overlay" id="deleteUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger)">🗑️ Supprimer ce compte</div>
+      <button class="modal-close" onclick="closeModal('deleteUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="deleteUserWarning" style="font-size:14px;line-height:1.6;color:var(--text)"></p>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">Tape <strong>SUPPRIMER</strong> pour confirmer</label>
+        <input class="form-input" id="deleteUserConfirmInput" placeholder="SUPPRIMER">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('deleteUserModal')">Annuler</button>
+      <button class="btn btn-danger" id="deleteUserConfirmBtn" onclick="confirmDeleteUser()">🗑️ Supprimer definitivement</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL TEMPLATE ===== -->
 <div class="modal-overlay" id="templateModal">
   <div class="modal">
@@ -804,6 +825,67 @@ input:checked + .toggle-track:before { transform: translateX(16px); }
 const SUPABASE_URL = 'https://unwrghiiocaztnecmpeh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVud3JnaGlpb2NhenRuZWNtcGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2Mjc4NTUsImV4cCI6MjA4MDIwMzg1NX0.m9s85OKGVTQbItxB8bHaCpfpvICRf5tWSztUyLvOeZw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// SUPPRESSION DE COMPTE (business et/ou user)
+// Appelle l'Edge Function admin-delete-user (necessite service_role,
+// jamais exposee ici -- voir supabase/functions/admin-delete-user).
+// ============================================================
+let _pendingDeleteUserId = null;
+let _pendingDeleteHasBusiness = false;
+
+function openDeleteModal(userId, label, hasBusiness) {
+  _pendingDeleteUserId = userId;
+  _pendingDeleteHasBusiness = hasBusiness;
+  const warningEl = document.getElementById('deleteUserWarning');
+  warningEl.innerHTML = hasBusiness
+    ? `Tu es sur le point de supprimer definitivement le compte de <strong>${label}</strong> ainsi que son business complet : catalogue, commandes, reservations, transactions, avis, employes, statistiques... <strong style="color:var(--danger)">Cette action est irreversible.</strong><br><br>Les commandes/avis passes chez d'autres pros par ce compte seront conserves mais anonymises.`
+    : `Tu es sur le point de supprimer definitivement le compte de <strong>${label}</strong>. <strong style="color:var(--danger)">Cette action est irreversible.</strong><br><br>Son historique de commandes/reservations/avis sera conserve mais anonymise (le pro concerne garde ses statistiques).`;
+  document.getElementById('deleteUserConfirmInput').value = '';
+  openModal('deleteUserModal');
+}
+
+async function confirmDeleteUser() {
+  const confirmValue = document.getElementById('deleteUserConfirmInput').value.trim();
+  if (confirmValue !== 'SUPPRIMER') {
+    toast('Tape SUPPRIMER pour confirmer', 'error');
+    return;
+  }
+  if (!_pendingDeleteUserId) return;
+
+  const btn = document.getElementById('deleteUserConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Suppression en cours...';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-delete-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${session?.access_token || SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ user_id: _pendingDeleteUserId }),
+    });
+    const result = await res.json();
+
+    if (!res.ok || result.error) {
+      toast(result.error || 'Erreur lors de la suppression', 'error');
+      return;
+    }
+
+    toast('Compte supprime avec succes', 'success');
+    closeModal('deleteUserModal');
+    refreshCurrentView();
+  } catch (err) {
+    toast('Erreur reseau : ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑️ Supprimer definitivement';
+    _pendingDeleteUserId = null;
+  }
+}
 
 // ============================================================
 // STATE
@@ -1235,6 +1317,10 @@ function renderBizRows(data, tbody) {
           onclick="openFeaturedFromBtn(this)">
           ${b.is_featured ? '⭐ Vedette' : '☆ Mettre en vedette'}
         </button>
+        <button class="btn btn-danger btn-sm" style="margin-top:4px"
+          onclick="openDeleteModal('${b.owner_id}', '${(b.name||'').replace(/"/g,'&quot;')}', true)">
+          🗑️ Supprimer le compte
+        </button>
       </td>
     </tr>
   `).join('');
@@ -1290,6 +1376,9 @@ function renderUserRows(data, tbody) {
         ${u.role !== 'admin' ? `
           <button class="btn btn-sm ${u.is_active === false ? 'btn-secondary' : 'btn-warning'}" onclick="toggleUser('${u.id}',${u.is_active !== false})">
             ${u.is_active === false ? '▶ Réactiver' : '⏸ Désactiver'}
+          </button>
+          <button class="btn btn-danger btn-sm" style="margin-top:4px" onclick="openDeleteModal('${u.id}', '${(u.first_name||u.email||'').replace(/"/g,'&quot;')}', false)">
+            🗑️ Supprimer
           </button>` : '<span style="font-size:11px;color:var(--light)">—</span>'}
       </td>
     </tr>

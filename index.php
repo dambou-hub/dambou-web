@@ -12,7 +12,7 @@ $reservedPages = [
     'privacy'         => 'privacy.php',
     'cgu'             => 'cgu.php',
     'abonnement'      => 'abonnement.php',
-    'abonnement/success' => 'abonnement/success.php',
+    'abonnement-success' => 'abonnement-success.php',
     'mentions'        => 'mentions.php',
     'admin'           => 'admin.html',
 ];

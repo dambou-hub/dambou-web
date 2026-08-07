@@ -1,0 +1,3 @@
+# Fichier contenant la vraie cle secrete Stripe -- ne doit JAMAIS etre
+# commite sur GitHub. Uploade manuellement sur Hostinger uniquement.
+stripe-config.php

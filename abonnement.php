@@ -75,7 +75,19 @@ $price = $PRICES[$currency_code];
 $business_id = $_GET['business_id'] ?? '';
 $email       = $_GET['email'] ?? '';
 
-$STRIPE_SECRET_KEY = getenv('STRIPE_SECRET_KEY') ?: '';
+// Cle secrete Stripe : lue depuis stripe-config.php (fichier NON commite sur
+// GitHub, uploade manuellement sur Hostinger -- voir stripe-config.example.php
+// pour le format). Repli sur une variable d'environnement si jamais
+// disponible un jour sur cet hebergement.
+$STRIPE_SECRET_KEY = '';
+$stripeConfigFile = __DIR__ . '/stripe-config.php';
+if (file_exists($stripeConfigFile)) {
+  $stripeConfig = include $stripeConfigFile;
+  $STRIPE_SECRET_KEY = $stripeConfig['secret_key'] ?? '';
+}
+if (empty($STRIPE_SECRET_KEY)) {
+  $STRIPE_SECRET_KEY = getenv('STRIPE_SECRET_KEY') ?: '';
+}
 
 // POST - creer session Stripe
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($STRIPE_SECRET_KEY)) {

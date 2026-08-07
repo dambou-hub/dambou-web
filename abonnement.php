@@ -1,15 +1,21 @@
 <?php
 // dambou.fr/abonnement
 $PRICES = array(
+  // ============================================================
+  // TARIF DE TEST TEMPORAIRE (mensuel EUR) -- a REMETTRE apres les
+  // simulations : price_id normal = price_1TkIC3Lh7m1wDGRjQ146c59B,
+  // monthly_amount = '29', monthly_label = '29 EUR / mois',
+  // equiv_label = 'soit 24,90 EUR / mois - 2 mois offerts'
+  // ============================================================
   'eur' => array(
-    'monthly' => 'price_1TkIC3Lh7m1wDGRjQ146c59B',
+    'monthly' => 'price_1U1iCpLh7m1wDGRjAVICnOCG',
     'yearly'  => 'price_1TkIDkLh7m1wDGRjIETOsaAt',
     'symbol'  => 'EUR',
-    'monthly_amount' => '29',
+    'monthly_amount' => '1,20',
     'yearly_amount'  => '299',
-    'monthly_label'  => '29 EUR / mois',
+    'monthly_label'  => '1,20 EUR / mois (TEST)',
     'yearly_label'   => '299 EUR / an',
-    'equiv_label'    => 'soit 24,90 EUR / mois - 2 mois offerts',
+    'equiv_label'    => 'Tarif de test -- pas le vrai prix',
     'flag'           => 'France / Europe',
   ),
   'mad' => array(
@@ -419,7 +425,8 @@ body {
         <div class="option-price">Inclus dans l'abonnement - 1,4% + 0,10 <?php echo htmlspecialchars($price['symbol']); ?> / transaction</div>
       </div>
     </div>
-    <div class="option-item" id="opt-terminal" onclick="toggleOption('terminal')">
+    <div class="option-item" id="opt-terminal" onclick="toggleOption('terminal')" style="display:none">
+      <!-- Reserve a la V2, masque pour l'instant -->
       <div class="option-check" id="check-terminal"></div>
       <div>
         <div class="option-title">Terminal de paiement (WisePad 3)</div>

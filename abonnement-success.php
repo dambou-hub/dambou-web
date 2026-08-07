@@ -96,7 +96,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="card">
     <div class="success-icon">&#10003;</div>
     <div class="success-title">Abonnement activé !</div>
-    <div class="success-sub">
+    <div class="success-sub" id="success-sub">
       Bienvenue sur Dambou Pro. Retournez sur l'application pour commencer.
     </div>
   </div>
@@ -108,8 +108,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="step">
       <div class="step-num">1</div>
       <div>
-        <div class="step-title">Ouvrez l'application Dambou</div>
-        <div class="step-desc">Votre abonnement est automatiquement actif dans l'app.</div>
+        <div class="step-title" id="step1-title">Ouvrez l'application Dambou</div>
+        <div class="step-desc" id="step1-desc">Votre abonnement est automatiquement actif dans l'app.</div>
       </div>
     </div>
 
@@ -174,8 +174,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
   <?php endif; ?>
 
-  <!-- Retour app -->
-  <a href="dambouapp://home" class="btn btn-primary">
+  <!-- Retour app ou dashboard selon la provenance -->
+  <a href="dambouapp://home" class="btn btn-primary" id="return-btn">
     Retourner dans l'application
   </a>
 
@@ -185,5 +185,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 
 </div>
+
+<script type="module">
+  import { supabase, fr } from '/pro/js/auth.js';
+  // Si une session web est active, la personne vient du site (dashboard.php,
+  // pas de l'app mobile) -- adapter les textes/lien qui supposent a tort un
+  // retour vers l'application.
+  const { data } = await supabase.auth.getSession();
+  if (data && data.session) {
+    const sub = document.getElementById('success-sub');
+    if (sub) sub.textContent = fr('Bienvenue sur Dambou Pro. Votre abonnement est actif.');
+    const t1 = document.getElementById('step1-title');
+    if (t1) t1.textContent = fr('Votre abonnement est actif');
+    const d1 = document.getElementById('step1-desc');
+    if (d1) d1.textContent = fr('Retrouvez toutes vos fonctionnalit&eacute;s dans le tableau de bord.');
+    const btn = document.getElementById('return-btn');
+    if (btn) {
+      btn.href = '/pro';
+      btn.textContent = fr('Retourner au tableau de bord');
+    }
+  }
+</script>
 </body>
 </html>

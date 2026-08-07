@@ -200,6 +200,21 @@ ini_set('log_errors', 1);
           <p>Activez ce dont vous avez besoin</p>
         </a>
       </div>
+
+      <a id="trial-banner" href="#" style="display:none; margin-top:20px; text-decoration:none">
+        <div style="background:linear-gradient(135deg, #00BFA5 0%, #00897B 100%); border-radius:18px; padding:22px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; box-shadow:0 8px 24px rgba(0,191,165,0.28); flex-wrap:wrap">
+          <div style="display:flex; align-items:center; gap:14px">
+            <div style="font-size:30px">&#9203;</div>
+            <div>
+              <div id="trial-banner-title" style="color:white; font-size:15px; font-weight:800; margin-bottom:2px"></div>
+              <div id="trial-banner-sub" style="color:rgba(255,255,255,0.85); font-size:12px; font-weight:600"></div>
+            </div>
+          </div>
+          <div style="background:white; color:var(--primary-dark); padding:11px 22px; border-radius:12px; font-size:14px; font-weight:800; white-space:nowrap">
+            Je m'abonne !!
+          </div>
+        </div>
+      </a>
     </div>
   </div>
 
@@ -296,6 +311,42 @@ ini_set('log_errors', 1);
       });
     }
 
+    function renderTrialBanner(business, email) {
+      const banner = document.getElementById('trial-banner');
+      const status = business.subscription_status;
+
+      if (status === 'active') {
+        banner.style.display = 'none';
+        return;
+      }
+
+      const params = 'business_id=' + encodeURIComponent(business.id) + '&email=' + encodeURIComponent(email);
+      banner.href = '/abonnement?' + params;
+
+      let title, sub;
+      if (status === 'past_due') {
+        title = fr('Le renouvellement de votre abonnement a &eacute;chou&eacute;');
+        sub = fr('V&eacute;rifiez votre moyen de paiement pour ne pas perdre l\'acc&egrave;s.');
+      } else if (business.trial_end_date) {
+        const end = new Date(business.trial_end_date);
+        const daysLeft = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysLeft > 1) {
+          title = fr('Votre essai prend fin dans ' + daysLeft + ' jours.');
+        } else if (daysLeft === 1) {
+          title = fr('Votre essai prend fin demain.');
+        } else {
+          title = fr('Votre essai gratuit est termin&eacute;.');
+        }
+        sub = fr('Abonnez-vous pour garder l\'acc&egrave;s &agrave; toutes vos fonctionnalit&eacute;s.');
+      } else {
+        title = fr('Profitez de toutes les fonctionnalit&eacute;s Dambou');
+        sub = fr('Abonnez-vous pour d&eacute;bloquer l\'ensemble des modules.');
+      }
+      document.getElementById('trial-banner-title').textContent = title;
+      document.getElementById('trial-banner-sub').textContent = sub;
+      banner.style.display = 'block';
+    }
+
     (async () => {
       const session = await requireAuth();
       if (!session) return; // requireAuth redirige deja vers /pro/login
@@ -311,6 +362,7 @@ ini_set('log_errors', 1);
         document.getElementById('topbar-logo').src = business.logo_url;
       }
       document.getElementById('topbar-name').textContent = business.name || 'Dambou Pro';
+      renderTrialBanner(business, session.user.email || '');
 
       // Planning et Reservations ne s'affichent que si le module "booking" est actif
       // (meme logique que _buildQuickActions() dans pro_home_screen.dart -- un food truck

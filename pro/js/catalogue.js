@@ -225,6 +225,29 @@ export async function saveIngredients(productId, ingredients) {
     if (error) throw error;
 }
 
+// ------------------------------------------------------------
+// REORDONNANCEMENT (categories : fleches, items : glisser-deposer),
+// reproduit _moveCategory() et le onReorder de ReorderableListView.builder
+// dans catalogue_screen.dart.
+// ------------------------------------------------------------
+// Met a jour sort_order = 0,1,2... pour la liste de categories dans son
+// nouvel ordre (deja reordonnee cote appelant avant l'appel).
+export async function saveCategoriesOrder(orderedCategories) {
+    await Promise.all(orderedCategories.map((cat, i) =>
+        supabase.from('categories').update({ sort_order: i }).eq('id', cat.id)
+    ));
+}
+
+// Met a jour sort_order = 0,1,2... pour une liste d'items (produits et/ou
+// services melanges) dans une meme categorie. Chaque item garde sa propre
+// table d'origine via _type.
+export async function saveItemsOrder(orderedItems) {
+    await Promise.all(orderedItems.map((item, i) => {
+        const table = item._type === 'product' ? 'products' : 'services';
+        return supabase.from(table).update({ sort_order: i }).eq('id', item.id);
+    }));
+}
+
 export async function toggleTrackStock(productId, current) {
     const { error } = await supabase.from('products').update({ track_stock: !current }).eq('id', productId);
     if (error) throw error;

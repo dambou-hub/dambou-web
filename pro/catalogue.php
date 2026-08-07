@@ -52,9 +52,13 @@ ini_set('log_errors', 1);
   .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
 
   .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-  .item-card { background: white; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; cursor: pointer; }
+  .item-card { background: white; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; cursor: pointer; position: relative; transition: opacity 0.15s, box-shadow 0.15s; }
   .item-card:hover { border-color: var(--primary); }
   .item-card.inactive { opacity: 0.5; }
+  .item-card.dragging { opacity: 0.4; }
+  .item-card.drag-over { box-shadow: inset 0 0 0 2px var(--primary); }
+  .drag-handle { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.9); color: var(--text-light); display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: -3px; cursor: grab; z-index: 2; }
+  .drag-handle:active { cursor: grabbing; }
   .item-thumb { width: 100%; height: 110px; background: var(--background); display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--text-light); overflow: hidden; }
   .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .item-info { padding: 10px 12px; }
@@ -208,6 +212,7 @@ ini_set('log_errors', 1);
       TVA_RATES, loadCategories, loadProducts, loadServices,
       createCategory, deleteCategory, uploadItemImage, saveItem, deleteItem, updateItemImageUrl,
       loadIngredientsForProduct, loadAllBusinessIngredientNames, saveIngredients,
+      saveCategoriesOrder, saveItemsOrder,
     } from '/pro/js/catalogue.js';
 
     let business = null;
@@ -249,17 +254,18 @@ ini_set('log_errors', 1);
       container.style.display = 'block';
       container.innerHTML = '';
 
+      const byOrder = (a, b) => (a.sort_order || 0) - (b.sort_order || 0);
       const groups = categories.map((cat) => ({
         category: cat,
         items: [
           ...services.filter((s) => s.category_id === cat.id).map((s) => Object.assign({ _type: 'service' }, s)),
           ...products.filter((p) => p.category_id === cat.id).map((p) => Object.assign({ _type: 'product' }, p)),
-        ],
+        ].sort(byOrder),
       }));
       const uncategorized = [
         ...services.filter((s) => !s.category_id).map((s) => Object.assign({ _type: 'service' }, s)),
         ...products.filter((p) => !p.category_id).map((p) => Object.assign({ _type: 'product' }, p)),
-      ];
+      ].sort(byOrder);
       if (uncategorized.length) groups.push({ category: null, items: uncategorized });
 
       if (groups.length === 0) {
@@ -267,10 +273,14 @@ ini_set('log_errors', 1);
         return;
       }
 
-      groups.forEach((g) => container.appendChild(renderCategorySection(g.category, g.items)));
+      groups.forEach((g, idx) => container.appendChild(renderCategorySection(g.category, g.items, idx)));
     }
 
-    function renderCategorySection(category, items) {
+    // idx = position de cette categorie parmi les VRAIES categories (hors
+    // "Sans categorie", toujours en dernier et sans fleches -- comme cote
+    // mobile ou seul _categories, jamais les items sans categorie, est
+    // reordonnable).
+    function renderCategorySection(category, items, idx) {
       const section = document.createElement('div');
       section.className = 'category-section';
 
@@ -280,19 +290,40 @@ ini_set('log_errors', 1);
       if (category) {
         const actions = document.createElement('div');
         actions.className = 'category-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.className = 'icon-btn';
+        upBtn.textContent = '\u2191';
+        upBtn.title = fr('Monter');
+        upBtn.disabled = idx === 0;
+        upBtn.style.opacity = idx === 0 ? '0.3' : '1';
+        upBtn.addEventListener('click', () => moveCategory(idx, idx - 1));
+        actions.appendChild(upBtn);
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'icon-btn';
+        downBtn.textContent = '\u2193';
+        downBtn.title = fr('Descendre');
+        downBtn.disabled = idx === categories.length - 1;
+        downBtn.style.opacity = idx === categories.length - 1 ? '0.3' : '1';
+        downBtn.addEventListener('click', () => moveCategory(idx, idx + 1));
+        actions.appendChild(downBtn);
+
         const delBtn = document.createElement('button');
         delBtn.className = 'icon-btn';
         delBtn.textContent = '\u{1F5D1}';
         delBtn.title = fr('Supprimer la cat&eacute;gorie');
         delBtn.addEventListener('click', () => onDeleteCategory(category));
         actions.appendChild(delBtn);
+
         head.appendChild(actions);
       }
       section.appendChild(head);
 
       const grid = document.createElement('div');
       grid.className = 'item-grid';
-      items.forEach((item) => grid.appendChild(renderItemCard(item)));
+      items.forEach((item, itemIdx) => grid.appendChild(renderItemCard(item, items, category ? category.id : null)));
+      attachDragReorder(grid, items);
 
       const addTile = document.createElement('button');
       addTile.className = 'add-tile';
@@ -304,7 +335,60 @@ ini_set('log_errors', 1);
       return section;
     }
 
-    function renderItemCard(item) {
+    async function moveCategory(oldIdx, newIdx) {
+      if (newIdx < 0 || newIdx >= categories.length) return;
+      const reordered = categories.slice();
+      const [moved] = reordered.splice(oldIdx, 1);
+      reordered.splice(newIdx, 0, moved);
+      categories = reordered;
+      render();
+      try {
+        await saveCategoriesOrder(reordered);
+      } catch (err) {
+        console.error(err);
+        showToast('Erreur lors du tri.');
+        await loadAll();
+      }
+    }
+
+    // Glisser-deposer natif HTML5 sur les cartes d'une grille d'items
+    // (produits/services melanges). itemsList = liste actuelle de CETTE
+    // categorie uniquement (le tri est toujours relatif a la categorie,
+    // comme cote mobile).
+    function attachDragReorder(grid, itemsList) {
+      let dragFromIdx = null;
+      grid.querySelectorAll('.item-card').forEach((card, i) => {
+        card.draggable = true;
+        card.addEventListener('dragstart', (e) => {
+          dragFromIdx = i;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+        card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+        card.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          if (dragFromIdx === null || dragFromIdx === i) return;
+          const reordered = itemsList.slice();
+          const [moved] = reordered.splice(dragFromIdx, 1);
+          reordered.splice(i, 0, moved);
+          try {
+            await saveItemsOrder(reordered);
+            await loadAll();
+          } catch (err) {
+            console.error(err);
+            showToast('Erreur lors du tri.');
+          }
+        });
+      });
+    }
+
+    function renderItemCard(item, itemsList, categoryId) {
       const card = document.createElement('div');
       card.className = 'item-card' + (item.is_active === false ? ' inactive' : '');
       const price = Math.round(item.price || 0) + ' ' + currencySymbol();
@@ -314,12 +398,16 @@ ini_set('log_errors', 1);
       const lowStock = item._type === 'product' && item.track_stock && (item.stock_qty || 0) <= (item.stock_alert != null ? item.stock_alert : 5);
 
       card.innerHTML =
+        '<div class="drag-handle" title="Glisser pour r&eacute;ordonner">\u{22EE}\u{22EE}</div>' +
         '<div class="item-thumb">' + (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '">' : (item._type === 'service' ? '\u2702' : '\u{1F4E6}')) + '</div>' +
         '<div class="item-info"><div class="item-name">' + escapeHtml(item.name) + '</div>' +
         '<div class="item-meta"><span>' + price + '</span>' +
         (meta ? '<span' + (lowStock ? ' class="stock-badge" style="background:rgba(221,107,32,0.12);color:var(--warning)"' : '') + '>' + escapeHtml(meta) + '</span>' : '') +
         '</div></div>';
-      card.addEventListener('click', () => openItemModal(item, item.category_id, item._type === 'product'));
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.drag-handle')) return;
+        openItemModal(item, item.category_id, item._type === 'product');
+      });
       return card;
     }
 

@@ -20,7 +20,7 @@ export async function loadCatalogueItems(businessId) {
     ]);
     const products = (prodRes.data || []).map((p) => Object.assign({ _isProduct: true }, p));
     const services = (svcRes.data || []).map((s) => Object.assign({ _isProduct: false }, s));
-    return products.concat(services);
+    return products.concat(services).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 }
 
 // Fiche fidelite d'un client pour ce business (ou null si aucune / pas encore de compte).

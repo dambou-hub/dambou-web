@@ -57,8 +57,13 @@ $products = supabase_get($SUPABASE_URL, $SUPABASE_KEY,
 $services = supabase_get($SUPABASE_URL, $SUPABASE_KEY,
     "services?business_id=eq.$bizId&is_active=eq.true&select=id,name,description,price,image_url,category_id&order=sort_order");
 
-// Fusionner produits et services
+// Fusionner produits et services, tries ensemble par sort_order (comme le
+// pro les a organises depuis le catalogue -- un simple array_merge mettrait
+// tous les produits avant tous les services, peu importe leur ordre voulu).
 $allItems = array_merge($products, $services);
+usort($allItems, function($a, $b) {
+  return ($a['sort_order'] ?? 0) <=> ($b['sort_order'] ?? 0);
+});
 $modules = supabase_get($SUPABASE_URL, $SUPABASE_KEY,
     "modules?business_id=eq.$bizId&is_enabled=eq.true&select=module_type,online_enabled");
 

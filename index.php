@@ -18,7 +18,6 @@ if (count($parts) >= 1 && !empty($parts[0])) {
 // Pages reservees (servies directement, pas traitees comme slug de business)
 // Comparaison sur le chemin complet, donc les sous-chemins (ex: pro/login) fonctionnent.
 $reservedPages = [
-$reservedPages = [
     'privacy'             => 'privacy.php',
     'cgu'                 => 'cgu.php',
     'abonnement'          => 'abonnement.php',

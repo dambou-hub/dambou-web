@@ -48,6 +48,15 @@ ini_set('log_errors', 1);
   .toggle input:checked + .toggle-slider { background: var(--primary); }
   .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
 
+  .card { background: white; border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; }
+  .btn { padding: 12px 16px; border-radius: 12px; border: none; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row label { font-size: 13px; font-weight: 600; }
+  .toggle-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; max-width: 260px; }
+
   .sub-toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--card-border); font-size: 12px; }
 
   .mobile-only-note { background: rgba(113,128,150,0.08); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; font-size: 12px; color: var(--text-medium); line-height: 1.5; margin-top: 24px; }
@@ -70,15 +79,35 @@ ini_set('log_errors', 1);
     <div id="loading">Chargement...</div>
     <div id="modules-content" style="display:none"></div>
 
+    <div class="card" id="stripe-card" style="display:none; margin-top:20px">
+      <h3 style="font-size:14px; font-weight:800; margin-bottom:12px">Paiement en ligne (Stripe)</h3>
+      <div id="stripe-status-box" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; margin-bottom:14px">
+        <span id="stripe-status-icon" style="font-size:22px"></span>
+        <div>
+          <div id="stripe-status-title" style="font-size:13px; font-weight:800"></div>
+          <div id="stripe-status-sub" style="font-size:11px; color:var(--text-medium); margin-top:2px"></div>
+        </div>
+      </div>
+      <button type="button" id="stripe-connect-btn" class="btn btn-primary" style="width:100%; margin-bottom:14px">Connecter mon compte Stripe</button>
+
+      <div id="stripe-toggles" style="display:none; border-top:1px solid var(--card-border); padding-top:14px">
+        <div class="toggle-row"><label>Paiement en ligne activ&eacute;</label><label class="toggle"><input type="checkbox" id="f-payment-enabled"><span class="toggle-slider"></span></label></div>
+        <div class="toggle-row">
+          <div><label>Paiement en ligne obligatoire</label><div class="toggle-sub">Le client doit payer &agrave; la commande/r&eacute;servation, pas sur place</div></div>
+          <label class="toggle"><input type="checkbox" id="f-payment-required"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
     <div class="mobile-only-note">
-      &#8505; Le <strong>Terminal de paiement</strong> (lecteur carte Bluetooth) et le <strong>Paiement en ligne</strong> (Stripe) n&eacute;cessitent une configuration qui se fait depuis l'application mobile. Le module <strong>Multi-activit&eacute;</strong> &eacute;galement, car il r&eacute;organise votre catalogue.
+      &#8505; Le <strong>Terminal de paiement</strong> (lecteur carte Bluetooth) n&eacute;cessite une configuration qui se fait depuis l'application mobile. Le module <strong>Multi-activit&eacute;</strong> &eacute;galement, car il r&eacute;organise votre catalogue.
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { requireAuth, getBusinessForUser, fr } from '/pro/js/auth.js';
+    import { requireAuth, getBusinessForUser, fr, supabase } from '/pro/js/auth.js';
     import { ALL_MODULES, loadModuleStates, toggleModule, toggleOnlineOrders, saveAiContext } from '/pro/js/modules.js';
 
     let business = null;
@@ -210,6 +239,112 @@ ini_set('log_errors', 1);
       }
     }
 
+    async function initStripeSection() {
+      document.getElementById('stripe-card').style.display = 'block';
+
+      let stripeReady = !!business.stripe_charges_enabled;
+      const accountId = business.stripe_account_id || '';
+
+      // Rafraichit le vrai statut aupres de Stripe si un compte existe deja
+      // (reproduit la verification 'stripeReady' de stripe_config_screen.dart)
+      if (accountId) {
+        try {
+          const { data, error } = await supabase.functions.invoke('stripe-payment', {
+            body: { action: 'check_account', account_id: accountId },
+          });
+          if (!error && data && data.charges_enabled) {
+            stripeReady = true;
+            if (!business.stripe_charges_enabled) {
+              await supabase.from('businesses').update({
+                stripe_charges_enabled: true, stripe_onboarding_done: true,
+              }).eq('id', business.id);
+              business.stripe_charges_enabled = true;
+            }
+          }
+        } catch (e) { console.error('Erreur verification statut Stripe:', e); }
+      }
+
+      renderStripeStatus(stripeReady, accountId);
+    }
+
+    function renderStripeStatus(stripeReady, accountId) {
+      const box = document.getElementById('stripe-status-box');
+      const icon = document.getElementById('stripe-status-icon');
+      const title = document.getElementById('stripe-status-title');
+      const sub = document.getElementById('stripe-status-sub');
+      const btn = document.getElementById('stripe-connect-btn');
+      const toggles = document.getElementById('stripe-toggles');
+
+      if (stripeReady) {
+        box.style.background = 'rgba(56,161,105,0.08)';
+        icon.textContent = '\u2705';
+        title.textContent = fr('Compte Stripe actif');
+        sub.textContent = fr('Vous pouvez encaisser vos clients en ligne.');
+        btn.textContent = fr('G&eacute;rer mon compte Stripe');
+        toggles.style.display = 'block';
+        document.getElementById('f-payment-enabled').checked = !!business.online_payment_enabled;
+        document.getElementById('f-payment-required').checked = !!business.online_payment_required;
+      } else if (accountId) {
+        box.style.background = 'rgba(221,107,32,0.08)';
+        icon.textContent = '\u26A0\uFE0F';
+        title.textContent = fr('Configuration Stripe incompl&egrave;te');
+        sub.textContent = fr('Terminez la v&eacute;rification pour activer le paiement en ligne.');
+        btn.textContent = fr('Continuer la configuration');
+        toggles.style.display = 'none';
+      } else {
+        box.style.background = 'rgba(160,174,192,0.12)';
+        icon.textContent = '\u26A0\uFE0F';
+        title.textContent = fr('Compte Stripe non configur&eacute;');
+        sub.textContent = fr('Connectez un compte pour encaisser vos clients en ligne.');
+        btn.textContent = fr('Connecter mon compte Stripe');
+        toggles.style.display = 'none';
+      }
+    }
+
+    document.getElementById('stripe-connect-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('stripe-connect-btn');
+      btn.disabled = true;
+      const originalLabel = btn.textContent;
+      try {
+        let accountId = business.stripe_account_id || '';
+        if (!accountId) {
+          btn.textContent = fr('Cr&eacute;ation du compte...');
+          const { data, error } = await supabase.functions.invoke('stripe-payment', {
+            body: { action: 'create_connect_account', business_name: business.name, email: business.email || '' },
+          });
+          if (error || !data || !data.account_id) throw new Error((data && data.error) || 'Erreur creation compte');
+          accountId = data.account_id;
+          await supabase.from('businesses').update({ stripe_account_id: accountId }).eq('id', business.id);
+          business.stripe_account_id = accountId;
+        }
+
+        btn.textContent = fr('G&eacute;n&eacute;ration du lien...');
+        const { data: linkData, error: linkError } = await supabase.functions.invoke('stripe-payment', {
+          body: { action: 'create_onboarding_link', account_id: accountId },
+        });
+        if (linkError || !linkData || !linkData.url) throw new Error((linkData && linkData.error) || 'Erreur generation lien');
+
+        window.location.href = linkData.url;
+      } catch (err) {
+        console.error(err);
+        showToast("Erreur lors de la connexion Stripe.");
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    });
+
+    async function saveStripeToggle(field, value) {
+      try {
+        await supabase.from('businesses').update({ [field]: value }).eq('id', business.id);
+        business[field] = value;
+      } catch (err) {
+        console.error(err);
+        showToast('Erreur lors de la mise &agrave; jour.');
+      }
+    }
+    document.getElementById('f-payment-enabled').addEventListener('change', (e) => saveStripeToggle('online_payment_enabled', e.target.checked));
+    document.getElementById('f-payment-required').addEventListener('change', (e) => saveStripeToggle('online_payment_required', e.target.checked));
+
     (async () => {
       const session = await requireAuth();
       if (!session) return;
@@ -222,6 +357,7 @@ ini_set('log_errors', 1);
       document.getElementById('loading').style.display = 'none';
       document.getElementById('modules-content').style.display = 'block';
       render();
+      await initStripeSection();
     })();
   </script>
 </body>

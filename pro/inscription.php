@@ -445,6 +445,7 @@ ini_set('log_errors', 1);
     try {
       const user = await verifyOtpAndCompleteProfile(otpEmail, code, otpProfile);
       currentUser = user;
+      document.getElementById('step-otp').style.display = 'none';
       goToStep(1);
       initActivityStep();
     } catch (err) {
